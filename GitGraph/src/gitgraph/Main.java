@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
  * @author pauldoo
  */
 public class Main {
+    private static final boolean includeBlobs = false;
+
     private static final Pattern objectInRevList = Pattern.compile("^([0123456789abcdef]{40}).*$");
     private static final Pattern parentInCommit = Pattern.compile("^parent ([0123456789abcdef]{40})$");
     private static final Pattern treeInCommit = Pattern.compile("^tree ([0123456789abcdef]{40})$");
@@ -75,18 +77,15 @@ public class Main {
 
                     BufferedReader r = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
                     String type = r.readLine();
-                    String shapeName = null;
                     if ("commit".equals(type)) {
-                        shapeName = "circle";
+                        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=circle];");
                     } else if ("tree".equals(type)) {
-                        shapeName = "triangle";
-                    } else if ("blob".equals(type)) {
-                        shapeName = "rectangle";
+                        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=triangle];");
+                    } else if (includeBlobs && "blob".equals(type)) {
+                        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=rectangle];");
                     }
                     process.waitFor();
                     process = null;
-
-                    dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=" + shapeName + "];");
 
                     {
                         if ("commit".equals(type)) {
@@ -128,7 +127,7 @@ public class Main {
                                     dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
                                 }
                                 Matcher blob = blobInTree.matcher(line);
-                                if (blob.matches()) {
+                                if (includeBlobs && blob.matches()) {
                                     dotOutput.println("  \"" + hash + "\" -> \"" + blob.group(1) + "\";");
                                 }
                             }
