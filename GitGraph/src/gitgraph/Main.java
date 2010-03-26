@@ -21,6 +21,12 @@ import java.util.regex.Pattern;
  * @author pauldoo
  */
 public class Main {
+    private static final Pattern objectInRevList = Pattern.compile("^([0123456789abcdef]{40}).*$");
+    private static final Pattern parentInCommit = Pattern.compile("^parent ([0123456789abcdef]{40})$");
+    private static final Pattern treeInCommit = Pattern.compile("^tree ([0123456789abcdef]{40})$");
+    private static final Pattern treeInTree = Pattern.compile("^[0123456789]{6} tree ([0123456789abcdef]{40}).*$");
+    private static final Pattern blobInTree = Pattern.compile("^[0123456789]{6} blob ([0123456789abcdef]{40}).*$");
+
     /**
      * @param args the command line arguments
      */
@@ -30,17 +36,18 @@ public class Main {
         try {
             Collection<String> objectHashes = new TreeSet<String>();
             {
-                String command[] = new String[]{"git",  "rev-list",  "--objects",  "--all"};
-                process = Runtime.getRuntime().exec(command);
-                process.getOutputStream().close();
-                process.getErrorStream().close();
+                {
+                    String command[] = new String[]{"git",  "rev-list",  "--objects",  "--all"};
+                    process = Runtime.getRuntime().exec(command);
+                    process.getOutputStream().close();
+                    process.getErrorStream().close();
+                }
 
                 BufferedReader r = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
-                Pattern pattern = Pattern.compile("^([0123456789abcdef]{40}).*$");
                 {
                     String line;
                     while ((line = r.readLine()) != null) {
-                        Matcher m = pattern.matcher(line);
+                        Matcher m = objectInRevList.matcher(line);
                         if (m.matches()) {
                             String fullHash = m.group(1);
                             objectHashes.add(fullHash);
@@ -58,10 +65,13 @@ public class Main {
                 dotOutput.println("strict digraph {");
 
                 for (String hash: objectHashes) {
-                    String command[] = new String[]{"git", "cat-file", "-t", hash};
-                    process = Runtime.getRuntime().exec(command);
-                    process.getOutputStream().close();
-                    process.getErrorStream().close();
+                    System.out.print("\r" + hash);
+                    {
+                        String command[] = new String[]{"git", "cat-file", "-t", hash};
+                        process = Runtime.getRuntime().exec(command);
+                        process.getOutputStream().close();
+                        process.getErrorStream().close();
+                    }
 
                     BufferedReader r = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
                     String type = r.readLine();
@@ -77,7 +87,60 @@ public class Main {
                     process = null;
 
                     dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=" + shapeName + "];");
+
+                    {
+                        if ("commit".equals(type)) {
+                            {
+                                String command[] = new String[]{"git", "cat-file", "-p", hash};
+                                process = Runtime.getRuntime().exec(command);
+                                process.getOutputStream().close();
+                                process.getErrorStream().close();
+                            }
+
+                            BufferedReader commitReader = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
+                            String line;
+                            while ((line = commitReader.readLine()).equals("") == false) {
+                                Matcher parent = parentInCommit.matcher(line);
+                                if (parent.matches()) {
+                                    dotOutput.println("  \"" + hash + "\" -> \"" + parent.group(1) + "\";");
+                                }
+                                Matcher tree = treeInCommit.matcher(line);
+                                if (tree.matches()) {
+                                    dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
+                                }
+                            }
+
+                            process.waitFor();
+                            process = null;
+                        } else if ("tree".equals(type)) {
+                            {
+                                String command[] = new String[]{"git", "cat-file", "-p", hash};
+                                process = Runtime.getRuntime().exec(command);
+                                process.getOutputStream().close();
+                                process.getErrorStream().close();
+                            }
+
+                            BufferedReader treeReader = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
+                            String line;
+                            while ((line = treeReader.readLine()) != null) {
+                                Matcher tree = treeInTree.matcher(line);
+                                if (tree.matches()) {
+                                    dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
+                                }
+                                Matcher blob = blobInTree.matcher(line);
+                                if (blob.matches()) {
+                                    dotOutput.println("  \"" + hash + "\" -> \"" + blob.group(1) + "\";");
+                                }
+                            }
+
+                            process.waitFor();
+                            process = null;
+                        } else if ("blob".equals(type)) {
+                        }
+                    }
+
                 }
+                System.out.print("\n");
 
                 dotOutput.println("}");
                 dotOutput.close();
