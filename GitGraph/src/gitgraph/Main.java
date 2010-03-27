@@ -9,10 +9,9 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.Collection;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,8 +19,8 @@ import java.util.regex.Pattern;
  *
  * @author pauldoo
  */
-public class Main {
-    private static final boolean includeBlobs = false;
+public final class Main {
+    private static final boolean includeBlobs = true;
 
     private static final Pattern objectInRevList = Pattern.compile("^([0123456789abcdef]{40}).*$");
     private static final Pattern parentInCommit = Pattern.compile("^parent ([0123456789abcdef]{40})$");
@@ -36,115 +35,37 @@ public class Main {
         final String outputFilename = args[0];
         Process process = null;
         try {
-            Collection<String> objectHashes = new TreeSet<String>();
             {
-                {
-                    String command[] = new String[]{"git",  "rev-list",  "--objects",  "--all"};
-                    process = Runtime.getRuntime().exec(command);
-                    process.getOutputStream().close();
-                    process.getErrorStream().close();
-                }
-
-                BufferedReader r = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
-                {
-                    String line;
-                    while ((line = r.readLine()) != null) {
-                        Matcher m = objectInRevList.matcher(line);
-                        if (m.matches()) {
-                            String fullHash = m.group(1);
-                            objectHashes.add(fullHash);
-                        } else {
-                            System.err.println("Warning: I didn't understand '" + line + "'");
-                        }
-                    }
-                }
-                process.waitFor();
-                process = null;
+                String command[] = new String[]{"git",  "rev-list",  "--objects",  "--all"};
+                process = Runtime.getRuntime().exec(command);
+                process.getOutputStream().close();
+                process.getErrorStream().close();
             }
 
+            BufferedReader r = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
+            PrintWriter dotOutput = new PrintWriter(new BufferedOutputStream(new FileOutputStream(outputFilename)));
+            dotOutput.println("strict digraph {");
+
             {
-                PrintWriter dotOutput = new PrintWriter(new BufferedOutputStream(new FileOutputStream(outputFilename)));
-                dotOutput.println("strict digraph {");
-
-                for (String hash: objectHashes) {
-                    System.out.print("\r" + hash);
-                    {
-                        String command[] = new String[]{"git", "cat-file", "-t", hash};
-                        process = Runtime.getRuntime().exec(command);
-                        process.getOutputStream().close();
-                        process.getErrorStream().close();
+                String line;
+                while ((line = r.readLine()) != null) {
+                    Matcher m = objectInRevList.matcher(line);
+                    if (m.matches()) {
+                        String fullHash = m.group(1);
+                        processObject(fullHash, dotOutput);
+                    } else {
+                        System.err.println("Warning: I didn't understand '" + line + "'");
                     }
-
-                    BufferedReader r = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
-                    String type = r.readLine();
-                    if ("commit".equals(type)) {
-                        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=circle];");
-                    } else if ("tree".equals(type)) {
-                        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=triangle];");
-                    } else if (includeBlobs && "blob".equals(type)) {
-                        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=rectangle];");
-                    }
-                    process.waitFor();
-                    process = null;
-
-                    {
-                        if ("commit".equals(type)) {
-                            {
-                                String command[] = new String[]{"git", "cat-file", "-p", hash};
-                                process = Runtime.getRuntime().exec(command);
-                                process.getOutputStream().close();
-                                process.getErrorStream().close();
-                            }
-
-                            BufferedReader commitReader = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
-                            String line;
-                            while ((line = commitReader.readLine()).equals("") == false) {
-                                Matcher parent = parentInCommit.matcher(line);
-                                if (parent.matches()) {
-                                    dotOutput.println("  \"" + hash + "\" -> \"" + parent.group(1) + "\";");
-                                }
-                                Matcher tree = treeInCommit.matcher(line);
-                                if (tree.matches()) {
-                                    dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
-                                }
-                            }
-
-                            process.waitFor();
-                            process = null;
-                        } else if ("tree".equals(type)) {
-                            {
-                                String command[] = new String[]{"git", "cat-file", "-p", hash};
-                                process = Runtime.getRuntime().exec(command);
-                                process.getOutputStream().close();
-                                process.getErrorStream().close();
-                            }
-
-                            BufferedReader treeReader = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
-                            String line;
-                            while ((line = treeReader.readLine()) != null) {
-                                Matcher tree = treeInTree.matcher(line);
-                                if (tree.matches()) {
-                                    dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
-                                }
-                                Matcher blob = blobInTree.matcher(line);
-                                if (includeBlobs && blob.matches()) {
-                                    dotOutput.println("  \"" + hash + "\" -> \"" + blob.group(1) + "\";");
-                                }
-                            }
-
-                            process.waitFor();
-                            process = null;
-                        } else if ("blob".equals(type)) {
-                        }
-                    }
-
                 }
-                System.out.print("\n");
-
-                dotOutput.println("}");
-                dotOutput.close();
             }
 
+            dotOutput.println("}");
+            dotOutput.close();
+            if (dotOutput.checkError()) {
+                throw new IOException("Error writing output file.");
+            }
+            process.waitFor();
+            process = null;
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
@@ -152,5 +73,108 @@ public class Main {
                 process.destroy();
             }
         }
+    }
+
+    private static void processObject(String objectHash, PrintWriter dotOutput) throws Exception
+    {
+        Process process = null;
+        try {
+            {
+                String command[] = new String[]{"git", "cat-file", "-t", objectHash};
+                process = Runtime.getRuntime().exec(command);
+                process.getOutputStream().close();
+                process.getErrorStream().close();
+            }
+
+            BufferedReader r = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
+            String type = r.readLine();
+            process.waitFor();
+            process = null;
+            if ("commit".equals(type)) {
+                processCommit(objectHash, dotOutput);
+            } else if ("tree".equals(type)) {
+                processTree(objectHash, dotOutput);
+            } else if (includeBlobs && "blob".equals(type)) {
+                processBlob(objectHash, dotOutput);
+            } else {
+                System.err.println("Warning: Did not recognise object type '" + type + "'");
+            }
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+        }
+    }
+
+    private static void processCommit(String hash, PrintWriter dotOutput) throws Exception
+    {
+        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=circle];");
+
+        Process process = null;
+        try {
+            {
+                String command[] = new String[]{"git", "cat-file", "-p", hash};
+                process = Runtime.getRuntime().exec(command);
+                process.getOutputStream().close();
+                process.getErrorStream().close();
+            }
+
+            BufferedReader commitReader = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
+            String line;
+            while ((line = commitReader.readLine()).equals("") == false) {
+                Matcher parent = parentInCommit.matcher(line);
+                if (parent.matches()) {
+                    dotOutput.println("  \"" + hash + "\" -> \"" + parent.group(1) + "\";");
+                }
+                Matcher tree = treeInCommit.matcher(line);
+                if (tree.matches()) {
+                    dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
+                }
+            }
+            process.waitFor();
+            process = null;
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+        }
+    }
+
+    private static void processTree(String hash, PrintWriter dotOutput) throws Exception
+    {
+        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=triangle];");
+        Process process = null;
+        try {
+            {
+                String command[] = new String[]{"git", "cat-file", "-p", hash};
+                process = Runtime.getRuntime().exec(command);
+                process.getOutputStream().close();
+                process.getErrorStream().close();
+            }
+
+            BufferedReader treeReader = new BufferedReader(new InputStreamReader(new BufferedInputStream(process.getInputStream())));
+            String line;
+            while ((line = treeReader.readLine()) != null) {
+                Matcher tree = treeInTree.matcher(line);
+                if (tree.matches()) {
+                    dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
+                }
+                Matcher blob = blobInTree.matcher(line);
+                if (includeBlobs && blob.matches()) {
+                    dotOutput.println("  \"" + hash + "\" -> \"" + blob.group(1) + "\";");
+                }
+            }
+            process.waitFor();
+            process = null;
+        } finally {
+            if (process != null) {
+                process.destroy();
+            }
+        }
+    }
+
+    private static void processBlob(String hash, PrintWriter dotOutput)
+    {
+        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=rectangle];");
     }
 }
