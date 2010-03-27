@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 public final class Main {
     private static final boolean includeBlobs = true;
 
-    private static final Pattern objectInRevList = Pattern.compile("^([0123456789abcdef]{40}).*$");
+    private static final Pattern objectInRevList = Pattern.compile("^([0123456789abcdef]{40})( (.*))?$");
     private static final Pattern parentInCommit = Pattern.compile("^parent ([0123456789abcdef]{40})$");
     private static final Pattern treeInCommit = Pattern.compile("^tree ([0123456789abcdef]{40})$");
     private static final Pattern treeInTree = Pattern.compile("^[0123456789]{6} tree ([0123456789abcdef]{40}).*$");
@@ -52,7 +52,8 @@ public final class Main {
                     Matcher m = objectInRevList.matcher(line);
                     if (m.matches()) {
                         String fullHash = m.group(1);
-                        processObject(fullHash, dotOutput);
+                        String hintName = (m.groupCount() >= 2) ? m.group(2) : null;
+                        processObject(fullHash, hintName, dotOutput);
                     } else {
                         System.err.println("Warning: I didn't understand '" + line + "'");
                     }
@@ -75,7 +76,7 @@ public final class Main {
         }
     }
 
-    private static void processObject(String objectHash, PrintWriter dotOutput) throws Exception
+    private static void processObject(String objectHash, String hintName, PrintWriter dotOutput) throws Exception
     {
         Process process = null;
         try {
@@ -93,9 +94,9 @@ public final class Main {
             if ("commit".equals(type)) {
                 processCommit(objectHash, dotOutput);
             } else if ("tree".equals(type)) {
-                processTree(objectHash, dotOutput);
+                processTree(objectHash, hintName, dotOutput);
             } else if (includeBlobs && "blob".equals(type)) {
-                processBlob(objectHash, dotOutput);
+                processBlob(objectHash, hintName, dotOutput);
             } else {
                 System.err.println("Warning: Did not recognise object type '" + type + "'");
             }
@@ -108,8 +109,6 @@ public final class Main {
 
     private static void processCommit(String hash, PrintWriter dotOutput) throws Exception
     {
-        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=circle];");
-
         Process process = null;
         try {
             {
@@ -131,6 +130,12 @@ public final class Main {
                     dotOutput.println("  \"" + hash + "\" -> \"" + tree.group(1) + "\";");
                 }
             }
+            String firstLineOfCommitMessage = commitReader.readLine();
+            if (firstLineOfCommitMessage == null) {
+                firstLineOfCommitMessage = "";
+            }
+            dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + firstLineOfCommitMessage + "\",shape=ellipse];");
+
             process.waitFor();
             process = null;
         } finally {
@@ -140,9 +145,9 @@ public final class Main {
         }
     }
 
-    private static void processTree(String hash, PrintWriter dotOutput) throws Exception
+    private static void processTree(String hash, String hintName, PrintWriter dotOutput) throws Exception
     {
-        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=triangle];");
+        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName + "\",shape=triangle];");
         Process process = null;
         try {
             {
@@ -173,8 +178,8 @@ public final class Main {
         }
     }
 
-    private static void processBlob(String hash, PrintWriter dotOutput)
+    private static void processBlob(String hash, String hintName, PrintWriter dotOutput)
     {
-        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\",shape=rectangle];");
+        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName + "\",shape=rectangle];");
     }
 }
