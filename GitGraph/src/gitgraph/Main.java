@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * @author pauldoo
  */
 public final class Main {
-    private static final boolean includeBlobs = true;
+    private static final boolean includeBlobs = false;
 
     private static final Pattern objectInRevList = Pattern.compile("^([0123456789abcdef]{40})( (.*))?$");
     private static final Pattern parentInCommit = Pattern.compile("^parent ([0123456789abcdef]{40})$");
@@ -95,7 +95,7 @@ public final class Main {
                 processCommit(objectHash, dotOutput);
             } else if ("tree".equals(type)) {
                 processTree(objectHash, hintName, dotOutput);
-            } else if (includeBlobs && "blob".equals(type)) {
+            } else if ("blob".equals(type)) {
                 processBlob(objectHash, hintName, dotOutput);
             } else {
                 System.err.println("Warning: Did not recognise object type '" + type + "'");
@@ -180,6 +180,8 @@ public final class Main {
 
     private static void processBlob(String hash, String hintName, PrintWriter dotOutput)
     {
-        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName + "\",shape=rectangle];");
+        if (includeBlobs) {
+            dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName + "\",shape=rectangle];");
+        }
     }
 }
