@@ -134,7 +134,7 @@ public final class Main {
             if (firstLineOfCommitMessage == null) {
                 firstLineOfCommitMessage = "";
             }
-            dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + firstLineOfCommitMessage + "\",shape=ellipse];");
+            dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + firstLineOfCommitMessage.replace("\"", "\\\"") + "\",shape=ellipse];");
 
             process.waitFor();
             process = null;
@@ -147,7 +147,7 @@ public final class Main {
 
     private static void processTree(String hash, String hintName, PrintWriter dotOutput) throws Exception
     {
-        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName + "\",shape=triangle];");
+        dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName.replace("\"", "\\\"") + "\",shape=triangle];");
         Process process = null;
         try {
             {
@@ -181,7 +181,7 @@ public final class Main {
     private static void processBlob(String hash, String hintName, PrintWriter dotOutput)
     {
         if (includeBlobs) {
-            dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName + "\",shape=rectangle];");
+            dotOutput.println("  \"" + hash + "\" [label=\"" + hash.substring(0, 7) + "\\n" + hintName.replace("\"", "\\\"") + "\",shape=rectangle];");
         }
     }
 }
