@@ -41,9 +41,12 @@ void WarpOpenCL(
     //const size_t local_work_size[] = { 6, 6, 6 }; // 0.253900
     //const size_t local_work_size[] = { 8, 8, 4 };
 
-    context = clCreateContextFromType(NULL, CL_DEVICE_TYPE_CPU, NULL, NULL, &status);
+    context = clCreateContextFromType(NULL, CL_DEVICE_TYPE_GPU, NULL, NULL, &status);
     if (status != CL_SUCCESS) {
-        Bailout("clCreateContextFromType failed");
+        context = clCreateContextFromType(NULL, CL_DEVICE_TYPE_CPU, NULL, NULL, &status);
+        if (status != CL_SUCCESS) {
+            Bailout("clCreateContextFromType failed");
+        }
 	}
 
     status = clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &device_list_size);

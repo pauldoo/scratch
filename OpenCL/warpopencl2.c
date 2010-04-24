@@ -50,7 +50,7 @@ void WarpOpenCL2(
     warp_image_format.image_channel_order = CL_INTENSITY;
     warp_image_format.image_channel_data_type = CL_FLOAT;
 
-    context = clCreateContextFromType(NULL, CL_DEVICE_TYPE_CPU, NULL, NULL, &status);
+    context = clCreateContextFromType(NULL, CL_DEVICE_TYPE_GPU, NULL, NULL, &status);
     if (status != CL_SUCCESS) {
         Bailout("clCreateContextFromType failed");
 	}
