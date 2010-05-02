@@ -8,19 +8,19 @@
 #include "cl.hpp"
 
 namespace {
-    const int sampleWidth = 512;
-    const int sampleHeight = 512;
-    const double sampleMinX = -2.0;
+    const int sampleWidth = 1024;
+    const int sampleHeight = 1024;
+    const double sampleMinX = -2.5;
     const double sampleMinY = -2.0;
-    const double sampleMaxX = 2.0;
+    const double sampleMaxX = 1.5;
     const double sampleMaxY = 2.0;
     const int maximumIterations = 20;
 
     const int imageWidth = 320;
     const int imageHeight = 240;
-    const double imageMinX = -2.0;
+    const double imageMinX = -2.5;
     const double imageMinY = -1.5;
-    const double imageMaxX = 2.0;
+    const double imageMaxX = 1.5;
     const double imageMaxY = 1.5;
 
     const std::string ReadFileIntoString(const std::string& filename)
