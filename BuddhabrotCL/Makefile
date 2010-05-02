@@ -1,6 +1,6 @@
-all: image.pnm
+all: image.png
 
-image.pnm: buddhabrot
+image.pnm: buddhabrot kernel.cl
 	./buddhabrot > image.pnm
 
 OBJS := main.o
@@ -14,6 +14,9 @@ buddhabrot: $(OBJS)
 %.o: %.cpp
 	g++ -c $(CXXFLAGS) $*.cpp -o $*.o
 	g++ -MM $(CXXFLAGS) $*.cpp > $*.d
+
+%.png: %.pnm
+	convert $< $@
 
 clean:
 	rm -f image.pnm buddhabrot *.o *.d

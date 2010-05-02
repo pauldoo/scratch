@@ -8,17 +8,21 @@
 #include "cl.hpp"
 
 namespace {
-    const int width = 160;
-    const int height = 160;
-
-    const double minX = -2.0;
-    const double minY = -2.0;
-    const double maxX = 2.0;
-    const double maxY = 2.0;
+    const int sampleWidth = 512;
+    const int sampleHeight = 512;
+    const double sampleMinX = -2.0;
+    const double sampleMinY = -2.0;
+    const double sampleMaxX = 2.0;
+    const double sampleMaxY = 2.0;
     const int maximumIterations = 20;
 
-    const int levels = 256;
-    
+    const int imageWidth = 320;
+    const int imageHeight = 240;
+    const double imageMinX = -2.0;
+    const double imageMinY = -1.5;
+    const double imageMaxX = 2.0;
+    const double imageMaxY = 1.5;
+
     const std::string ReadFileIntoString(const std::string& filename)
     {
         std::ostringstream buf;
@@ -32,45 +36,80 @@ namespace {
 int main(void) {
     try {
         const std::string kernelSource = ReadFileIntoString("kernel.cl");
-        
-        std::wcout
-            << L"P2\n"
-            << L"# buddhabrot\n"
-            << width << L" " << height << "\n"
-            << (levels - 1) << "\n";
-        
+
         cl::Context context(CL_DEVICE_TYPE_CPU);
         std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
         cl::Program::Sources sources;
         sources.push_back(std::make_pair(kernelSource.c_str(), kernelSource.size()));
-        
+
         cl::Program program(context, sources);
-        program.build(devices);
-        
+        try {
+            program.build(devices);
+        } catch (const cl::Error& ex) {
+            if (ex.err() == CL_BUILD_PROGRAM_FAILURE) {
+                std::wcerr
+                    << L"Build error:\n"
+                    << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(devices.front()).c_str() << "\n";
+            }
+            throw;
+        }
+
         cl::Kernel kernel(program, "Buddhabrot");
-        
+
         cl::CommandQueue queue(context, devices.front());
-        
-        const size_t outputBufferSize = width * height * 4;
+
+        const size_t outputBufferSize = imageWidth * imageHeight * 4;
         cl::Buffer outputBuffer(context, CL_MEM_READ_WRITE, outputBufferSize);
-        
+
         cl::KernelFunctor functor = kernel.bind(
             queue,
-            cl::NDRange(width, height),
-            cl::NDRange(16, 16));
-        
-        cl::Event event = functor(
-            static_cast<float>(minX),
-            static_cast<float>(minY),
-            static_cast<float>(maxX),
-            static_cast<float>(maxY),
+            cl::NDRange(sampleWidth, sampleHeight),
+            cl::NDRange());
+
+        cl::Event kernelEvent = functor(
+            static_cast<float>(sampleMinX),
+            static_cast<float>(sampleMinY),
+            static_cast<float>(sampleMaxX),
+            static_cast<float>(sampleMaxY),
+            imageWidth,
+            imageHeight,
+            static_cast<float>(imageMinX),
+            static_cast<float>(imageMinY),
+            static_cast<float>(imageMaxX),
+            static_cast<float>(imageMaxY),
             maximumIterations,
             outputBuffer);
-        event.wait();
-        
+
+        std::vector<int> resultBuffer(imageWidth * imageHeight);
+        std::vector<cl::Event> events;
+        events.push_back(kernelEvent);
+        queue.enqueueReadBuffer(
+            outputBuffer,
+            true,
+            0,
+            outputBufferSize,
+            &(resultBuffer.front()),
+            &events);
+
+        const int maxLevel = *std::max_element(resultBuffer.begin(), resultBuffer.end());
+        std::wcout
+            << L"P2\n"
+            << L"# buddhabrot\n"
+            << imageWidth << L" " << imageHeight << "\n"
+            << maxLevel << "\n";
+
+        for (int y = 0; y < imageHeight; y++) {
+            for (int x = 0; x < imageWidth; x++) {
+                std::wcout << resultBuffer.at(y * imageWidth + x) << L" ";
+            }
+            std::wcout << L"\n";
+        }
+
+        return EXIT_SUCCESS;
     } catch (const cl::Error& ex) {
         std::wcerr << L"ERROR: " << ex.what() << L"(" << ex.err() << L")" << std::endl;
     } catch (const std::exception& ex) {
         std::wcerr << L"ERROR: " << ex.what() << std::endl;
     }
+    return EXIT_FAILURE;
 }
