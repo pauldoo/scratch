@@ -11,16 +11,16 @@
 namespace {
     const int chunkWidth = 1000;
     const int chunkHeight = 1000;
-    const int sampleWidth = 32000;
-    const int sampleHeight = 24000;
+    const int sampleWidth = 64000;
+    const int sampleHeight = 48000;
     const double sampleMinX = -2.5;
     const double sampleMinY = -1.5;
     const double sampleMaxX = 1.5;
     const double sampleMaxY = 1.5;
     const int maximumIterations = 20;
 
-    const int imageWidth = 640;
-    const int imageHeight = 480;
+    const int imageWidth = 3200;
+    const int imageHeight = 2400;
     const double imageMinX = -0.8;
     const double imageMinY = -1.125;
     const double imageMaxX = 0.2;
