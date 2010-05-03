@@ -8,16 +8,16 @@
 #include "cl.hpp"
 
 namespace {
-    const int sampleWidth = 1024;
-    const int sampleHeight = 1024;
+    const int sampleWidth = 2000;
+    const int sampleHeight = 1500;
     const double sampleMinX = -2.5;
-    const double sampleMinY = -2.0;
+    const double sampleMinY = -1.5;
     const double sampleMaxX = 1.5;
-    const double sampleMaxY = 2.0;
-    const int maximumIterations = 20;
+    const double sampleMaxY = 1.5;
+    const int maximumIterations = 500;
 
-    const int imageWidth = 320;
-    const int imageHeight = 240;
+    const int imageWidth = 640;
+    const int imageHeight = 480;
     const double imageMinX = -2.5;
     const double imageMinY = -1.5;
     const double imageMaxX = 1.5;
@@ -58,8 +58,15 @@ int main(void) {
 
         cl::CommandQueue queue(context, devices.front());
 
-        const size_t outputBufferSize = imageWidth * imageHeight * 4;
+        std::vector<int> resultBuffer(imageWidth * imageHeight);
+        const size_t outputBufferSize = resultBuffer.size() * sizeof(int);
         cl::Buffer outputBuffer(context, CL_MEM_READ_WRITE, outputBufferSize);
+        queue.enqueueWriteBuffer(
+            outputBuffer,
+            true,
+            0,
+            outputBufferSize,
+            &(resultBuffer.front()));
 
         cl::KernelFunctor functor = kernel.bind(
             queue,
@@ -80,7 +87,6 @@ int main(void) {
             maximumIterations,
             outputBuffer);
 
-        std::vector<int> resultBuffer(imageWidth * imageHeight);
         std::vector<cl::Event> events;
         events.push_back(kernelEvent);
         queue.enqueueReadBuffer(

@@ -42,16 +42,19 @@ __kernel void Buddhabrot(
             zR = tzR;
             zI = tzI;
 
-            int x = (zR - imageMinX) * (imageWidth - 1) / (imageMaxX - imageMinX);
-            int y = (zI - imageMinY) * (imageHeight - 1) / (imageMaxY - imageMinY);
-            if (x >= 0 && x < imageWidth &&
-                y >= 0 && y < imageHeight) {
-                __global int* address =
-                    outputImage +
-                    y * imageWidth +
-                    x;
+            if (zR >= imageMinX && zR < imageMaxX &&
+                zI >= imageMinY && zI < imageMaxY) {
+                int x = (zR - imageMinX) * (imageWidth - 1) / (imageMaxX - imageMinX);
+                int y = (zI - imageMinY) * (imageHeight - 1) / (imageMaxY - imageMinY);
+                if (x >= 0 && x < imageWidth &&
+                    y >= 0 && y < imageHeight) {
+                    __global int* address =
+                        outputImage +
+                        y * imageWidth +
+                        x;
 
-                atom_inc(address);
+                    atom_inc(address);
+                }
             }
         }
     }
