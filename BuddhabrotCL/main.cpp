@@ -9,22 +9,22 @@
 #include "cl.hpp"
 
 namespace {
-    const int chunkWidth = 2000;
-    const int chunkHeight = 2000;
-    const int sampleWidth = 16000;
-    const int sampleHeight = 12000;
+    const int chunkWidth = 1000;
+    const int chunkHeight = 1000;
+    const int sampleWidth = 32000;
+    const int sampleHeight = 24000;
     const double sampleMinX = -2.5;
     const double sampleMinY = -1.5;
     const double sampleMaxX = 1.5;
     const double sampleMaxY = 1.5;
     const int maximumIterations = 20;
 
-    const int imageWidth = 3200;
-    const int imageHeight = 2400;
-    const double imageMinX = -2.5;
-    const double imageMinY = -1.5;
-    const double imageMaxX = 1.5;
-    const double imageMaxY = 1.5;
+    const int imageWidth = 640;
+    const int imageHeight = 480;
+    const double imageMinX = -0.8;
+    const double imageMinY = -1.125;
+    const double imageMaxX = 0.2;
+    const double imageMaxY = -0.375;
 
     const std::string ReadFileIntoString(const std::string& filename)
     {
