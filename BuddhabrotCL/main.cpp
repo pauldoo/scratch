@@ -9,8 +9,8 @@
 #include "cl.hpp"
 
 namespace {
-    const int chunkWidth = 1000;
-    const int chunkHeight = 1000;
+    const int chunkWidth = 2000;
+    const int chunkHeight = 2000;
     const int sampleWidth = 16000;
     const int sampleHeight = 12000;
     const double sampleMinX = -2.5;
