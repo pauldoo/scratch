@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
+#include <sys/time.h>
 
 
 static void AllocateShortImage(ShortImage* const result, const int width, const int height)
@@ -127,6 +127,14 @@ static double MeasureRmsError(
     return sqrt(sumSquared / count);
 }
 
+static double Time()
+{
+    struct timeval tp;
+    gettimeofday(&tp, NULL);
+    return tp.tv_sec + tp.tv_usec * 1e-6;
+}
+
+
 static void Benchmark(
     const char* const name,
     const ShortVolume* const input_volume,
@@ -136,26 +144,26 @@ static void Benchmark(
     const WarperFunc func)
 {
     const int iterations = 10;
-    clock_t begin, end;
+    double begin, end;
     double timeSingle;
     double timeMulti;
     double setupTime;
     double computeTime;
     double rmsError;
-    
+
     printf("%s: Starting..\n", name);
 
     func(input_volume, warpfield, output_volume, 1);
 
-    begin = clock();
+    begin = Time();
     func(input_volume, warpfield, output_volume, 1);
-    end = clock();
-    timeSingle = ((double)(end - begin)) / CLOCKS_PER_SEC;
+    end = Time();
+    timeSingle = end - begin;
 
-    begin = clock();
+    begin = Time();
     func(input_volume, warpfield, output_volume, iterations);
-    end = clock();
-    timeMulti = ((double)(end - begin)) / CLOCKS_PER_SEC;
+    end = Time();
+    timeMulti = end - begin;
 
     rmsError = MeasureRmsError(output_volume, expected_volume, 10);
     printf("%s: %f rms error.\n", name, rmsError);

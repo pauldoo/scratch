@@ -40,6 +40,7 @@ void WarpOpenCL(
     //const size_t local_work_size[] = { 15, 15, 1 }; // 0.246700
     //const size_t local_work_size[] = { 6, 6, 6 }; // 0.253900
     //const size_t local_work_size[] = { 8, 8, 4 };
+    //const size_t local_work_size[] = { 8, 8, 8 };
 
     context = clCreateContextFromType(NULL, CL_DEVICE_TYPE_GPU, NULL, NULL, &status);
     if (status != CL_SUCCESS) {
