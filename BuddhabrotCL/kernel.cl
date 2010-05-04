@@ -48,6 +48,9 @@ __kernel void Buddhabrot(
         float zR = 0.0;
         float zI = 0.0;
         for (int i = 0; i < maximumIterations; i++) {
+            if (zR * zR + zI * zI >= 4.0) {
+                break;
+            }
             float tzR = zR * zR - zI * zI + cR;
             float tzI = zR * zI + zR * zI + cI;
             zR = tzR;
@@ -56,8 +59,7 @@ __kernel void Buddhabrot(
             int x = floor(((zR - imageMinX) * imageWidth) / (imageMaxX - imageMinX));
             int y = floor(((zI - imageMinY) * imageHeight) / (imageMaxY - imageMinY));
             if (x >= 0 && x < imageWidth &&
-                y >= 0 && y < imageHeight &&
-                !(x == 0 && y == 0)) {
+                y >= 0 && y < imageHeight) {
                 __global int* address =
                     outputImage +
                     y * imageWidth +
