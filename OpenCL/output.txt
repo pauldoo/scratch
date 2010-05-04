@@ -4,11 +4,26 @@ OpenCL: Starting..
 
 
 OpenCL: 690.786393 rms error.
-OpenCL: Setup: 0.968581 seconds.
-OpenCL: Compute: 0.295772 seconds.
+OpenCL: Setup: 1.120377 seconds.
+OpenCL: Compute: 0.282396 seconds.
 
 OpenMP: Starting..
 OpenMP: 690.776601 rms error.
-OpenMP: Setup: 0.023927 seconds.
-OpenMP: Compute: 1.141253 seconds.
+OpenMP: Setup: 0.030897 seconds.
+OpenMP: Compute: 1.169561 seconds.
+
+Vanilla: Starting..
+Vanilla: 690.776601 rms error.
+Vanilla: Setup: -0.032459 seconds.
+Vanilla: Compute: 2.628820 seconds.
+
+Vanilla2: Starting..
+Vanilla2: 690.776601 rms error.
+Vanilla2: Setup: 0.063038 seconds.
+Vanilla2: Compute: 2.552611 seconds.
+
+VanillaF: Starting..
+VanillaF: 690.776686 rms error.
+VanillaF: Setup: -0.064737 seconds.
+VanillaF: Compute: 2.422456 seconds.
 

@@ -219,9 +219,9 @@ int main(void)
     //Benchmark("OpenCL2", &input_volume, &warpfield, &output_volume, &expected_volume, WarpOpenCL2);
     Benchmark("OpenCL", &input_volume, &warpfield, &output_volume, &expected_volume, WarpOpenCL);
     Benchmark("OpenMP", &input_volume, &warpfield, &output_volume, &expected_volume, WarpOpenMP);
-    //Benchmark("Vanilla", &input_volume, &warpfield, &output_volume, &expected_volume, WarpVanilla);
-    //Benchmark("Vanilla2", &input_volume, &warpfield, &output_volume, &expected_volume, WarpVanilla2);
-    //Benchmark("VanillaF", &input_volume, &warpfield, &output_volume, &expected_volume, WarpVanillaF);
+    Benchmark("Vanilla", &input_volume, &warpfield, &output_volume, &expected_volume, WarpVanilla);
+    Benchmark("Vanilla2", &input_volume, &warpfield, &output_volume, &expected_volume, WarpVanilla2);
+    Benchmark("VanillaF", &input_volume, &warpfield, &output_volume, &expected_volume, WarpVanillaF);
 
     return 0;
 }
