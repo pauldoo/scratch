@@ -9,15 +9,15 @@
 #include "cl.hpp"
 
 namespace {
-    const int chunkWidth = 1000;
-    const int chunkHeight = 1000;
-    const int sampleWidth = 64000;
-    const int sampleHeight = 48000;
+    const int chunkWidth = 500;
+    const int chunkHeight = 500;
+    const int sampleWidth = 128000;
+    const int sampleHeight = 96000;
     const double sampleMinX = -2.5;
     const double sampleMinY = -1.5;
     const double sampleMaxX = 1.5;
     const double sampleMaxY = 1.5;
-    const int maximumIterations = 20;
+    const int maximumIterations = 500;
 
     const int imageWidth = 3200;
     const int imageHeight = 2400;
@@ -40,6 +40,19 @@ namespace {
         timeval tp;
         gettimeofday(&tp, NULL);
         return tp.tv_sec + tp.tv_usec * 1e-6;
+    }
+
+    const int Median(const std::vector<int>& vec)
+    {
+        std::vector<int> vecCopy = vec;
+        std::vector<int>::iterator centerIterator = vecCopy.begin() + vecCopy.size() / 2;
+        std::nth_element(vecCopy.begin(), centerIterator, vecCopy.end());
+        return *centerIterator;
+    }
+
+    const int Minimum(const std::vector<int>& vec)
+    {
+        return *std::min_element(vec.begin(), vec.end());
     }
 }
 
@@ -123,7 +136,9 @@ int main(void) {
 
         std::wclog << L"OpenCL time: " << (endTime - startTime) << L"s\n";
 
-        const int maxLevel = *std::max_element(resultBuffer.begin(), resultBuffer.end());
+        const int minimumValue = Minimum(resultBuffer);
+        const int medianValue = Median(resultBuffer);
+        const int maxLevel = (medianValue - minimumValue) * 4;
         std::wcout
             << L"P2\n"
             << L"# buddhabrot\n"
@@ -132,7 +147,7 @@ int main(void) {
 
         for (int y = 0; y < imageHeight; y++) {
             for (int x = 0; x < imageWidth; x++) {
-                std::wcout << resultBuffer.at(y * imageWidth + x) << L" ";
+                std::wcout << std::min(resultBuffer.at(y * imageWidth + x) - minimumValue, maxLevel) << L" ";
             }
             std::wcout << L"\n";
         }

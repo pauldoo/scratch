@@ -1,4 +1,4 @@
-all: image.png
+all: image.png image.jpg
 
 image.pnm: buddhabrot kernel.cl
 	time ./buddhabrot > image.pnm
@@ -16,6 +16,9 @@ buddhabrot: $(OBJS)
 	g++ -MM $(CXXFLAGS) $*.cpp > $*.d
 
 %.png: %.pnm
+	convert $< $@
+
+%.jpg: %.pnm
 	convert $< $@
 
 clean:
