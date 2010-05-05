@@ -4,7 +4,7 @@ image.pnm: buddhabrot kernel.cl
 	time ./buddhabrot > image.pnm
 
 OBJS := main.o
-CXXFLAGS := -Wall -O3 -g
+CXXFLAGS := -Wall -Os -g
 
 buddhabrot: $(OBJS)
 	g++ -Wall -framework OpenCL -o $@ $(OBJS)

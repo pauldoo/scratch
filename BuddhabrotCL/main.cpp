@@ -1,7 +1,9 @@
+#include <cmath>
 #include <exception>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <sstream>
+
 #include <sys/time.h>
 
 #define __CL_ENABLE_EXCEPTIONS
@@ -42,17 +44,18 @@ namespace {
         return tp.tv_sec + tp.tv_usec * 1e-6;
     }
 
-    const int Median(const std::vector<int>& vec)
+    const int Percentile(const std::vector<int>& vec, const double fraction)
     {
         std::vector<int> vecCopy = vec;
-        std::vector<int>::iterator centerIterator = vecCopy.begin() + vecCopy.size() / 2;
-        std::nth_element(vecCopy.begin(), centerIterator, vecCopy.end());
-        return *centerIterator;
+        const int targetIndex = round((vecCopy.size() - 1) * fraction);
+        std::vector<int>::iterator targetIterator = vecCopy.begin() + targetIndex;
+        std::nth_element(vecCopy.begin(), targetIterator, vecCopy.end());
+        return *targetIterator;
     }
 
-    const int Minimum(const std::vector<int>& vec)
+    const int Clamp(const int x, const int min, const int max)
     {
-        return *std::min_element(vec.begin(), vec.end());
+        return std::min(std::max(x, min), max);
     }
 }
 
@@ -104,7 +107,7 @@ int main(void) {
                 computeEvents.push_back(cl::Kernel(program, "Buddhabrot").bind(
                         queue,
                         cl::NDRange(chunkWidth, chunkHeight),
-                        cl::NDRange(20, 20)
+                        cl::NDRange()
                     )(
                         static_cast<float>(chunkMinX),
                         static_cast<float>(chunkMinY),
@@ -136,18 +139,20 @@ int main(void) {
 
         std::wclog << L"OpenCL time: " << (endTime - startTime) << L"s\n";
 
-        const int minimumValue = Minimum(resultBuffer);
-        const int medianValue = Median(resultBuffer);
-        const int maxLevel = (medianValue - minimumValue) * 4;
+        const int minimumValue = Percentile(resultBuffer, 0.001);
+        const int maximumValue = Percentile(resultBuffer, 0.999);
+
+        const int maxImageLevel = (maximumValue - minimumValue);
         std::wcout
             << L"P2\n"
             << L"# buddhabrot\n"
             << imageWidth << L" " << imageHeight << "\n"
-            << maxLevel << "\n";
+            << maxImageLevel << "\n";
 
         for (int y = 0; y < imageHeight; y++) {
             for (int x = 0; x < imageWidth; x++) {
-                std::wcout << std::min(resultBuffer.at(y * imageWidth + x) - minimumValue, maxLevel) << L" ";
+                const int outputValue = Clamp(resultBuffer.at(y * imageWidth + x), minimumValue, maximumValue) - minimumValue;
+                std::wcout << outputValue << L" ";
             }
             std::wcout << L"\n";
         }
