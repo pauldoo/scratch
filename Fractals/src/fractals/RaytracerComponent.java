@@ -29,26 +29,26 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import javax.swing.event.MouseInputListener;
 
 /**
     Renders an OctTree in 3D.
 */
-final class OctTreeRendererComponent extends BackgroundRenderingComponent implements MouseInputListener, KeyListener
+final class RaytracerComponent extends BackgroundRenderingComponent implements MouseInputListener, KeyListener
 {
 
     private static final long serialVersionUID = 4417921502019642371L;
 
-    private OctTree segmentation = OctTree.createEmpty().repSetRegion(0.0, 0.0, 0.0, 0.5, 0.5, 0.5, true);
-    private final Color backgroundColor = Color.DARK_GRAY;
-    private final NormalProvider normalProvider;
-    private Camera3D camera = new Camera3D(new Triplex(0.0, 0.0, -1.5), Quaternion.identityRotation());
-    private Point previousDragPoint = null;
-    private double shiftDistance = Double.NaN;
-
     private static final int superSample = 2;
     private static final int subSample = 16;
+    private final Color backgroundColor = Color.DARK_GRAY;
+    private double shiftDistance = Double.NaN;
+    private SurfaceProvider surfaceProvider;
+    private Camera3D camera = new Camera3D(new Triplex(0.0, 0.0, -1.5), Quaternion.identityRotation());
+    private Point previousDragPoint = null;
+
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -102,7 +102,7 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
             final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
 
             final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, x1, y1).normalize();
-            shiftDistance = segmentation.firstHit(
+            shiftDistance = surfaceProvider.firstHit(
                 cameraCenter.x,
                 cameraCenter.y,
                 cameraCenter.z,
@@ -153,7 +153,7 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
         final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
 
         final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
-        final double distance = segmentation.firstHit(
+        final double distance = surfaceProvider.firstHit(
             cameraCenter.x,
             cameraCenter.y,
             cameraCenter.z,
@@ -168,27 +168,36 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
     }
 
     /**
-        Callback interface used by OctTreeRendererComponent when
-        the surface normal at a point is needed.
-
-        This normal could be estimated using the structure of the OctTree
-        segmentation, but in some cases the normal can be computed
-        analytically by some other means.
+        Callback interface used by RaytracerComponent to
+        provide geometry information.
     */
-    static interface NormalProvider
+    static interface SurfaceProvider
     {
         /**
-            Should calculate the surface normal for the
-            given point (which will only roughly be on the surface).
-
-            The returned value should be normalized.
+            The color at the surface taking into acount all
+            lighting and shading.
         */
-        Triplex normalAtPosition(Triplex p);
+        Color colorAtPosition(Triplex p, Collection<Pair<Triplex, Color>> lights);
+
+        /**
+            For the parametric line (x, y, z) + t * (dx, dy, dz), compute
+            the lowest value for t in the range [0, inf) that represents
+            the line hitting the boundary of the set.
+
+            Returns NaN if there is no hit.
+         */
+         double firstHit(
+            final double x,
+            final double y,
+            final double z,
+            final double dx,
+            final double dy,
+            final double dz);
     }
 
-    public OctTreeRendererComponent(final NormalProvider normalProvider) {
+    public RaytracerComponent(final SurfaceProvider surfaceProvider) {
         super(superSample);
-        this.normalProvider = normalProvider;
+        this.surfaceProvider = surfaceProvider;
         this.setFocusable(true);
         this.addMouseMotionListener(this);
         this.addMouseListener(this);
@@ -212,8 +221,7 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
             g.setTransform(originalTransform);
             g.transform(AffineTransform.getScaleInstance(downscale, downscale));
             doRender(
-                    segmentation,
-                    normalProvider,
+                    surfaceProvider,
                     projectionMatrix,
                     g,
                     super.getSupersampledWidth() / downscale,
@@ -226,9 +234,9 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
         g.setTransform(originalTransform);
     }
 
-    public void setSegmentation(OctTree segmentation)
+    public void setSurface(SurfaceProvider surfaceProvider)
     {
-        this.segmentation = segmentation;
+        this.surfaceProvider = surfaceProvider;
         super.rerender();
     }
 
@@ -252,8 +260,7 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
     }
 
     private static void doRender(
-            final OctTree segmentation,
-            final NormalProvider normalProvider,
+            final SurfaceProvider surfaceProvider,
             final Matrix projectionMatrix,
             final Graphics g,
             final int width,
@@ -278,10 +285,10 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
 
             for (int ix = 0; ix < width; ix++) {
                 final double sx = (ix - width/2.0) / halfSize;
-                 final double sy = (iy - height/2.0) / halfSize;
+                final double sy = (iy - height/2.0) / halfSize;
                 final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, sx, sy);
 
-                final double result = segmentation.firstHit(
+                final double result = surfaceProvider.firstHit(
                         cameraCenter.x,
                         cameraCenter.y,
                         cameraCenter.z,
@@ -294,24 +301,7 @@ final class OctTreeRendererComponent extends BackgroundRenderingComponent implem
                 } else {
                     try {
                         final Triplex position = Triplex.add(cameraCenter, Triplex.multiply(rayVector, result));
-                        final Triplex normal = normalProvider.normalAtPosition(position);
-
-                        double red = 0.0;
-                        double blue = 0.0;
-                        double green = 0.0;
-                        for(Pair<Triplex, Color> light: lights) {
-                            final double shade = Math.max(Triplex.dotProduct(normal, light.first), 0.0);
-                            if (shade > 0.0) {
-                                red += shade * (light.second.getRed() / 255.0);
-                                green += shade * (light.second.getGreen() / 255.0);
-                                blue += shade * (light.second.getBlue() / 255.0);
-                            }
-                        }
-                        red = Math.min(red, 1.0);
-                        green = Math.min(green, 1.0);
-                        blue = Math.min(blue, 1.0);
-
-                        final Color color = new Color((float)(red), (float)(green), (float)(blue));
+                        final Color color = surfaceProvider.colorAtPosition(position, lights);
                         g.setColor(color);
                     } catch (NotANumberException ex) {
                         g.setColor(Color.BLUE);

@@ -141,9 +141,9 @@ final class Mandelbulb {
 
     private static final class Evaluator implements Runnable
     {
-        final OctTreeRendererComponent renderComponent;
+        final RaytracerComponent renderComponent;
 
-        public Evaluator(OctTreeRendererComponent renderComponent) {
+        public Evaluator(RaytracerComponent renderComponent) {
             this.renderComponent = renderComponent;
         }
 
@@ -172,12 +172,12 @@ final class Mandelbulb {
 
                 final int nodeCount = tree.nodeCount();
                 System.out.println("Level " + level + ", resolution " + resolution + ", nodeCount " + nodeCount + ", nodeCount/resolution^2 " + (nodeCount / (resolution * resolution)) + ", time " + (endTime - startTime) + "ms");
-                renderComponent.setSegmentation(tree);
+                renderComponent.setSurface(new OctTreeSurfaceProvider(tree, new NormalProvider()));
             }
         }
     }
 
-    final static class NormalProvider implements OctTreeRendererComponent.NormalProvider
+    final static class NormalProvider implements OctTreeSurfaceProvider.NormalProvider
     {
         @Override
         public Triplex normalAtPosition(Triplex p) {
@@ -187,7 +187,7 @@ final class Mandelbulb {
 
     public static JComponent createView()
     {
-        final OctTreeRendererComponent renderComponent = new OctTreeRendererComponent(new NormalProvider());
+        final RaytracerComponent renderComponent = new RaytracerComponent(null);
 
         /*
             TODO: Remove this thread, and do it as part of the OctTreeRenderComponent.
