@@ -73,7 +73,7 @@ final class Mandelbulb {
     public static double distanceEstimate(final Triplex c, final int maxIter)
     {
         if (c.magnitude() >= 2.0) {
-            return c.magnitude() - 2.0;
+            return c.magnitude() - 2.0 + 0.1;
         } else {
             Triplex w = null;
             Triplex dw = null;
@@ -240,9 +240,11 @@ final class Mandelbulb {
         public HitAndColor firstHit(
             final Triplex cameraCenter,
             final Triplex rayVector,
-            final Collection<Pair<Triplex, Color>> lights) {
-
+            final Collection<Pair<Triplex, Color>> lights)
+        {
+            final double shadowStrength = 0.03;
             Triplex position = cameraCenter;
+            int counter = 0;
             while (true) {
                 if (position.magnitude() > 10.0 && Triplex.dotProduct(position, rayVector) > 0.0) {
                     return null;
@@ -250,10 +252,12 @@ final class Mandelbulb {
 
                 final double distanceEstimate = distanceEstimate(position, maxIterations);
                 if (distanceEstimate < 1e-3) {
-                    return new HitAndColor(position, Color.PINK);
+                    final double shade = Math.exp(-counter * shadowStrength);
+                    return new HitAndColor(position, new Color((float)shade, (float)shade, (float)shade));
                 }
 
                 position = Triplex.add(position, Triplex.multiply(rayVector, distanceEstimate));
+                counter++;
             }
         }
     }

@@ -46,7 +46,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
     private final Color backgroundColor = Color.DARK_GRAY;
     private double shiftDistance = Double.NaN;
     private SurfaceProvider surfaceProvider;
-    private Camera3D camera = new Camera3D(new Triplex(0.0, 0.0, -1.5), Quaternion.identityRotation());
+    private Camera3D camera = new Camera3D(new Triplex(0.0, 0.5, -1.5), Quaternion.identityRotation());
     private Point previousDragPoint = null;
 
 
