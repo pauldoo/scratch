@@ -25,9 +25,9 @@ import java.util.Collection;
 import javax.swing.JComponent;
 
 final class Mandelbulb {
-    public static final int maxIterations = 10;
+    public static final int maxIterations = 3;
 
-    static boolean evaluate(final Triplex c, final int maxIter)
+    public static boolean evaluate(final Triplex c, final int maxIter)
     {
         Triplex z = c;
         boolean inside = true;
@@ -37,12 +37,21 @@ final class Mandelbulb {
         return inside;
     }
 
+    private static Triplex iteratePoint(final Triplex c, final int iterations)
+    {
+        Triplex z = c;
+        for (int i = 0; i < iterations; i++) {
+            z = stepNormal(c, z, null).first;
+        }
+        return z;
+    }
+
     /**
         Hardcoded for power-8 mandelbulbs.
 
         See "MandelBulb Normals.png" from Sean.
     */
-    static Triplex computeNormal(final Triplex c, final int maxIter)
+    private static Triplex computeNormal(final Triplex c, final int maxIter)
     {
         Pair<Triplex, Matrix> state = new Pair<Triplex, Matrix>(
             c,
@@ -51,11 +60,50 @@ final class Mandelbulb {
             state = stepNormal(c, state.first, state.second);
         }
 
-        Matrix normal = Matrix.multiply(
+        final Matrix normal = Matrix.multiply(
                 Matrix.create1x3(state.first.x, state.first.y, state.first.z),
                 state.second);
-        Triplex result = new Triplex(normal.get(0, 0), normal.get(0, 1), normal.get(0, 2));
+        final Triplex result = new Triplex(normal.get(0, 0), normal.get(0, 1), normal.get(0, 2));
         return Triplex.normalize(result);
+    }
+
+    /**
+        Estimate distance to mandelbulb surface by: 0.5 * |w| * log(|w|) / |δw|
+    */
+    public static double distanceEstimate(final Triplex c, final int maxIter)
+    {
+        if (c.magnitude() >= 2.0) {
+            return c.magnitude() - 2.0;
+        } else {
+            Triplex w = null;
+            Triplex dw = null;
+            if (false) {
+                Pair<Triplex, Matrix> state = new Pair<Triplex, Matrix>(
+                    c,
+                    Matrix.createIdentity(3));
+                for (int i = 0; i < maxIter; i++) {
+                    state = stepNormal(c, state.first, state.second);
+                }
+
+                final Matrix normal = Matrix.multiply(
+                        Matrix.create1x3(state.first.x, state.first.y, state.first.z),
+                        state.second);
+                final Triplex derivative = new Triplex(normal.get(0, 0), normal.get(0, 1), normal.get(0, 2));
+                w = state.first;
+                dw = derivative;
+            } else {
+                final double dx = 1e-3;
+                w = iteratePoint(c, maxIter);
+                dw = new Triplex(
+                        (iteratePoint(Triplex.add(c, new Triplex(+dx, 0, 0)), maxIter).magnitude() -
+                        iteratePoint(Triplex.add(c, new Triplex(-dx, 0, 0)), maxIter).magnitude()) / (2*dx),
+                        (iteratePoint(Triplex.add(c, new Triplex(0, +dx, 0)), maxIter).magnitude() -
+                        iteratePoint(Triplex.add(c, new Triplex(0, -dx, 0)), maxIter).magnitude()) / (2*dx),
+                        (iteratePoint(Triplex.add(c, new Triplex(0, 0, +dx)), maxIter).magnitude() -
+                        iteratePoint(Triplex.add(c, new Triplex(0, 0, -dx)), maxIter).magnitude()) / (2*dx));
+            }
+            return 0.5 * w.magnitude() * Math.log(w.magnitude()) / dw.magnitude();
+        }
     }
 
     /**
@@ -189,8 +237,24 @@ final class Mandelbulb {
     final static class SurfaceProvider implements ProjectorComponent.SurfaceProvider
     {
         @Override
-        public HitAndColor firstHit(Triplex cameraCenter, Triplex rayVector, Collection<Pair<Triplex, Color>> lights) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        public HitAndColor firstHit(
+            final Triplex cameraCenter,
+            final Triplex rayVector,
+            final Collection<Pair<Triplex, Color>> lights) {
+
+            Triplex position = cameraCenter;
+            while (true) {
+                if (position.magnitude() > 10.0 && Triplex.dotProduct(position, rayVector) > 0.0) {
+                    return null;
+                }
+
+                final double distanceEstimate = distanceEstimate(position, maxIterations);
+                if (distanceEstimate < 1e-3) {
+                    return new HitAndColor(position, Color.PINK);
+                }
+
+                position = Triplex.add(position, Triplex.multiply(rayVector, distanceEstimate));
+            }
         }
     }
 

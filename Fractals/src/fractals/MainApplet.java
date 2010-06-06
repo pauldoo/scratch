@@ -89,8 +89,8 @@ public final class MainApplet extends JApplet
         //parameters.put("FractalType", "Mandelbrot4D");
         //parameters.put("FractalType", "NewtonRaphson");
         //parameters.put("FractalType", "BifurcationDiagram");
-        parameters.put("FractalType", "MandelbulbOctTree");
-        //parameters.put("FractalType", "MandelbulbAnalytical");
+        //parameters.put("FractalType", "MandelbulbOctTree");
+        parameters.put("FractalType", "MandelbulbAnalytical");
         
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

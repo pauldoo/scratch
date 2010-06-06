@@ -284,6 +284,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
                         g.setColor(hitAndColor.color);
                     }
                 } catch (NotANumberException ex) {
+                    ex.printStackTrace();
                     g.setColor(Color.BLUE);
                 }
                 g.fillRect(ix, iy, 1, 1);
