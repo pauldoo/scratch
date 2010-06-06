@@ -34,9 +34,9 @@ import java.util.List;
 import javax.swing.event.MouseInputListener;
 
 /**
-    Renders an OctTree in 3D.
+    Projects 3D surfaces to 2D.
 */
-final class RaytracerComponent extends BackgroundRenderingComponent implements MouseInputListener, KeyListener
+final class ProjectorComponent extends BackgroundRenderingComponent implements MouseInputListener, KeyListener
 {
 
     private static final long serialVersionUID = 4417921502019642371L;
@@ -102,14 +102,13 @@ final class RaytracerComponent extends BackgroundRenderingComponent implements M
             final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
 
             final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, x1, y1).normalize();
-            shiftDistance = surfaceProvider.firstHit(
-                cameraCenter.x,
-                cameraCenter.y,
-                cameraCenter.z,
-                rayVector.x,
-                rayVector.y,
-                rayVector.z);
+            shiftDistance = distanceToSurface(cameraCenter, rayVector);
         }
+    }
+
+    private double distanceToSurface(final Triplex cameraCenter, final Triplex rayVector) {
+        final SurfaceProvider.HitAndColor hit = surfaceProvider.firstHit(cameraCenter, rayVector, null);
+        return (hit == null) ? Double.NaN : Triplex.subtract(hit.position, rayVector).magnitude();
     }
 
     @Override
@@ -153,13 +152,7 @@ final class RaytracerComponent extends BackgroundRenderingComponent implements M
         final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
 
         final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
-        final double distance = surfaceProvider.firstHit(
-            cameraCenter.x,
-            cameraCenter.y,
-            cameraCenter.z,
-            rayVector.x,
-            rayVector.y,
-            rayVector.z);
+        final double distance = distanceToSurface(cameraCenter, rayVector);
         if (Double.isNaN(distance) == false) {
             final Triplex shift = Triplex.multiply(rayVector, distance * factor);
             camera = camera.replicateAddShift(shift);
@@ -168,34 +161,29 @@ final class RaytracerComponent extends BackgroundRenderingComponent implements M
     }
 
     /**
-        Callback interface used by RaytracerComponent to
+        Callback interface used by ProjectorComponent to
         provide geometry information.
     */
     static interface SurfaceProvider
     {
-        /**
-            The color at the surface taking into acount all
-            lighting and shading.
-        */
-        Color colorAtPosition(Triplex p, Collection<Pair<Triplex, Color>> lights);
+        final static class HitAndColor
+        {
+            final Triplex position;
+            final Color color;
+
+            public HitAndColor(Triplex position, Color color) {
+                this.position = position;
+                this.color = color;
+            }
+        }
 
         /**
-            For the parametric line (x, y, z) + t * (dx, dy, dz), compute
-            the lowest value for t in the range [0, inf) that represents
-            the line hitting the boundary of the set.
-
-            Returns NaN if there is no hit.
+            Returns null if there is no hit.
          */
-         double firstHit(
-            final double x,
-            final double y,
-            final double z,
-            final double dx,
-            final double dy,
-            final double dz);
+        HitAndColor firstHit(Triplex cameraCenter, Triplex rayVector, Collection<Pair<Triplex, Color>> lights);
     }
 
-    public RaytracerComponent(final SurfaceProvider surfaceProvider) {
+    public ProjectorComponent(final SurfaceProvider surfaceProvider) {
         super(superSample);
         this.surfaceProvider = surfaceProvider;
         this.setFocusable(true);
@@ -288,24 +276,15 @@ final class RaytracerComponent extends BackgroundRenderingComponent implements M
                 final double sy = (iy - height/2.0) / halfSize;
                 final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, sx, sy);
 
-                final double result = surfaceProvider.firstHit(
-                        cameraCenter.x,
-                        cameraCenter.y,
-                        cameraCenter.z,
-                        rayVector.x,
-                        rayVector.y,
-                        rayVector.z);
-
-                if (Double.isNaN(result)) {
-                    g.setColor(backgroundColor);
-                } else {
-                    try {
-                        final Triplex position = Triplex.add(cameraCenter, Triplex.multiply(rayVector, result));
-                        final Color color = surfaceProvider.colorAtPosition(position, lights);
-                        g.setColor(color);
-                    } catch (NotANumberException ex) {
-                        g.setColor(Color.BLUE);
+                try {
+                    final SurfaceProvider.HitAndColor hitAndColor = surfaceProvider.firstHit(cameraCenter, rayVector, lights);
+                    if (hitAndColor == null) {
+                        g.setColor(backgroundColor);
+                    } else {
+                        g.setColor(hitAndColor.color);
                     }
+                } catch (NotANumberException ex) {
+                    g.setColor(Color.BLUE);
                 }
                 g.fillRect(ix, iy, 1, 1);
             }

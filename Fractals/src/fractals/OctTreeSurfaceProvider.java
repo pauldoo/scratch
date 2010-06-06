@@ -21,7 +21,7 @@ import fractals.math.Triplex;
 import java.awt.Color;
 import java.util.Collection;
 
-final class OctTreeSurfaceProvider implements RaytracerComponent.SurfaceProvider
+final class OctTreeSurfaceProvider implements ProjectorComponent.SurfaceProvider
 {
     /**
         Callback interface used by OctTreeSurfaceProvider when
@@ -50,29 +50,41 @@ final class OctTreeSurfaceProvider implements RaytracerComponent.SurfaceProvider
     }
 
     @Override
-    public Color colorAtPosition(Triplex position, Collection<Pair<Triplex, Color>> lights) {
-        final Triplex normal = normalProvider.normalAtPosition(position);
-        double red = 0.0;
-        double blue = 0.0;
-        double green = 0.0;
-        for(Pair<Triplex, Color> light: lights) {
-            final double shade = Math.max(Triplex.dotProduct(normal, light.first), 0.0);
-            if (shade > 0.0) {
-                red += shade * (light.second.getRed() / 255.0);
-                green += shade * (light.second.getGreen() / 255.0);
-                blue += shade * (light.second.getBlue() / 255.0);
+    public HitAndColor firstHit(
+        final Triplex cameraCenter,
+        final Triplex rayVector,
+        final Collection<Pair<Triplex, Color> > lights)
+    {
+        double hitDistance = segmentation.firstHit(
+            cameraCenter.x,
+            cameraCenter.y,
+            cameraCenter.z,
+            rayVector.x,
+            rayVector.y,
+            rayVector.z);
+        if (Double.isNaN(hitDistance) == false) {
+            final Triplex position = Triplex.add(cameraCenter, Triplex.multiply(rayVector, hitDistance));
+            double red = 0.0;
+            double blue = 0.0;
+            double green = 0.0;
+            if (lights != null) {
+                final Triplex normal = normalProvider.normalAtPosition(position);
+                for(Pair<Triplex, Color> light: lights) {
+                    final double shade = Math.max(Triplex.dotProduct(normal, light.first), 0.0);
+                    if (shade > 0.0) {
+                        red += shade * (light.second.getRed() / 255.0);
+                        green += shade * (light.second.getGreen() / 255.0);
+                        blue += shade * (light.second.getBlue() / 255.0);
+                    }
+                }
             }
+            red = Math.min(red, 1.0);
+            green = Math.min(green, 1.0);
+            blue = Math.min(blue, 1.0);
+
+            final Color color = new Color((float)(red), (float)(green), (float)(blue));
+            return new HitAndColor(position, color);
         }
-        red = Math.min(red, 1.0);
-        green = Math.min(green, 1.0);
-        blue = Math.min(blue, 1.0);
-
-        final Color color = new Color((float)(red), (float)(green), (float)(blue));
-        return color;
-    }
-
-    @Override
-    public double firstHit(double x, double y, double z, double dx, double dy, double dz) {
-        return segmentation.firstHit(x, y, z, dx, dy, dz);
+        return null;
     }
 }

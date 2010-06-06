@@ -21,6 +21,7 @@ import fractals.math.Complex;
 import fractals.math.Matrix;
 import fractals.math.Triplex;
 import java.awt.Color;
+import java.util.Collection;
 import javax.swing.JComponent;
 
 final class Mandelbulb {
@@ -141,9 +142,9 @@ final class Mandelbulb {
 
     private static final class Evaluator implements Runnable
     {
-        final RaytracerComponent renderComponent;
+        final ProjectorComponent renderComponent;
 
-        public Evaluator(RaytracerComponent renderComponent) {
+        public Evaluator(ProjectorComponent renderComponent) {
             this.renderComponent = renderComponent;
         }
 
@@ -185,15 +186,29 @@ final class Mandelbulb {
         }
     }
 
-    public static JComponent createView()
+    final static class SurfaceProvider implements ProjectorComponent.SurfaceProvider
     {
-        final RaytracerComponent renderComponent = new RaytracerComponent(null);
+        @Override
+        public HitAndColor firstHit(Triplex cameraCenter, Triplex rayVector, Collection<Pair<Triplex, Color>> lights) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
+
+    public static JComponent createViewUsingOctTreeSurface()
+    {
+        final ProjectorComponent renderComponent = new ProjectorComponent(null);
 
         /*
             TODO: Remove this thread, and do it as part of the OctTreeRenderComponent.
             That way evaluation of a region will only occur as a consequence of a rendering.
         */
         new Thread(new Evaluator(renderComponent)).start();
+        return renderComponent;
+    }
+
+    public static JComponent createViewUsingAnalyticalSurface()
+    {
+        final ProjectorComponent renderComponent = new ProjectorComponent(new SurfaceProvider());
         return renderComponent;
     }
 }
