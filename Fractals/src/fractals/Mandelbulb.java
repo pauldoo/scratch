@@ -72,8 +72,8 @@ final class Mandelbulb {
     */
     public static double distanceEstimate(final Triplex c, final int maxIter)
     {
-        if (c.magnitude() >= 2.0) {
-            return c.magnitude() - 2.0 + 0.1;
+        if (c.magnitude() >= 1.5) {
+            return c.magnitude() - 1.49;
         } else {
             Triplex w = null;
             Triplex dw = null;
