@@ -31,6 +31,8 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import javax.swing.event.MouseInputListener;
 
 /**
@@ -305,32 +307,53 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
         lights.add(new Pair<Triplex, Color>(new Triplex(0.0, 0.0, -1.0), Color.DARK_GRAY));
         lights.add(new Pair<Triplex, Color>(new Triplex(0.0, 0.0, +1.0), Color.DARK_GRAY));
 
-        for (int iy = 0; iy < height; iy++) {
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-
-            for (int ix = 0; ix < width; ix++) {
-                final double sx = (ix - width/2.0) / halfSize;
-                final double sy = (iy - height/2.0) / halfSize;
-                final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, sx, sy);
-
-                try {
-                    final SurfaceProvider.HitAndColor hitAndColor = surfaceProvider.firstHit(cameraCenter, rayVector, rayArcAngle * 0.1, lights);
-                    if (hitAndColor == null) {
-                        g.setColor(backgroundColor);
-                    } else {
-                        g.setColor(hitAndColor.color);
-                    }
-                } catch (NotANumberException ex) {
-                    ex.printStackTrace();
-                    g.setColor(Color.BLUE);
+        List<Future> futures = new ArrayList<Future>();
+        try {
+            final Object lockObject = new Object();
+            for (int y = 0; y < height; y++) {
+                if (Thread.interrupted()) {
+                    throw new InterruptedException();
                 }
-                g.fillRect(ix, iy, 1, 1);
+                final int iy = y;
+                Runnable runner = new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        for (int ix = 0; ix < width; ix++) {
+                            final double sx = (ix - width/2.0) / halfSize;
+                            final double sy = (iy - height/2.0) / halfSize;
+                            final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, sx, sy);
+
+                            Color color = null;
+                            try {
+                                final SurfaceProvider.HitAndColor hitAndColor = surfaceProvider.firstHit(cameraCenter, rayVector, rayArcAngle * 0.1, lights);
+                                if (hitAndColor == null) {
+                                    color = backgroundColor;
+                                } else {
+                                    color = hitAndColor.color;
+                                }
+                            } catch (NotANumberException ex) {
+                                color = Color.BLUE;
+                            }
+                            synchronized (lockObject) {
+                                g.setColor(color);
+                                g.fillRect(ix, iy, 1, 1);
+                            }
+                        }
+                    }
+                };
+                futures.add(Utilities.getHeavyThreadPool().submit(runner));
+            }
+            for (Future future: futures) {
+                future.get();
+            }
+        } catch (ExecutionException ex) {
+            ex.printStackTrace();
+        } finally {
+            for (Future future: futures) {
+                future.cancel(true);
             }
         }
     }
-
-
 }
 
