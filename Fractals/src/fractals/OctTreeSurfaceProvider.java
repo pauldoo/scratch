@@ -53,6 +53,7 @@ final class OctTreeSurfaceProvider implements ProjectorComponent.SurfaceProvider
     public HitAndColor firstHit(
         final Triplex cameraCenter,
         final Triplex rayVector,
+        final double rayArcAngle,
         final Collection<Pair<Triplex, Color> > lights)
     {
         double hitDistance = segmentation.firstHit(

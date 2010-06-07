@@ -49,7 +49,6 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
     private Camera3D camera = new Camera3D(new Triplex(0.0, 0.5, -1.5), Quaternion.identityRotation());
     private Point previousDragPoint = null;
 
-
     @Override
     public void mouseDragged(MouseEvent e) {
         if (previousDragPoint != null) {
@@ -107,8 +106,8 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
     }
 
     private double distanceToSurface(final Triplex cameraCenter, final Triplex rayVector) {
-        final SurfaceProvider.HitAndColor hit = surfaceProvider.firstHit(cameraCenter, rayVector, null);
-        return (hit == null) ? Double.NaN : Triplex.subtract(hit.position, rayVector).magnitude();
+        final SurfaceProvider.HitAndColor hit = surfaceProvider.firstHit(cameraCenter, rayVector, rayArcAngle(), null);
+        return (hit == null) ? Double.NaN : Triplex.subtract(hit.position, cameraCenter).magnitude();
     }
 
     @Override
@@ -180,7 +179,11 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
         /**
             Returns null if there is no hit.
          */
-        HitAndColor firstHit(Triplex cameraCenter, Triplex rayVector, Collection<Pair<Triplex, Color>> lights);
+        HitAndColor firstHit(
+            Triplex cameraCenter,
+            Triplex rayVector,
+            final double rayWidthInRadians,
+            Collection<Pair<Triplex, Color>> lights);
     }
 
     public ProjectorComponent(final SurfaceProvider surfaceProvider) {
@@ -190,6 +193,15 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
         this.addMouseMotionListener(this);
         this.addMouseListener(this);
         this.addKeyListener(this);
+    }
+
+    private double rayArcAngle()
+    {
+        final Matrix projectionMatrix = camera.toProjectionMatrix();
+        final double result = screenSizeToWorldAngle(
+            Matrix.invert4x4(projectionMatrix),
+            1.0 / (Math.max(super.getSupersampledWidth(), super.getSupersampledHeight()) / 2.0));
+        return result;
     }
 
     @Override
@@ -208,12 +220,17 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
 
             g.setTransform(originalTransform);
             g.transform(AffineTransform.getScaleInstance(downscale, downscale));
+            final int width = super.getSupersampledWidth() / downscale;
+            final int height = super.getSupersampledHeight() / downscale;
+            final double halfSize = Math.max(width, height) / 2.0;
             doRender(
                     surfaceProvider,
                     projectionMatrix,
                     g,
-                    super.getSupersampledWidth() / downscale,
-                    super.getSupersampledHeight() / downscale,
+                    width,
+                    height,
+                    halfSize,
+                    rayArcAngle(),
                     backgroundColor);
 
             super.bufferIsNowOkayToBlit();
@@ -247,17 +264,39 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
         return Triplex.subtract(position, recoverCameraCenter(invertedProjectionMatrix));
     }
 
+    /**
+        Given a size in screen space (where the entire screen is [(-1, -1), (1, 1)]),
+        returns the size of the corresponding ray in world space radians.
+    */
+    private static double screenSizeToWorldAngle(
+        Matrix invertedProjectionMatrix,
+        double screenSize)
+    {
+        return
+                Math.acos(
+                    Triplex.dotProduct(
+                        recoverDirectionVector(
+                            invertedProjectionMatrix,
+                            0.0,
+                            0.0).normalize(),
+                        recoverDirectionVector(
+                            invertedProjectionMatrix,
+                            screenSize,
+                            screenSize).normalize())) / Math.sqrt(2.0);
+    }
+
     private static void doRender(
             final SurfaceProvider surfaceProvider,
             final Matrix projectionMatrix,
             final Graphics g,
             final int width,
             final int height,
+            final double halfSize,
+            final double rayArcAngle,
             final Color backgroundColor) throws InterruptedException
     {
         final Matrix invertedProjectionMatrix = Matrix.invert4x4(projectionMatrix);
         final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
-        final double halfSize = Math.max(width, height) / 2.0;
 
         final List<Pair<Triplex, Color> > lights = new ArrayList<Pair<Triplex, Color> >();
         lights.add(new Pair<Triplex, Color>(new Triplex(+1.0, 0.0, 0.0), Color.RED));
@@ -277,7 +316,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
                 final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, sx, sy);
 
                 try {
-                    final SurfaceProvider.HitAndColor hitAndColor = surfaceProvider.firstHit(cameraCenter, rayVector, lights);
+                    final SurfaceProvider.HitAndColor hitAndColor = surfaceProvider.firstHit(cameraCenter, rayVector, rayArcAngle * 0.1, lights);
                     if (hitAndColor == null) {
                         g.setColor(backgroundColor);
                     } else {

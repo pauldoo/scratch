@@ -239,24 +239,29 @@ final class Mandelbulb {
         @Override
         public HitAndColor firstHit(
             final Triplex cameraCenter,
-            final Triplex rayVector,
+            final Triplex unnormalizedRayVector,
+            final double rayWidthInRadians,
             final Collection<Pair<Triplex, Color>> lights)
         {
             final double shadowStrength = 0.03;
-            Triplex position = cameraCenter;
+            final Triplex rayVector = unnormalizedRayVector.normalize();
+
+            double distance = 0.0;
             int counter = 0;
             while (true) {
+                final Triplex position = Triplex.add(cameraCenter, Triplex.multiply(rayVector, distance));
                 if (position.magnitude() > 10.0 && Triplex.dotProduct(position, rayVector) > 0.0) {
                     return null;
                 }
 
-                final double distanceEstimate = distanceEstimate(position, maxIterations);
-                if (distanceEstimate < 1e-3) {
-                    final double shade = Math.exp(-counter * shadowStrength);
-                    return new HitAndColor(position, new Color((float)shade, (float)shade, (float)shade));
-                }
+                final double threshold = distance * rayWidthInRadians;
 
-                position = Triplex.add(position, Triplex.multiply(rayVector, distanceEstimate));
+                final double distanceEstimate = distanceEstimate(position, maxIterations);
+                if (distanceEstimate <= threshold) {
+                    final double shade = Math.exp(-counter * shadowStrength);
+                    return new HitAndColor(position, new Color((float)0.0, (float)(shade * 1.0), (float)(shade * 0.5)));
+                }
+                distance += distanceEstimate;
                 counter++;
             }
         }
