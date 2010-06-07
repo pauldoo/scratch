@@ -49,4 +49,9 @@ public class MandelbulbTest extends TestCase {
 
         System.out.println(distanceEstimate);
     }
+
+    public void testSomeMethod() {
+        //Mandelbulb.computeNormal(new Triplex(0.2912884237062956, 0.04246198765516082, 0.640625), 10);
+        Mandelbulb.computeNormal(new Triplex(0.291, 0.042, 0.641), 4);
+    }
 }

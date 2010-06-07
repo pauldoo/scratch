@@ -51,7 +51,7 @@ final class Mandelbulb {
 
         See "MandelBulb Normals.png" from Sean.
     */
-    private static Triplex computeNormal(final Triplex c, final int maxIter)
+    public static Triplex computeNormal(final Triplex c, final int maxIter)
     {
         Pair<Triplex, Matrix> state = new Pair<Triplex, Matrix>(
             c,
