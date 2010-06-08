@@ -57,7 +57,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             final Point currentDragPoint = e.getPoint();
             final int width = getWidth();
             final int height = getHeight();
-            final double halfSize = Math.max(width, height) / 2.0;
+            final double halfSize = getSupersampledHalfSize() / superSample;
             final double x1 = (previousDragPoint.x - (width / 2.0)) / halfSize;
             final double y1 = (previousDragPoint.y - (height / 2.0)) / halfSize;
             final double x2 = (currentDragPoint.x - (width / 2.0)) / halfSize;
@@ -95,7 +95,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             final Point currentDragPoint = e.getPoint();
             final int width = getWidth();
             final int height = getHeight();
-            final double halfSize = Math.max(width, height) / 2.0;
+            final double halfSize = getSupersampledHalfSize() / superSample;
             final double x1 = (previousDragPoint.x - (width / 2.0)) / halfSize;
             final double y1 = (previousDragPoint.y - (height / 2.0)) / halfSize;
 
@@ -206,6 +206,11 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
         return result;
     }
 
+    private double getSupersampledHalfSize()
+    {
+        return Math.max(super.getSupersampledWidth(), super.getSupersampledHeight()) / 1.5;
+    }
+
     @Override
     protected void render(Graphics2D g) throws InterruptedException {
         Utilities.setGraphicsToLowQuality(g);
@@ -222,16 +227,13 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
 
             g.setTransform(originalTransform);
             g.transform(AffineTransform.getScaleInstance(downscale, downscale));
-            final int width = super.getSupersampledWidth() / downscale;
-            final int height = super.getSupersampledHeight() / downscale;
-            final double halfSize = Math.max(width, height) / 2.0;
             doRender(
                     surfaceProvider,
                     projectionMatrix,
                     g,
-                    width,
-                    height,
-                    halfSize,
+                    super.getSupersampledWidth() / downscale,
+                    super.getSupersampledHeight() / downscale,
+                    getSupersampledHalfSize() / downscale,
                     rayArcAngle(),
                     backgroundColor);
 
