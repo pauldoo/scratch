@@ -25,7 +25,7 @@ import java.util.Collection;
 import javax.swing.JComponent;
 
 final class Mandelbulb {
-    public static final int maxIterations = 3;
+    public static final int maxIterations = 30;
 
     public static boolean evaluate(final Triplex c, final int maxIter)
     {
@@ -67,42 +67,52 @@ final class Mandelbulb {
         return Triplex.normalize(result);
     }
 
+    private static Pair<Triplex, Double> powN(Triplex z, double zr0, double dr)
+    {
+        final int power = 8;
+        double zo0 = Math.asin(z.z / zr0);
+        double zi0 = Math.atan2(z.y, z.x);
+        double zr = Math.pow(zr0, power - 1.0);
+        double zo = (zo0) * power;
+        double zi = (zi0) * power;
+        double czo = Math.cos(zo);
+
+        dr = zr * dr * power + 1.0;
+        zr *= zr0;
+
+        z = Triplex.multiply(
+                new Triplex(czo*Math.cos(zi), czo*Math.sin(zi), Math.sin(zo)),
+                zr);
+
+        return new Pair<Triplex, Double>(z, dr);
+    }
+
     /**
         Estimate distance to mandelbulb surface by: 0.5 * |w| * log(|w|) / |δw|
     */
-    public static double distanceEstimate(final Triplex c, final int maxIter)
+    public static double distanceEstimate(final Triplex z0, final int maxIter)
     {
-        if (c.magnitude() >= 1.5) {
-            return c.magnitude() - 1.49;
+        if (z0.magnitude() >= 1.5) {
+            return z0.magnitude() - 1.49;
         } else {
-            Triplex w = null;
-            Triplex dw = null;
-            if (false) {
-                Pair<Triplex, Matrix> state = new Pair<Triplex, Matrix>(
-                    c,
-                    Matrix.createIdentity(3));
-                for (int i = 0; i < maxIter; i++) {
-                    state = stepNormal(c, state.first, state.second);
-                }
+            final Triplex c = z0;
+            Triplex z = z0;
 
-                final Matrix normal = Matrix.multiply(
-                        Matrix.create1x3(state.first.x, state.first.y, state.first.z),
-                        state.second);
-                final Triplex derivative = new Triplex(normal.get(0, 0), normal.get(0, 1), normal.get(0, 2));
-                w = state.first;
-                dw = derivative;
-            } else {
-                final double dx = 1e-3;
-                w = iteratePoint(c, maxIter);
-                dw = new Triplex(
-                        (iteratePoint(Triplex.add(c, new Triplex(+dx, 0, 0)), maxIter).magnitude() -
-                        iteratePoint(Triplex.add(c, new Triplex(-dx, 0, 0)), maxIter).magnitude()) / (2*dx),
-                        (iteratePoint(Triplex.add(c, new Triplex(0, +dx, 0)), maxIter).magnitude() -
-                        iteratePoint(Triplex.add(c, new Triplex(0, -dx, 0)), maxIter).magnitude()) / (2*dx),
-                        (iteratePoint(Triplex.add(c, new Triplex(0, 0, +dx)), maxIter).magnitude() -
-                        iteratePoint(Triplex.add(c, new Triplex(0, 0, -dx)), maxIter).magnitude()) / (2*dx));
+            double dr = 1.0;
+            double r = z.magnitude();
+            for (int i = 0; i < maxIter; i++) {
+                Pair<Triplex, Double> newValues = powN(z, r, dr);
+                z = newValues.first;
+                dr = newValues.second;
+                z = Triplex.add(z, c);
+
+                r = z.magnitude();
+                if (r > 4) {
+                    break;
+                }
             }
-            return 0.5 * w.magnitude() * Math.log(w.magnitude()) / dw.magnitude();
+
+            return 0.5 * Math.log(r) * r / dr;
         }
     }
 
