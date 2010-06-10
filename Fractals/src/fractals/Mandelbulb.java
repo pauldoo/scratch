@@ -267,8 +267,8 @@ final class Mandelbulb {
                 final double threshold = distance * rayWidthInRadians;
 
                 final double distanceEstimate = distanceEstimate(position, maxIterations);
-                if (distanceEstimate <= threshold) {
-                    final double shade = Math.exp(-counter * shadowStrength);
+                final double shade = Math.exp(-counter * shadowStrength);
+                if (distanceEstimate <= threshold || shade < (1.0 / 256)) {
                     return new HitAndColor(position, new Color((float)0.0, (float)(shade * 1.0), (float)(shade * 0.5)));
                 }
                 distance += distanceEstimate;
