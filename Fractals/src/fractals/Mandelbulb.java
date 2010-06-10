@@ -75,7 +75,7 @@ final class Mandelbulb {
         double zr = Math.pow(zr0, power - 1.0);
         double zo = (zo0) * power;
         double zi = (zi0) * power;
-        double czo = Math.cos(zo);
+        double czo = Math.cos(zo + zi);
 
         dr = zr * dr * power + 1.0;
         zr *= zr0;
@@ -92,7 +92,7 @@ final class Mandelbulb {
     */
     public static double distanceEstimate(final Triplex z0, final int maxIter)
     {
-        if (z0.magnitude() >= 1.5) {
+        if (false && z0.magnitude() >= 1.5) {
             return z0.magnitude() - 1.49;
         } else {
             final Triplex c = z0;
@@ -105,6 +105,8 @@ final class Mandelbulb {
                 z = newValues.first;
                 dr = newValues.second;
                 z = Triplex.add(z, c);
+
+                //z = new Triplex(z.x, Math.min(0.0, z.y), z.z);
 
                 r = z.magnitude();
                 if (r > 4) {
