@@ -75,7 +75,7 @@ final class Mandelbulb {
         double zr = Math.pow(zr0, power - 1.0);
         double zo = (zo0) * power;
         double zi = (zi0) * power;
-        double czo = Math.cos(zo + zi);
+        double czo = Math.sin(zo);
 
         dr = zr * dr * power + 1.0;
         zr *= zr0;
