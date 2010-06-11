@@ -107,7 +107,7 @@ final class Mandelbulb {
                 z = Triplex.add(z, c);
 
                 r = z.magnitude();
-                if (r > 4) {
+                if (r > 1e10) {
                     break;
                 }
             }
