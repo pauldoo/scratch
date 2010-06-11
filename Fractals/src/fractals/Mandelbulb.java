@@ -70,18 +70,18 @@ final class Mandelbulb {
     private static Pair<Triplex, Double> powN(Triplex z, double zr0, double dr)
     {
         final int power = 8;
-        double zo0 = Math.asin(z.z / zr0);
+        double zo0 = Math.acos(z.z / zr0);
         double zi0 = Math.atan2(z.y, z.x);
         double zr = Math.pow(zr0, power - 1.0);
         double zo = (zo0) * power;
         double zi = (zi0) * power;
-        double czo = Math.cos(zo);
+        double czo = Math.sin(zo);
 
         dr = zr * dr * power + 1.0;
         zr *= zr0;
 
         z = Triplex.multiply(
-                new Triplex(czo*Math.cos(zi), czo*Math.sin(zi), Math.sin(zo)),
+                new Triplex(czo*Math.cos(zi), czo*Math.sin(zi), Math.cos(zo)),
                 zr);
 
         return new Pair<Triplex, Double>(z, dr);
