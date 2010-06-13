@@ -67,24 +67,84 @@ final class Mandelbulb {
         return Triplex.normalize(result);
     }
 
-    private static Pair<Triplex, Double> powN(Triplex z, double zr0, double dr)
+    private static Pair<Triplex, Double> powN(final Triplex k, final double dr)
     {
-        final int power = 8;
-        double zo0 = Math.acos(z.z / zr0);
-        double zi0 = Math.atan2(z.y, z.x);
-        double zr = Math.pow(zr0, power - 1.0);
-        double zo = (zo0) * power;
-        double zi = (zi0) * power;
-        double czo = Math.sin(zo);
+        /*
+            Absolute voodoo!
 
-        dr = zr * dr * power + 1.0;
-        zr *= zr0;
+            Check back in VCS history to find a more understandable implementation.
+        */
+        final double x = k.x;
+        final double y = k.y;
+        final double z = k.z;
 
-        z = Triplex.multiply(
-                new Triplex(czo*Math.cos(zi), czo*Math.sin(zi), Math.cos(zo)),
-                zr);
+        final double x2 = x * x;
+        final double x3 = x2 * x;
+        final double x4 = x2 * x2;
+        final double x5 = x4 * x;
+        final double x6 = x4 * x2;
+        final double x7 = x4 * x3;
+        final double x8 = x4 * x4;
 
-        return new Pair<Triplex, Double>(z, dr);
+        final double y2 = y * y;
+        final double y3 = y2 * y;
+        final double y4 = y2 * y2;
+        final double y5 = y4 * y;
+        final double y6 = y4 * y2;
+        final double y7 = y4 * y3;
+        final double y8 = y4 * y4;
+
+        final double z2 = z * z;
+        final double z3 = z2 * z;
+        final double z4 = z2 * z2;
+        final double z5 = z4 * z;
+        final double z6 = z4 * z2;
+        final double z7 = z4 * z3;
+        final double z8 = z4 * z4;
+
+        final double w2 = x2 + y2 + z2;
+        final double w1 = Math.sqrt(w2);
+        final double w4 = w2 * w2;
+        final double w6 = w4 * w2;
+        final double w7 = w6 * w1;
+        final double w8 = w4 * w4;
+
+        final double a = 8 * w1 * Math.sqrt((x2 + y2) / w2) * (
+                z7
+                - 7 * x2 * z5
+                - 7 * y2 * z5
+                + 14 * x2 * y2 * z3
+                - y6 * z
+                - 3 * x2 * y4 * z
+                + 7 * y4 * z3
+                - x6 * z
+                - 3 * x4 * y2 * z
+                + 7 * x4 * z3);
+
+        final double c1 = x2 + y2;
+        final double c2 = c1 * c1;
+        final double c4 = c2 * c2;
+
+        final double magic1 = a * 0.5 * (
+                + 2 * y8
+                - 56 * x2 * y6
+                + 2 * x8
+                - 56 * x6 * y2
+                + 140 * x4 * y4) / c4;
+        final double magic2 = a * 0.5 * (
+                + 16 * x * y7
+                - 16 * x7 * y
+                + 112 * x5 * y3
+                - 112 * x3 * y5) / c4;
+        final double magic3 =
+                - 32 * z2 * w6
+                + 128 * z8
+                - 256 * z6 * w2
+                + 160 * z4 * w4
+                + w8;
+        final double magic4 = w7 * dr * 8 + 1.0;
+
+        return new Pair<Triplex, Double>(new Triplex(magic1, magic2, magic3), magic4);
     }
 
     /**
@@ -101,7 +161,7 @@ final class Mandelbulb {
             double dr = 1.0;
             double r = z.magnitude();
             for (int i = 0; i < maxIter; i++) {
-                Pair<Triplex, Double> newValues = powN(z, r, dr);
+                Pair<Triplex, Double> newValues = powN(z, dr);
                 z = newValues.first;
                 dr = newValues.second;
                 z = Triplex.add(z, c);
