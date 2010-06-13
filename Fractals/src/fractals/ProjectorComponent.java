@@ -299,6 +299,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             final double rayArcAngle,
             final Color backgroundColor) throws InterruptedException
     {
+        final long startTime = System.currentTimeMillis();
         final Matrix invertedProjectionMatrix = Matrix.invert4x4(projectionMatrix);
         final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
 
@@ -355,6 +356,13 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             for (Future future: futures) {
                 future.cancel(true);
             }
+        }
+
+        final long endTime = System.currentTimeMillis();
+        if (false) {
+            System.out.println(
+                    "Render complete: " + (width * height) + " pixels in " + (endTime - startTime) + " milliseconds.\n" +
+                    "\t" + ((double)(width * height) / (endTime - startTime)) + " pixels/ms");
         }
     }
 }
