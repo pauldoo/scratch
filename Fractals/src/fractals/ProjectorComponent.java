@@ -20,10 +20,15 @@ package fractals;
 import fractals.math.Matrix;
 import fractals.math.Quaternion;
 import fractals.math.Triplex;
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -33,6 +38,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.BevelBorder;
 import javax.swing.event.MouseInputListener;
 
 /**
@@ -43,13 +53,157 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
 
     private static final long serialVersionUID = 4417921502019642371L;
 
+    private static enum DragType {
+        ROTATE_ON_THE_SPOT,
+        PAN,
+        ROTATE_AROUND_SURFACE
+    }
+
     private static final int superSample = 2;
     private static final int subSample = 16;
     private final Color backgroundColor = Color.DARK_GRAY;
-    private double shiftDistance = Double.NaN;
+    private DragType dragType;
     private SurfaceProvider surfaceProvider;
     private Camera3D camera = new Camera3D(new Triplex(0.0, 0.5, -1.5), Quaternion.identityRotation());
     private Point previousDragPoint = null;
+
+    private JButton createPanButton(
+        final JButton button,
+        final double dx,
+        final double dy)
+    {
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                panBy(dx, dy);
+            }
+        });
+        return button;
+    }
+
+    private JButton createRotateOnTheSpotButton(
+        final JButton button,
+        final double dx,
+        final double dy)
+    {
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                rotateOnTheSpotBy(dx, dy);
+            }
+        });
+        return button;
+    }
+
+    private JButton createRotateAroundSurfaceButton(
+        final JButton button,
+        final double dx,
+        final double dy)
+    {
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                rotateAroundTheSurface(dx, dy);
+            }
+        });
+        return button;
+    }
+
+    private JButton createZoomButton(
+        final JButton button,
+        final double dz)
+    {
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                zoomBy(dz);
+            }
+        });
+        return button;
+    }
+
+    public static JComponent createView(final SurfaceProvider surface)
+    {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        ProjectorComponent projector = new ProjectorComponent(surface);
+        panel.add(projector, BorderLayout.CENTER);
+
+        {
+            JPanel controlPanel = new JPanel();
+            controlPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+            {
+                JPanel panControls = new JPanel();
+                panControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                panControls.setLayout(new BorderLayout());
+                panControls.add(new JLabel("Pan"), BorderLayout.NORTH);
+
+                JPanel panButtons = new JPanel();
+                panButtons.setLayout(new GridLayout(2, 2));
+                panButtons.add(projector.createPanButton(new JButton("\u2191"), 0.0, 0.1));
+                panButtons.add(projector.createPanButton(new JButton("\u2192"), -0.1, 0.0));
+                panButtons.add(projector.createPanButton(new JButton("\u2190"), 0.1, 0.0));
+                panButtons.add(projector.createPanButton(new JButton("\u2193"), 0.0, -0.1));
+                panControls.add(panButtons, BorderLayout.CENTER);
+                
+                panControls.add(new JLabel("(or shift click and drag)"), BorderLayout.SOUTH);
+                controlPanel.add(panControls);
+            }
+            {
+                JPanel rotateOnTheSpotControls = new JPanel();
+                rotateOnTheSpotControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                rotateOnTheSpotControls.setLayout(new BorderLayout());
+                rotateOnTheSpotControls.add(new JLabel("Rotate on the spot"), BorderLayout.NORTH);
+
+                JPanel rotateOnTheSpotButtons = new JPanel();
+                rotateOnTheSpotButtons.setLayout(new GridLayout(2, 2));
+                rotateOnTheSpotButtons.add(projector.createRotateOnTheSpotButton(new JButton("\u2191"), 0.0, 0.1));
+                rotateOnTheSpotButtons.add(projector.createRotateOnTheSpotButton(new JButton("\u2192"), -0.1, 0.0));
+                rotateOnTheSpotButtons.add(projector.createRotateOnTheSpotButton(new JButton("\u2190"), 0.1, 0.0));
+                rotateOnTheSpotButtons.add(projector.createRotateOnTheSpotButton(new JButton("\u2193"), 0.0, -0.1));
+                rotateOnTheSpotControls.add(rotateOnTheSpotButtons, BorderLayout.CENTER);
+
+                rotateOnTheSpotControls.add(new JLabel("(or click and drag)"), BorderLayout.SOUTH);
+                controlPanel.add(rotateOnTheSpotControls);
+            }
+            {
+                JPanel rotateAroundSurfaceControls = new JPanel();
+                rotateAroundSurfaceControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                rotateAroundSurfaceControls.setLayout(new BorderLayout());
+                rotateAroundSurfaceControls.add(new JLabel("Rotate around the surface"), BorderLayout.NORTH);
+
+                JPanel rotateAroundSurfaceButtons = new JPanel();
+                rotateAroundSurfaceButtons.setLayout(new GridLayout(2, 2));
+                rotateAroundSurfaceButtons.add(projector.createRotateAroundSurfaceButton(new JButton("\u2191"), 0.0, 0.1));
+                rotateAroundSurfaceButtons.add(projector.createRotateAroundSurfaceButton(new JButton("\u2192"), -0.1, 0.0));
+                rotateAroundSurfaceButtons.add(projector.createRotateAroundSurfaceButton(new JButton("\u2190"), 0.1, 0.0));
+                rotateAroundSurfaceButtons.add(projector.createRotateAroundSurfaceButton(new JButton("\u2193"), 0.0, -0.1));
+                rotateAroundSurfaceControls.add(rotateAroundSurfaceButtons, BorderLayout.CENTER);
+
+                rotateAroundSurfaceControls.add(new JLabel("(or alt click and drag)"), BorderLayout.SOUTH);
+                controlPanel.add(rotateAroundSurfaceControls);
+            }
+            {
+                JPanel zoomControls = new JPanel();
+                zoomControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                zoomControls.setLayout(new BorderLayout());
+                zoomControls.add(new JLabel("Zoom"), BorderLayout.NORTH);
+
+                JPanel zoomButtons = new JPanel();
+                zoomButtons.setLayout(new GridLayout(2, 0));
+                zoomButtons.add(projector.createZoomButton(new JButton("\u2191"), 0.2));
+                zoomButtons.add(projector.createZoomButton(new JButton("\u2193"), -0.2));
+                zoomControls.add(zoomButtons, BorderLayout.CENTER);
+
+                zoomControls.add(new JLabel("(or +/- keys)"), BorderLayout.SOUTH);
+                controlPanel.add(zoomControls);
+
+            }
+            panel.add(controlPanel, BorderLayout.SOUTH);
+        }
+
+        return panel;
+    }
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -62,22 +216,65 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             final double y1 = (previousDragPoint.y - (height / 2.0)) / halfSize;
             final double x2 = (currentDragPoint.x - (width / 2.0)) / halfSize;
             final double y2 = (currentDragPoint.y - (height / 2.0)) / halfSize;
-            final Matrix invertedProjectionMatrix = Matrix.invert4x4(camera.toProjectionMatrix());
-            final Triplex previous = recoverDirectionVector(invertedProjectionMatrix, x1, y1).normalize();
-            final Triplex current = recoverDirectionVector(invertedProjectionMatrix, x2, y2).normalize();
-
             previousDragPoint = currentDragPoint;
-            if (Double.isNaN(shiftDistance) == false) {
-                final Triplex displacement = Triplex.multiply(Triplex.subtract(current, previous).negate(), shiftDistance);
-                camera = camera.replicateAddShift(displacement);
-            } else {
-                final Triplex axis = Triplex.crossProduct(previous, current).normalize();
-                final double angle = Math.acos(Triplex.dotProduct(previous, current));
-                Quaternion update = Quaternion.createRotation(axis, angle);
-                camera = camera.replicateAddRotation(update);
+
+            switch (dragType) {
+                case PAN:
+                    panBy(x2 - x1, y2 - y1);
+                    break;
+                case ROTATE_ON_THE_SPOT:
+                    rotateOnTheSpotBy(x2 - x1, y2 - y1);
+                    break;
+                case ROTATE_AROUND_SURFACE:
+                    rotateAroundTheSurface(x2 - x1, y2 - y1);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unrecognised DragType");
             }
-            super.rerender();
         }
+    }
+
+    private void rotateAroundTheSurface(double dx, double dy) {
+        final Matrix invertedProjectionMatrix = Matrix.invert4x4(camera.toProjectionMatrix());
+        final Triplex previous = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
+        final Triplex current = recoverDirectionVector(invertedProjectionMatrix, -dx, -dy).normalize();
+
+        final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
+        final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
+        final double shiftDistance = distanceToSurface(cameraCenter, rayVector);
+        final Triplex displacement = Triplex.multiply(Triplex.subtract(current, previous).negate(), shiftDistance);
+
+        final Triplex axis = Triplex.crossProduct(previous, current);
+        final double angle = Math.acos(Triplex.dotProduct(previous, current));
+        final Quaternion rotationUpdate = Quaternion.createRotation(axis, -angle);
+
+        camera = camera.replicateAddRotation(rotationUpdate);
+        camera = camera.replicateAddShift(displacement);
+        super.rerender();
+    }
+
+    private void rotateOnTheSpotBy(double dx, double dy) {
+        final Matrix invertedProjectionMatrix = Matrix.invert4x4(camera.toProjectionMatrix());
+        final Triplex previous = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
+        final Triplex current = recoverDirectionVector(invertedProjectionMatrix, dx, dy).normalize();
+        final Triplex axis = Triplex.crossProduct(previous, current);
+        final double angle = Math.acos(Triplex.dotProduct(previous, current));
+        final Quaternion update = Quaternion.createRotation(axis, angle);
+        camera = camera.replicateAddRotation(update);
+        super.rerender();
+    }
+
+    private void panBy(double dx, double dy) {
+        final Matrix invertedProjectionMatrix = Matrix.invert4x4(camera.toProjectionMatrix());
+        final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
+        final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
+        final double shiftDistance = distanceToSurface(cameraCenter, rayVector);
+
+        final Triplex previous = recoverDirectionVector(invertedProjectionMatrix, 0, 0);
+        final Triplex current = recoverDirectionVector(invertedProjectionMatrix, dx, dy);
+        final Triplex displacement = Triplex.multiply(Triplex.subtract(current, previous).negate(), shiftDistance);
+        camera = camera.replicateAddShift(displacement);
+        super.rerender();
     }
 
     @Override
@@ -91,19 +288,11 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
     @Override
     public void mousePressed(MouseEvent e) {
         previousDragPoint = e.getPoint();
+        dragType = DragType.ROTATE_ON_THE_SPOT;
         if (e.isShiftDown()) {
-            final Point currentDragPoint = e.getPoint();
-            final int width = getWidth();
-            final int height = getHeight();
-            final double halfSize = getSupersampledHalfSize() / superSample;
-            final double x1 = (previousDragPoint.x - (width / 2.0)) / halfSize;
-            final double y1 = (previousDragPoint.y - (height / 2.0)) / halfSize;
-
-            final Matrix invertedProjectionMatrix = Matrix.invert4x4(camera.toProjectionMatrix());
-            final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
-
-            final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, x1, y1).normalize();
-            shiftDistance = distanceToSurface(cameraCenter, rayVector);
+            dragType = DragType.PAN;
+        } else if (e.isAltDown()) {
+            dragType = DragType.ROTATE_AROUND_SURFACE;
         }
     }
 
@@ -115,7 +304,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
     @Override
     public void mouseReleased(MouseEvent e) {
         previousDragPoint = null;
-        shiftDistance = Double.NaN;
+        dragType = null;
     }
 
     @Override

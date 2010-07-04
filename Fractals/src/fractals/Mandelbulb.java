@@ -17,12 +17,13 @@
 
 package fractals;
 
-import fractals.math.Complex;
-import fractals.math.Matrix;
 import fractals.math.Triplex;
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
 import java.util.Collection;
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 final class Mandelbulb {
     public static final int maxIterations = 30;
@@ -171,7 +172,6 @@ final class Mandelbulb {
 
     public static JComponent createView()
     {
-        final ProjectorComponent renderComponent = new ProjectorComponent(new SurfaceProvider());
-        return renderComponent;
+        return ProjectorComponent.createView(new SurfaceProvider());
     }
 }
