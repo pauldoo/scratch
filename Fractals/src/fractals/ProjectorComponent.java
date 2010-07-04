@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -60,7 +61,7 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
     }
 
     private static final int superSample = 2;
-    private static final int subSample = 16;
+    private static final int subSample = 8;
     private final Color backgroundColor = Color.DARK_GRAY;
     private DragType dragType;
     private SurfaceProvider surfaceProvider;
@@ -134,9 +135,8 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             controlPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
             {
                 JPanel panControls = new JPanel();
-                panControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                panControls.setBorder(BorderFactory.createTitledBorder("Pan"));
                 panControls.setLayout(new BorderLayout());
-                panControls.add(new JLabel("Pan"), BorderLayout.NORTH);
 
                 JPanel panButtons = new JPanel();
                 panButtons.setLayout(new GridLayout(2, 2));
@@ -151,9 +151,8 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             }
             {
                 JPanel rotateOnTheSpotControls = new JPanel();
-                rotateOnTheSpotControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                rotateOnTheSpotControls.setBorder(BorderFactory.createTitledBorder("Rotate on the spot"));
                 rotateOnTheSpotControls.setLayout(new BorderLayout());
-                rotateOnTheSpotControls.add(new JLabel("Rotate on the spot"), BorderLayout.NORTH);
 
                 JPanel rotateOnTheSpotButtons = new JPanel();
                 rotateOnTheSpotButtons.setLayout(new GridLayout(2, 2));
@@ -168,9 +167,8 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             }
             {
                 JPanel rotateAroundSurfaceControls = new JPanel();
-                rotateAroundSurfaceControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                rotateAroundSurfaceControls.setBorder(BorderFactory.createTitledBorder("Rotate around the surface"));
                 rotateAroundSurfaceControls.setLayout(new BorderLayout());
-                rotateAroundSurfaceControls.add(new JLabel("Rotate around the surface"), BorderLayout.NORTH);
 
                 JPanel rotateAroundSurfaceButtons = new JPanel();
                 rotateAroundSurfaceButtons.setLayout(new GridLayout(2, 2));
@@ -185,9 +183,8 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
             }
             {
                 JPanel zoomControls = new JPanel();
-                zoomControls.setBorder(new BevelBorder(BevelBorder.RAISED));
+                zoomControls.setBorder(BorderFactory.createTitledBorder("Zoom"));
                 zoomControls.setLayout(new BorderLayout());
-                zoomControls.add(new JLabel("Zoom"), BorderLayout.NORTH);
 
                 JPanel zoomButtons = new JPanel();
                 zoomButtons.setLayout(new GridLayout(2, 0));
