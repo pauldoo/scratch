@@ -47,6 +47,19 @@ public final class MainApplet extends JApplet
             JOptionPane.showInternalMessageDialog(this.getContentPane(), message.toString(), e.toString(), JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    @Override
+    public void destroy()
+    {
+        try {
+            Utilities.getBackgroundThreadPool().shutdownNow();
+            Utilities.getHeavyThreadPool().shutdownNow();
+            Utilities.getLightThreadPool().shutdownNow();
+        } finally {
+            super.destroy();
+        }
+    }
+
     
     private static JComponent createMainComponent(Map<String, String> parameters)
     {
