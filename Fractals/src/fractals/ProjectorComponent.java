@@ -65,7 +65,9 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
     private final Color backgroundColor = Color.DARK_GRAY;
     private DragType dragType;
     private SurfaceProvider surfaceProvider;
-    private Camera3D camera = new Camera3D(new Triplex(0.0, 0.5, -1.5), Quaternion.identityRotation());
+    private Camera3D camera = new Camera3D(
+            new Triplex(0.0, 3.0, -0.5),
+            Quaternion.createRotation(new Triplex(1.0, 0.0, 0.0), (-Math.PI / 2) * 0.9));
     private Point previousDragPoint = null;
 
     private JButton createPanButton(
@@ -239,15 +241,17 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
         final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
         final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
         final double shiftDistance = distanceToSurface(cameraCenter, rayVector);
-        final Triplex displacement = Triplex.multiply(Triplex.subtract(current, previous).negate(), shiftDistance);
+        if (Double.isNaN(shiftDistance) == false) {
+            final Triplex displacement = Triplex.multiply(Triplex.subtract(current, previous).negate(), shiftDistance);
 
-        final Triplex axis = Triplex.crossProduct(previous, current);
-        final double angle = Math.acos(Triplex.dotProduct(previous, current));
-        final Quaternion rotationUpdate = Quaternion.createRotation(axis, -angle);
+            final Triplex axis = Triplex.crossProduct(previous, current);
+            final double angle = Math.acos(Triplex.dotProduct(previous, current));
+            final Quaternion rotationUpdate = Quaternion.createRotation(axis, -angle);
 
-        camera = camera.replicateAddRotation(rotationUpdate);
-        camera = camera.replicateAddShift(displacement);
-        super.rerender();
+            camera = camera.replicateAddRotation(rotationUpdate);
+            camera = camera.replicateAddShift(displacement);
+            super.rerender();
+        }
     }
 
     private void rotateOnTheSpotBy(double dx, double dy) {
@@ -266,12 +270,13 @@ final class ProjectorComponent extends BackgroundRenderingComponent implements M
         final Triplex rayVector = recoverDirectionVector(invertedProjectionMatrix, 0.0, 0.0).normalize();
         final Triplex cameraCenter = recoverCameraCenter(invertedProjectionMatrix);
         final double shiftDistance = distanceToSurface(cameraCenter, rayVector);
-
-        final Triplex previous = recoverDirectionVector(invertedProjectionMatrix, 0, 0);
-        final Triplex current = recoverDirectionVector(invertedProjectionMatrix, dx, dy);
-        final Triplex displacement = Triplex.multiply(Triplex.subtract(current, previous).negate(), shiftDistance);
-        camera = camera.replicateAddShift(displacement);
-        super.rerender();
+        if (Double.isNaN(shiftDistance) == false) {
+            final Triplex previous = recoverDirectionVector(invertedProjectionMatrix, 0, 0);
+            final Triplex current = recoverDirectionVector(invertedProjectionMatrix, dx, dy);
+            final Triplex displacement = Triplex.multiply(Triplex.subtract(current, previous).negate(), shiftDistance);
+            camera = camera.replicateAddShift(displacement);
+            super.rerender();
+        }
     }
 
     @Override

@@ -52,7 +52,6 @@ public final class MainApplet extends JApplet
     public void destroy()
     {
         try {
-            Utilities.getBackgroundThreadPool().shutdownNow();
             Utilities.getHeavyThreadPool().shutdownNow();
             Utilities.getLightThreadPool().shutdownNow();
         } finally {

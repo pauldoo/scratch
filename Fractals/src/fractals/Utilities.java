@@ -32,10 +32,6 @@ public final class Utilities
     private static final ScheduledExecutorService heavyThreadPool =
             new ScheduledThreadPoolExecutor(
                 Runtime.getRuntime().availableProcessors() + 1,
-                new MyThreadFactory((Thread.NORM_PRIORITY + Thread.MIN_PRIORITY) / 2));
-    private static final ScheduledExecutorService backgroundThreadPool =
-            new ScheduledThreadPoolExecutor(
-                Runtime.getRuntime().availableProcessors() + 1,
                 new MyThreadFactory(Thread.MIN_PRIORITY));
 
     private static final class MyThreadFactory implements ThreadFactory
@@ -95,15 +91,6 @@ public final class Utilities
     static ScheduledExecutorService getHeavyThreadPool()
     {
         return heavyThreadPool;
-    }
-
-    /**
-        A thread pool intended for heavy tasks that benefit image quality
-        in the long term (e.g. further sampling expected to take many seconds).
-    */
-    static ScheduledExecutorService getBackgroundThreadPool()
-    {
-        return backgroundThreadPool;
     }
     
     /**
