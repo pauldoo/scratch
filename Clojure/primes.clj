@@ -13,11 +13,7 @@
                 (recur x (inc n))))))
 
 (println
-    (map
-        (fn [k] (nth k 0))
-        (filter
-            (fn [k] (nth k 1))
-            (map
-                (fn [x] (vec [x (isprime? x)]))
-                (take 42 (iterate inc 0))))))
+    (filter
+        isprime?
+        (take 42 (iterate inc 0))))
 
