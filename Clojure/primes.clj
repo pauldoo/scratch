@@ -6,14 +6,17 @@
 (defn isprime?
     ([x] (isprime? x 2))
     ([x n]
-        (if (<= x n)
+        (if (> (* n n) x)
             true
             (if (zero? (rem x n))
                 false
                 (recur x (inc n))))))
 
-(println
+(defn lazy-primes
+    []
     (filter
         isprime?
-        (take 42 (iterate inc 0))))
+        (iterate inc 0)))
+
+(println (take 42 (lazy-primes)))
 
