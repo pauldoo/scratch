@@ -16,7 +16,7 @@
     []
     (filter
         isprime?
-        (iterate inc 0)))
+        (iterate inc 2)))
 
 (println (take 42 (lazy-primes)))
 
