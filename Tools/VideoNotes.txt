@@ -5,3 +5,6 @@ ffmpeg -r 5 -i output_%d.bmp -vcodec libx264 -vpre hq -acodec none -b 3000k -r 5
 mp4creator -hint=1 test.mp4 
 mp4creator -optimize test.mp4 
 
+# Convert existing file to high quality Vimeo settings
+ffmpeg -i foobar.avi -deinterlace -vcodec libx264 -vpre hq -acodec libfaac -b 5000k -ab 192k test.mp4
+
