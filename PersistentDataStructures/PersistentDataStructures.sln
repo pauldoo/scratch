@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersistentDataStructures", "PersistentDataStructures\PersistentDataStructures.csproj", "{5D0B5A62-1250-4A6E-9A1B-4E73EAF207F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PersistentDataStructuresTest", "PersistentDataStructuresTest\PersistentDataStructuresTest.csproj", "{4FC1CE8F-0BD1-4ACD-8891-845AD6B1634C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5D0B5A62-1250-4A6E-9A1B-4E73EAF207F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5D0B5A62-1250-4A6E-9A1B-4E73EAF207F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5D0B5A62-1250-4A6E-9A1B-4E73EAF207F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5D0B5A62-1250-4A6E-9A1B-4E73EAF207F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FC1CE8F-0BD1-4ACD-8891-845AD6B1634C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FC1CE8F-0BD1-4ACD-8891-845AD6B1634C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FC1CE8F-0BD1-4ACD-8891-845AD6B1634C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FC1CE8F-0BD1-4ACD-8891-845AD6B1634C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
