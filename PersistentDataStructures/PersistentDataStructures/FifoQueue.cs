@@ -128,6 +128,7 @@ namespace PersistentDataStructures
                 if (SinglyLinkedList<T>.Length(queue.m_tail) +
                     SinglyLinkedList<T>.Length(queue.m_reverse_tail_out) == queue.m_length)
                 {
+                    // ACK!  I'm not convinced that nulling out large linked lists can be considered O(1).
                     return new FifoQueue<T>(
                         queue.m_length,
                         queue.m_reverse_tail_out,
