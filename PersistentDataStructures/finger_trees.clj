@@ -23,9 +23,9 @@
         (finger-tree-deep. (cons a l) m r)
         (finger-tree-deep.
             [a (first l)]
-            (delay (push-front (force m) (apply make-node-3 (rest l))))
+            (let [m-forced (force m)]
+                (delay (push-front m-forced (apply make-node-3 (rest l)))))
             r)))
-
 
 ; Adds a new element to the back of the finger tree
 (defmulti push-back (fn [a _] (class a)))
@@ -38,7 +38,8 @@
         (finger-tree-deep. l m (snoc a r))
         (finger-tree-deep.
             l
-            (delay (push-back (force m) (apply make-node-3 (tser r))))
+            (let [m-forced (force m)]
+                (delay (push-back m-forced (apply make-node-3 (tser r)))))
             [(last r) a])))
 
 (defn go [t n func]
