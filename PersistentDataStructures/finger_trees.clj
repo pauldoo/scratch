@@ -2,6 +2,7 @@
 
 (defrecord node-2 [a b])
 (defrecord node-3 [a b c])
+(defrecord finger-tree-empty [])
 (defrecord finger-tree-single [v])
 (defrecord finger-tree-deep [l m r])
 
@@ -14,10 +15,10 @@
 
 ; Adds a new element to the front of the finger tree
 (defmulti push-front (fn [a _] (class a)))
-(defmethod push-front nil [_ a]
+(defmethod push-front finger-tree-empty [_ a]
     (finger-tree-single. a))
 (defmethod push-front finger-tree-single [{r :v} a]
-    (finger-tree-deep. [a] (delay nil) [r]))
+    (finger-tree-deep. [a] (delay (finger-tree-empty.)) [r]))
 (defmethod push-front finger-tree-deep [{l :l m :m r :r} a]
     (if (<= (count l) 3)
         (finger-tree-deep. (cons a l) m r)
@@ -29,10 +30,10 @@
 
 ; Adds a new element to the back of the finger tree
 (defmulti push-back (fn [a _] (class a)))
-(defmethod push-back nil [_ a]
+(defmethod push-back finger-tree-empty [_ a]
     (finger-tree-single. a))
 (defmethod push-back finger-tree-single [{r :v} a]
-    (finger-tree-deep. [r] (delay nil) [a]))
+    (finger-tree-deep. [r] (delay (finger-tree-empty.)) [a]))
 (defmethod push-back finger-tree-deep [{l :l m :m r :r} a]
     (if (<= (count r) 3)
         (finger-tree-deep. l m (snoc a r))
@@ -72,7 +73,7 @@
         (dorun (map (fn [x] (print-entry x (object-id node))) node))))
 
 (defmulti print-finger-tree (fn [node parent-id] (class node)))
-(defmethod print-finger-tree nil [_ parent-id] nil)
+(defmethod print-finger-tree finger-tree-empty [_ _] nil)
 (defmethod print-finger-tree finger-tree-single [node parent-id]
     (do
         (println (object-id node) " [label=\"Single\n" (:v node) "\"]")
@@ -99,8 +100,8 @@
             (go (func t n) (dec n) func filename))))
 
 (println "Forwards..")
-(go nil 20 push-front "/tmp/forwards.dot")
+(go (finger-tree-empty.) 20 push-front "/tmp/forwards.dot")
 
 (println "Backwards..")
-(go nil 20 push-back "/tmp/backwards.dot")
+(go (finger-tree-empty.) 20 push-back "/tmp/backwards.dot")
 
