@@ -42,13 +42,65 @@
                 (delay (push-back m-forced (apply make-node-3 (tser r)))))
             [(last r) a])))
 
-(defn go [t n func]
-    (do (println t "\n")
-        (if (<= n 0) nil (go (func t n) (dec n) func))))
+
+; Functions to print finger-trees to graphviz
+(defn object-id [x] (System/identityHashCode x))
+
+(defmulti print-entry (fn [entry parent-id] (class entry)))
+(defmethod print-entry node-2 [node parent-id]
+    (do
+        (println (object-id node) " [label=\"Node2\"]")
+        (println parent-id " -> " (object-id node))
+        (print-entry (:a node) (object-id node))
+        (print-entry (:b node) (object-id node))))
+(defmethod print-entry node-3 [node parent-id]
+    (do
+        (println (object-id node) " [label=\"Node3\"]")
+        (println parent-id " -> " (object-id node))
+        (print-entry (:a node) (object-id node))
+        (print-entry (:b node) (object-id node))
+        (print-entry (:c node) (object-id node))))
+(defmethod print-entry :default [entry parent-id]
+    (do
+        (println (object-id entry) " [label=\"" entry "\"]")
+        (when parent-id (println parent-id " -> " (object-id entry)))))
+
+(defn print-digits [node parent-id]
+    (do
+        (println (object-id node) " [label=\"Digits\"]")
+        (when parent-id (println parent-id " -> " (object-id node)))
+        (dorun (map (fn [x] (print-entry x (object-id node))) node))))
+
+(defmulti print-finger-tree (fn [node parent-id] (class node)))
+(defmethod print-finger-tree nil [_ parent-id] nil)
+(defmethod print-finger-tree finger-tree-single [node parent-id]
+    (do
+        (println (object-id node) " [label=\"Single\n" (:v node) "\"]")
+        (when parent-id (println parent-id " -> " (object-id node)))))
+(defmethod print-finger-tree finger-tree-deep [node parent-id]
+    (do
+        (println (object-id node) " [label=\"Deep\"]")
+        (when parent-id (println parent-id " -> " (object-id node)))
+        (print-digits (:l node) (object-id node))
+        (print-finger-tree (force (:m node)) (object-id node))
+        (print-digits (:r node) (object-id node))))
+
+(defn print-finger-tree-to-file [tree filename]
+    (spit filename (with-out-str (do
+        (println "digraph {")
+        (print-finger-tree tree nil)
+        (println "}")))))
+
+(defn go [t n func filename]
+    (do
+        (println t "\n")
+        (if (<= n 0)
+            (print-finger-tree-to-file t filename)
+            (go (func t n) (dec n) func filename))))
 
 (println "Forwards..")
-(go nil 20 push-front)
+(go nil 20 push-front "/tmp/forwards.dot")
 
 (println "Backwards..")
-(go nil 20 push-back)
+(go nil 20 push-back "/tmp/backwards.dot")
 
