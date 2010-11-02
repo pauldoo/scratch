@@ -86,6 +86,14 @@
                 (delay (push-back m-forced (apply make-node-3 monoid (tser r)))))
             [(last r) a])))
 
+; Convenience function to convert a list into a finger tree
+(defn to-tree [monoid vec] (
+    (fn [tree vec] (if (empty? vec)
+        tree
+        (recur (push-back tree (first vec)) (rest vec))))
+    (make-finger-tree-empty monoid)
+    vec))
+
 (defn nodes [monoid a b & r]
     (case (count r)
         0 [(make-node-2 monoid a b)]
