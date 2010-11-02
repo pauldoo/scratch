@@ -37,17 +37,19 @@
 (defn make-finger-tree-single [monoid e]
     (finger-tree-single. monoid e))
 (defn make-finger-tree-deep [monoid l m r]
-    (finger-tree-deep.
-        monoid
-        (delay (apply
-            (:combine-fn monoid)
-            (map
-                (fn [e] (extract-measure e monoid))
-                (concat
-                    l
-                    ((fn [v] (if (nil? v) [] [v])) (force m))
-                    r))))
-        l m r))
+    (if (delay? m)
+        (finger-tree-deep.
+            monoid
+            (delay (apply
+                (:combine-fn monoid)
+                (map
+                    (fn [e] (extract-measure e monoid))
+                    (concat
+                        l
+                        ((fn [v] (if (nil? v) [] [v])) (force m))
+                        r))))
+            l m r)
+        (throw (IllegalArgumentException. "middle tree is not a delay"))))
 
 ; Reverse cons
 (defn snoc [a lst] (concat lst [a]))
@@ -147,6 +149,24 @@
         (:l a)
         (app3 (force (:m a)) (apply nodes (:monoid a) (concat (:r a) (:l b))) (force (:m b)))
         (:r b)))
+
+(defmulti split-tree (fn [tree p i] (class tree)))
+(defmethod split-tree finger-tree-single [{e :e m :monoid} _ _]
+    [(make-finger-tree-empty m) e (make-finger-tree-empty m)])
+(defmethod split-tree finger-tree-deep [{monoid :monoid l :l m :m r :r} p i]
+    (let [cfn (:combine-fn monoid)
+            ems (fn [v] (extract-measure v monoid))
+            vl (cfn i (ems l))
+            vm (cfn vl (ems m))]
+        (if (p vl)
+            (let [[a b c] (split-digit p i l)]
+                [(to-tree a) b (make-finger-tree-deep monoid c m r)])
+            (if (p vm)
+                (let [[ma mb mc] (split-tree p vl m)
+                        [a b c] (split-digit p (cfn vl (ems ma)) (to-list mb))]
+                    [(make-finger-tree-deep monoid l ma a) b (make-finger-tree-deep c mc)])
+                (let [[a b c] (split-digit p vm r)]
+                    [(make-finger-tree-deep monoid l m a) b (to-tree c)])))))
 
 ; Functions to print finger-trees to graphviz
 (defn object-id [x] (System/identityHashCode x))
