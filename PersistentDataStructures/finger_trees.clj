@@ -1,11 +1,20 @@
 ; :mode=clojure:
 
+;(.printStackTrace *e)
+;for i in /tmp/*.dot ; do echo $i && dot -Tsvg $i -o $i.svg; done
+
 (defrecord monoid [measure-fn combine-fn])
 (defrecord node-2 [v a b])
 (defrecord node-3 [v a b c])
 (defrecord finger-tree-empty [monoid])
 (defrecord finger-tree-single [monoid e])
 (defrecord finger-tree-deep [monoid v l m r])
+
+(declare
+    view-left
+    view-right
+    to-tree
+    to-list)
 
 (derive Object ::any)
 
@@ -38,23 +47,60 @@
     (finger-tree-single. monoid e))
 (defn make-finger-tree-deep [monoid l m r]
     (if (delay? m)
-        (finger-tree-deep.
-            monoid
-            (delay (apply
-                (:combine-fn monoid)
-                (map
-                    (fn [e] (extract-measure e monoid))
-                    (concat
-                        l
-                        ((fn [v] (if (nil? v) [] [v])) (force m))
-                        r))))
-            l m r)
+        (if (or
+                (and (not (empty? l)) (not (empty? r)))
+                (instance? finger-tree-empty (force m)))
+            (finger-tree-deep.
+                monoid
+                (delay (apply
+                    (:combine-fn monoid)
+                    (map
+                        (fn [e] (extract-measure e monoid))
+                        (concat
+                            l
+                            ((fn [v] (if (nil? v) [] [v])) (force m))
+                            r))))
+                (vec l) m (vec r))
+            (throw (IllegalArgumentException. "middle tree is not empty, but a digit is")))
         (throw (IllegalArgumentException. "middle tree is not a delay"))))
 
 ; Reverse cons
 (defn snoc [a lst] (concat lst [a]))
 ; Reverse rest
 (defn tser [lst] (take (dec (count lst)) lst))
+
+
+(defn deep-l [monoid l m r]
+    (if (empty? l)
+        (let [view (view-left (force m))]
+            (if (nil? view)
+                (to-tree monoid r)
+                (let [[a mp] view]
+                    (make-finger-tree-deep monoid (to-list a) mp r))))
+        (make-finger-tree-deep monoid l m r)))
+
+(defn deep-r [monoid l m r]
+    (if (empty? r)
+        (let [view (view-right (force m))]
+            (if (nil? view)
+                (to-tree monoid l)
+                (let [[a mp] view]
+                    (make-finger-tree-deep monoid l mp (to-list a)))))
+        (make-finger-tree-deep monoid l m r)))
+
+(defmulti view-left (fn [tree] (class tree)))
+(defmethod view-left finger-tree-empty [_] nil)
+(defmethod view-left finger-tree-single [{e :e monoid :monoid}]
+    [e (delay (make-finger-tree-empty monoid))])
+(defmethod view-left finger-tree-deep [{monoid :monoid l :l m :m r :r}]
+    [(first l) (delay (deep-l monoid (rest l) m r))])
+
+(defmulti view-right (fn [tree] (class tree)))
+(defmethod view-right finger-tree-empty [_] nil)
+(defmethod view-right finger-tree-single [{e :e monoid :monoid}]
+    [e (delay (make-finger-tree-empty monoid))])
+(defmethod view-right finger-tree-deep [{monoid :monoid l :l m :m r :r}]
+    [(last r) (delay (deep-r monoid l m (tser r)))])
 
 ; Adds a new element to the front of the finger tree
 (defmulti push-front (fn [tree value] (class tree)))
@@ -103,6 +149,8 @@
         2 [(make-node-2 monoid a b) (apply make-node-2 monoid r)]
         (cons (make-node-3 monoid a b (first r)) (apply nodes monoid (rest r)))))
 
+(defn force-early [d] (do (force d) d))
+
 (defmulti app3 (fn [l m r] [(class l) (class r)]))
 (defmethod app3 [finger-tree-empty ::any] [l m r]
     (if (empty? m)
@@ -126,10 +174,10 @@
     (make-finger-tree-deep
         (:monoid l)
         (:l l)
-        (app3
+        (force-early (delay (app3
             (force (:m l))
             (apply nodes (:monoid l) (concat (:r l) m (:l r)))
-            (force (:m r)))
+            (force (:m r)))))
         (:r r)))
 
 (prefer-method app3 [finger-tree-empty ::any] [::any finger-tree-empty])
@@ -147,8 +195,21 @@
     (make-finger-tree-deep
         (:monoid a)
         (:l a)
-        (app3 (force (:m a)) (apply nodes (:monoid a) (concat (:r a) (:l b))) (force (:m b)))
+        (force-early (delay (app3 (force (:m a)) (apply nodes (:monoid a) (concat (:r a) (:l b))) (force (:m b)))))
         (:r b)))
+
+(defmulti to-list (fn [tree] (class tree)))
+(defmethod to-list node-2 [{a :a b :b}] [a b])
+(defmethod to-list node-3 [{a :a b :b c :c}] [a b c])
+
+(defn split-digit [p i [a & as] ems cfn]
+    (if (nil? as)
+        [[] a []]
+        (let [ip (cfn i (ems a))]
+            (if (p ip)
+                [[] a as]
+                (let [[l x r] (split-digit p ip as ems cfn)]
+                    [(cons a l) x r])))))
 
 (defmulti split-tree (fn [tree p i] (class tree)))
 (defmethod split-tree finger-tree-single [{e :e m :monoid} _ _]
@@ -156,17 +217,19 @@
 (defmethod split-tree finger-tree-deep [{monoid :monoid l :l m :m r :r} p i]
     (let [cfn (:combine-fn monoid)
             ems (fn [v] (extract-measure v monoid))
-            vl (cfn i (ems l))
-            vm (cfn vl (ems m))]
+            vl (cfn i (apply + (map ems l)))
+            vm (cfn vl (ems (force m)))]
         (if (p vl)
-            (let [[a b c] (split-digit p i l)]
-                [(to-tree a) b (make-finger-tree-deep monoid c m r)])
+            (let [[a b c] (split-digit p i l ems cfn)]
+                [(to-tree monoid a) b (deep-l monoid c m r)])
             (if (p vm)
-                (let [[ma mb mc] (split-tree p vl m)
-                        [a b c] (split-digit p (cfn vl (ems ma)) (to-list mb))]
-                    [(make-finger-tree-deep monoid l ma a) b (make-finger-tree-deep c mc)])
-                (let [[a b c] (split-digit p vm r)]
-                    [(make-finger-tree-deep monoid l m a) b (to-tree c)])))))
+                (let [[ma mb mc] (split-tree (force m) p vl)
+                        [a b c] (split-digit p (cfn vl (ems ma)) (to-list mb) ems cfn)]
+                        [(deep-r monoid l (delay ma) a)
+                        b
+                        (deep-l monoid c (delay mc) r)])
+                (let [[a b c] (split-digit p vm r ems cfn)]
+                    [(deep-r monoid l m a) b (to-tree monoid c)])))))
 
 ; Functions to print finger-trees to graphviz
 (defn object-id [x] (System/identityHashCode x))
@@ -220,24 +283,36 @@
 (def count-monoid
     (monoid. (fn [_] 1) +))
 
-(defn go [t vec func filename]
+(defn go [t vec func]
     (do
         (println t "\n")
         (if (empty? vec)
-            (do
-                (print-finger-tree-to-file t filename)
-                t)
-            (go (func t (first vec)) (rest vec) func filename))))
+            t
+            (go (func t (first vec)) (rest vec) func))))
 
 (println "Forwards..")
-(def t1 (go (make-finger-tree-empty count-monoid) (range 1 20) push-front "/tmp/forwards.dot"))
+(def t1 (go (make-finger-tree-empty count-monoid) (range 0 20) push-front))
+(print-finger-tree-to-file t1 "/tmp/forwards.dot")
+
+(println "Splitting")
+
+(defn split-test [tree idx]
+    (let [[l x r] (split-tree tree (fn [i] (< idx i)) 0)]
+        (do
+            (print-finger-tree-to-file l (str "/tmp/forwards-t1-" (print-str idx) "-l.dot"))
+            (print-finger-tree-to-file r (str "/tmp/forwards-t1-" (print-str idx) "-r.dot"))
+            x)))
+
+(doall (map (fn [x] (split-test t1 x)) (range -3 23)))
 
 (println "Backwards..")
-(def t2 (go (make-finger-tree-empty count-monoid) (range 20 40) push-back "/tmp/backwards.dot"))
+(def t2 (go (make-finger-tree-empty count-monoid) (range 20 40) push-back))
+(print-finger-tree-to-file t2 "/tmp/backwards.dot")
 
 (print-finger-tree-to-file
     (concatenate t1 t2)
     "/tmp/concat1.dot")
+
 (print-finger-tree-to-file
     (concatenate t2 t1)
     "/tmp/concat2.dot")
