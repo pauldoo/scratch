@@ -231,6 +231,28 @@
                 (let [[a b c] (split-digit p vm r ems cfn)]
                     [(deep-r monoid l m a) b (to-tree monoid c)])))))
 
+(defmulti split (fn [tree p] (class tree)))
+(defmethod split finger-tree-empty [tree _] [tree tree])
+(defmethod split ::any [tree p]
+    (let [monoid (:monoid tree)
+        [l x r] (split-tree tree p ((:combine-fn monoid)))]
+        (if (p (extract-measure tree monoid))
+            [l (push-front r x)]
+            [tree (make-finger-tree-empty monoid)])))
+
+(defn take-until [tree p]
+    (first (split tree p)))
+(defn drop-until [tree p]
+    (second (split tree p)))
+
+(defn as-lazy-seq
+    ([tree]
+        (apply as-lazy-seq (view-left tree)))
+    ([a next]
+        (lazy-seq
+            (cons a (apply as-lazy-seq (view-left (force next))))))
+    ([] []))
+
 ; Functions to print finger-trees to graphviz
 (defn object-id [x] (System/identityHashCode x))
 
@@ -297,11 +319,11 @@
 (println "Splitting")
 
 (defn split-test [tree idx]
-    (let [[l x r] (split-tree tree (fn [i] (< idx i)) 0)]
+    (let [[l r] (split tree (fn [i] (< idx i)))]
         (do
             (print-finger-tree-to-file l (str "/tmp/forwards-t1-" (print-str idx) "-l.dot"))
             (print-finger-tree-to-file r (str "/tmp/forwards-t1-" (print-str idx) "-r.dot"))
-            x)))
+            (println idx ": " (map as-lazy-seq [l r])))))
 
 (doall (map (fn [x] (split-test t1 x)) (range -3 23)))
 
