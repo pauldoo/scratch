@@ -1,5 +1,16 @@
 ; :mode=clojure:
 
+; 2-3 Finger Trees in Clojure.
+; I have implemented only barebones finger trees and a counting monoid.
+;
+; I have not implemented other monoids/wrappers for sorted sets or priority queues
+; but I have experimented on the REPL and am convinced they would work.
+; This was my first piece of Clojure programming beyond "Hello World", so feedback
+; is welcome!
+;
+; paul.richards@gmail.com
+;
+
 ;(.printStackTrace *e)
 ;for i in /tmp/*.dot ; do echo $i && dot -Tsvg $i -o $i.svg; done
 
