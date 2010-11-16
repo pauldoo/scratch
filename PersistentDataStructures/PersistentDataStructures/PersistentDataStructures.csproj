@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="CompleteBinaryTree.cs" />
     <Compile Include="FifoQueue.cs" />
+    <Compile Include="FingerTree.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RandomAccessList.cs" />
     <Compile Include="SinglyLinkedList.cs" />
