@@ -304,7 +304,7 @@
 
         public override T Back()
         {
-            return m_c;
+            return m_d;
         }
 
         public override T Front()
