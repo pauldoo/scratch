@@ -152,7 +152,7 @@ namespace PersistentDataStructures
                     queue.m_reverse_head_in,
                     queue.m_reverse_head_out.m_tail,
                     queue.m_reverse_tail_in,
-                    SinglyLinkedList<T>.Prepend(queue.m_reverse_head_out.m_head, queue.m_reverse_tail_out));
+                    SinglyLinkedList<T>.PushFront(queue.m_reverse_head_out.m_head, queue.m_reverse_tail_out));
             }
 
             return queue;
@@ -169,7 +169,7 @@ namespace PersistentDataStructures
                     queue.m_reverse_head_in,
                     queue.m_reverse_head_out,
                     queue.m_reverse_tail_in.m_tail,
-                    SinglyLinkedList<T>.Prepend(
+                    SinglyLinkedList<T>.PushFront(
                         queue.m_reverse_tail_in.m_head,
                         queue.m_reverse_tail_out));
             } else {
@@ -184,7 +184,7 @@ namespace PersistentDataStructures
                     queue.m_head,
                     queue.m_tail,
                     queue.m_reverse_head_in.m_tail,
-                    SinglyLinkedList<T>.Prepend(
+                    SinglyLinkedList<T>.PushFront(
                         queue.m_reverse_head_in.m_head,
                         queue.m_reverse_head_out),
                     queue.m_reverse_tail_in,
@@ -199,7 +199,7 @@ namespace PersistentDataStructures
             return Fixup(new FifoQueue<T>(
                 queue.m_length + 1,
                 queue.m_head,
-                SinglyLinkedList<T>.Prepend(value, queue.m_tail),
+                SinglyLinkedList<T>.PushFront(value, queue.m_tail),
                 queue.m_reverse_head_in,
                 queue.m_reverse_head_out,
                 queue.m_reverse_tail_in,

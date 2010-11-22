@@ -1,357 +1,99 @@
-﻿namespace PersistentDataStructures
+﻿using System.Collections.Generic;
+using System.Collections;
+
+namespace PersistentDataStructures
 {
-    public interface Monoid<T, U>
-    {
-        U Measure(T element);
-
-        U Combine(U a, U b);
-
-        U Identity();
-    }
-
-    public sealed class CountingMonoid<T> : Monoid<T, int>
-    {
-        public int Measure(T o)
-        {
-            return 1;
-        }
-
-        public int Combine(int a, int b)
-        {
-            return a + b;
-        }
-
-        public int Identity()
-        {
-            return 0;
-        }
-    }
-
-    public sealed class MaximumMonoid : Monoid<int, int>
-    {
-        public int Measure(int o)
-        {
-            return o;
-        }
-
-        public int Combine(int a, int b)
-        {
-            return System.Math.Max(a, b);
-        }
-
-        public int Identity()
-        {
-            return System.Int32.MinValue;
-        }
-    }
-
-    abstract class Node<T, U>
-    {
-        public readonly U m_monoid_value;
-
-        public Node(U monoid_value)
-        {
-            m_monoid_value = monoid_value;
-        }
-    }
-
-    // Hmm..  Could digits and nodes be the same thing?
-    abstract class Digits<T>
-    {
-        public abstract U ApplyMonoid<U>(Monoid<T, U> monoid);
-
-        public abstract int Count();
-        public abstract Digits<T> PushFront(T value);
-        public abstract Digits<T> PushBack(T value);
-        public abstract Digits<T> PopFront();
-        public abstract Digits<T> PopBack();
-        public abstract T Front();
-        public abstract T Back();
-    }
-
-    sealed class Node2<T, U> : Node<T, U>
-    {
-        public readonly T m_a;
-        public readonly T m_b;
-
-        public Node2(T a, T b, Monoid<T, U> monoid) :
-            base(
-                monoid.Combine(
-                    monoid.Measure(a), 
-                    monoid.Measure(b)))
-        {
-            m_a = a;
-            m_b = b;
-        }
-    }
-
-    sealed class Node3<T, U> : Node<T, U>
-    {
-        public readonly T m_a;
-        public readonly T m_b;
-        public readonly T m_c;
-
-        public Node3(T a, T b, T c, Monoid<T, U> monoid) :
-            base(
-                monoid.Combine(
-                    monoid.Combine(
-                        monoid.Measure(a),
-                        monoid.Measure(b)),
-                    monoid.Measure(c)))
-        {
-            m_a = a;
-            m_b = b;
-            m_c = c;
-        }
-    }
-
-
-    sealed class Digits1<T> : Digits<T>
-    {
-        public readonly T m_a;
-
-        public override U ApplyMonoid<U>(Monoid<T,U> monoid)
-        {
-            return monoid.Measure(m_a);
-        }
-
-        public Digits1(T a)
-        {
-            m_a = a;
-        }
-
-        public override int Count()
-        {
-            return 1;
-        }
-
-        public override T Back()
-        {
-            return m_a;
-        }
-
-        public override T Front()
-        {
-            return m_a;
-        }
-
-        public override Digits<T> PushBack(T value)
-        {
-            return new Digits2<T>(m_a, value);
-        }
-
-        public override Digits<T> PushFront(T value)
-        {
-            return new Digits2<T>(value, m_a);
-        }
-
-        public override Digits<T> PopBack()
-        {
-            throw new System.InvalidOperationException();
-        }
-
-        public override Digits<T> PopFront()
-        {
-            throw new System.InvalidOperationException();
-        }
-    }
-
-    sealed class Digits2<T> : Digits<T>
-    {
-        public readonly T m_a;
-        public readonly T m_b;
-
-        public Digits2(T a, T b) {
-            m_a = a;
-            m_b = b;
-        }
-
-        public override U ApplyMonoid<U>(Monoid<T,U> monoid)
-        {
-            return
-                monoid.Combine(
-                    monoid.Measure(m_a),
-                    monoid.Measure(m_b));
-        }
-
-        public override int Count()
-        {
-            return 2;
-        }
-
-        public override T Back()
-        {
-            return m_b;
-        }
-
-        public override T Front()
-        {
-            return m_a;
-        }
-
-        public override Digits<T> PushBack(T value)
-        {
-            return new Digits3<T>(m_a, m_b, value);
-        }
-
-        public override Digits<T> PushFront(T value)
-        {
-            return new Digits3<T>(value, m_a, m_b);
-        }
-
-        public override Digits<T> PopBack()
-        {
-            return new Digits1<T>(m_a);
-        }
-
-        public override Digits<T> PopFront()
-        {
-            return new Digits1<T>(m_b);
-        }
-    }
-    sealed class Digits3<T> : Digits<T>
-    {
-        public readonly T m_a;
-        public readonly T m_b;
-        public readonly T m_c;
-
-        public override U ApplyMonoid<U>(Monoid<T,U> monoid)
-        {
-            return 
-                monoid.Combine(
-                    monoid.Combine(
-                        monoid.Measure(m_a),
-                        monoid.Measure(m_b)),
-                    monoid.Measure(m_c));
-        }
-        public Digits3(T a, T b, T c)
-        {
-            m_a = a;
-            m_b = b;
-            m_c = c;
-        }
-        public override int Count()
-        {
-            return 3;
-        }
-
-        public override T Back()
-        {
-            return m_c;
-        }
-
-        public override T Front()
-        {
-            return m_a;
-        }
-
-        public override Digits<T> PushBack(T value)
-        {
-            return new Digits4<T>(m_a, m_b, m_c, value);
-        }
-
-        public override Digits<T> PushFront(T value)
-        {
-            return new Digits4<T>(value, m_a, m_b, m_c);
-        }
-
-        public override Digits<T> PopBack()
-        {
-            return new Digits2<T>(m_a, m_b);
-        }
-
-        public override Digits<T> PopFront()
-        {
-            return new Digits2<T>(m_b, m_c);
-        }
-
-        public Node3<T, U> PromoteToNode3<U>(Monoid<T, U> monoid)
-        {
-            return new Node3<T, U>(m_a, m_b, m_c, monoid);
-        }
-    }
-    sealed class Digits4<T> : Digits<T>
-    {
-        public readonly T m_a;
-        public readonly T m_b;
-        public readonly T m_c;
-        public readonly T m_d;
-
-        public override U ApplyMonoid<U>(Monoid<T,U> monoid)
-        {
-            return 
-                monoid.Combine(
-                    monoid.Combine(
-                        monoid.Measure(m_a),
-                        monoid.Measure(m_b)),
-                    monoid.Combine(
-                        monoid.Measure(m_c),
-                        monoid.Measure(m_d)));
-        }
-
-        public Digits4(T a, T b, T c, T d)
-        {
-            m_a = a;
-            m_b = b;
-            m_c = c;
-            m_d = d;
-        }
-
-        public override int Count()
-        {
-            return 4;
-        }
-
-        public override T Back()
-        {
-            return m_d;
-        }
-
-        public override T Front()
-        {
-            return m_a;
-        }
-
-        public override Digits<T> PushBack(T value)
-        {
-            throw new System.InvalidOperationException();
-        }
-
-        public override Digits<T> PushFront(T value)
-        {
-            throw new System.InvalidOperationException();
-        }
-
-        public override Digits<T> PopBack()
-        {
-            return new Digits3<T>(m_a, m_b, m_c);
-        }
-
-        public override Digits<T> PopFront()
-        {
-            return new Digits3<T>(m_b, m_c, m_d);
-        }
-    }
-
-    public abstract class FingerTree<T, U>
+    public abstract class FingerTree<T, U> : IEnumerable<T>
     {
         public readonly Monoid<T, U> m_monoid;
 
-        public FingerTree(Monoid<T, U> monoid)
+        protected FingerTree(Monoid<T, U> monoid)
         {
             this.m_monoid = monoid;
         }
 
         public abstract U MonoidValue();
 
+        protected abstract IEnumerator<T> GetEnumeratorImp();
+
+        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        {
+            return GetEnumeratorImp();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumeratorImp();
+        }
+        
         public abstract FingerTree<T, U> PushFront(T value);
         public abstract FingerTree<T, U> PushBack(T value);
+        
+        public FingerTree<T, U> PushBackAll(SinglyLinkedList<T> values)
+        {
+            if (values == null)
+            {
+                return this;
+            }
+            else
+            {
+                return PushBack(values.m_head).PushBackAll(values.m_tail);
+            }
+        }
+
+        public FingerTree<T, U> PushFrontAll(SinglyLinkedList<T> values)
+        {
+            if (values == null)
+            {
+                return this;
+            }
+            else
+            {
+                return PushFrontAll(values.m_tail).PushFront(values.m_head);
+            }
+        }
+
+        public static FingerTree<T, U> CreateEmpty(Monoid<T, U> monoid)
+        {
+            return new FingerTreeEmpty<T, U>(monoid);
+        }
+
+        public abstract FingerTree<T, U> Append(FingerTree<T, U> rhs);
+        internal abstract FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs);
+
+        internal abstract FingerTree<T, U> Append(SinglyLinkedList<T> middle, FingerTree<T, U> rhs);
+        internal abstract FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs, SinglyLinkedList<T> middle);
     }
 
-    public sealed class FingerTreeEmpty<T, U> : FingerTree<T, U>
+    sealed class FingerTreeEmpty<T, U> : FingerTree<T, U>
     {
         public FingerTreeEmpty(Monoid<T, U> monoid) : base(monoid)
         {
+        }
+
+        protected override IEnumerator<T> GetEnumeratorImp()
+        {
+            yield break;
+        }
+
+        public override FingerTree<T, U> Append(FingerTree<T, U> rhs)
+        {
+            return rhs;
+        }
+
+        internal override FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs)
+        {
+            return lhs;
+        }
+
+        internal override FingerTree<T, U> Append(SinglyLinkedList<T> middle, FingerTree<T, U> rhs)
+        {
+            return rhs.PushFrontAll(middle);
+        }
+
+        internal override FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs, SinglyLinkedList<T> middle)
+        {
+            return lhs.PushBackAll(middle);
         }
 
         public override U MonoidValue()
@@ -394,7 +136,7 @@
             return m_nested_monoid.Identity();
         }
     }
-
+    
     sealed class FingerTreeSingle<T, U> : FingerTree<T, U>
     {
         public readonly T m_value;
@@ -402,6 +144,31 @@
         public FingerTreeSingle(T value, Monoid<T, U> monoid) : base(monoid)
         {
             m_value = value;
+        }
+
+        public override FingerTree<T, U> Append(FingerTree<T, U> rhs)
+        {
+            return rhs.PushFront(m_value);
+        }
+
+        protected override IEnumerator<T> GetEnumeratorImp()
+        {
+            yield return m_value;
+        }
+
+        internal override FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs)
+        {
+            return lhs.PushBack(m_value);
+        }
+
+        internal override FingerTree<T, U> Append(SinglyLinkedList<T> middle, FingerTree<T, U> rhs)
+        {
+            return rhs.PushFrontAll(middle).PushFront(m_value);
+        }
+
+        internal override FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs, SinglyLinkedList<T> middle)
+        {
+            return lhs.PushBackAll(middle).PushBack(m_value);
         }
 
         public override U MonoidValue()
@@ -430,39 +197,6 @@
         }
     }
 
-    sealed class Delay<T>
-    {
-        private System.Func<T> m_lambda00;
-        private T m_result;
-
-        public Delay(System.Func<T> lambda)
-        {
-            if (lambda == null)
-            {
-                throw new System.NullReferenceException();
-            }
-            m_lambda00 = lambda;
-            m_result = default(T);
-        }
-
-        public T Force()
-        {
-            if (m_lambda00 != null)
-            {
-                lock (this)
-                {
-                    if (m_lambda00 != null)
-                    {
-                        m_result = m_lambda00.Invoke();
-                        m_lambda00 = null;
-                    }
-                }
-            }
-
-            return m_result;
-        }
-    }
-
     sealed class FingerTreeDeep<T, U> : FingerTree<T, U>
     {
         public readonly Delay<U> m_monoid_value;
@@ -485,6 +219,97 @@
                         m_prefix.ApplyMonoid(m_monoid),
                         m_middle.Force().MonoidValue()),
                     m_suffix.ApplyMonoid(m_monoid)));
+        }
+
+        protected override IEnumerator<T> GetEnumeratorImp()
+        {
+            foreach (var value in m_prefix)
+            {
+                yield return value;
+            }
+
+            foreach (var node in m_middle.Force())
+            {
+                foreach (var value in node)
+                {
+                    yield return value;
+                }
+            }
+
+            foreach (var value in m_suffix)
+            {
+                yield return value;
+            }
+        }
+
+        public override FingerTree<T, U> Append(FingerTree<T, U> rhs)
+        {
+            return rhs.PrependDeep(this);
+        }
+
+        internal override FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs)
+        {
+            return Concatenate(lhs, null, this);
+        }
+
+        internal override FingerTree<T, U> Append(SinglyLinkedList<T> middle, FingerTree<T, U> rhs)
+        {
+            return rhs.PrependDeep(this, middle);
+        }
+
+        internal override FingerTree<T, U> PrependDeep(FingerTreeDeep<T, U> lhs, SinglyLinkedList<T> middle)
+        {
+            return Concatenate(lhs, middle, this);
+        }
+
+        private static FingerTree<T, U> Concatenate(
+            FingerTreeDeep<T, U> lhs, 
+            SinglyLinkedList<T> middle,
+            FingerTreeDeep<T, U> rhs)
+        {
+            return new FingerTreeDeep<T, U>(
+                lhs.m_prefix,
+                new Delay<FingerTree<Node<T, U>, U>>(
+                    lhs.m_middle.Force().Append(
+                        Nodes(
+                            lhs.m_monoid,
+                            SinglyLinkedList<T>.Concatenate(
+                                lhs.m_suffix.AsList(),
+                                SinglyLinkedList<T>.Concatenate(
+                                    middle,
+                                    rhs.m_prefix.AsList()))),
+                        rhs.m_middle.Force())),
+                rhs.m_suffix,
+                lhs.m_monoid);
+        }
+
+        private static SinglyLinkedList<Node<T, U>> Nodes(
+            Monoid<T, U> monoid,
+            SinglyLinkedList<T> nodes)
+        {
+            T first = nodes.m_head;
+            T second = nodes.m_tail.m_head;
+            SinglyLinkedList<T> rest = nodes.m_tail.m_tail;
+            switch (SinglyLinkedList<T>.Length(rest)) {
+                case 0:
+                    return 
+                        SinglyLinkedList<Node<T, U>>.CreateSingle(
+                            new Node2<T, U>(first, second, monoid));
+                case 1:
+                    return 
+                        SinglyLinkedList<Node<T, U>>.CreateSingle(
+                            new Node3<T, U>(first, second, rest.m_head, monoid));
+                case 2:
+                    return
+                        SinglyLinkedList<Node<T, U>>.PushFront(
+                            new Node2<T, U>(first, second, monoid),
+                            Nodes(monoid, rest));
+                default:
+                    return
+                        SinglyLinkedList<Node<T, U>>.PushFront(
+                            new Node3<T, U>(first, second, rest.m_head, monoid),
+                            Nodes(monoid, rest.m_tail));
+            }
         }
 
         public override U MonoidValue()

@@ -35,7 +35,7 @@ namespace PersistentDataStructures
                 {
                     return new RandomAccessList<T>(
                         list.m_size + 1,
-                        SinglyLinkedList<CompleteBinaryTree<T>>.Prepend(
+                        SinglyLinkedList<CompleteBinaryTree<T>>.PushFront(
                             CompleteBinaryTree<T>.Concatenate(
                                 value,
                                 t1,
@@ -45,7 +45,7 @@ namespace PersistentDataStructures
             }
             return new RandomAccessList<T>(
                 list.m_size + 1,
-                SinglyLinkedList<CompleteBinaryTree<T>>.Prepend(
+                SinglyLinkedList<CompleteBinaryTree<T>>.PushFront(
                     CompleteBinaryTree<T>.CreateSingleElementTree(value),
                     list.m_trees));
         }
@@ -61,9 +61,9 @@ namespace PersistentDataStructures
             if (t1 != null) {
                 return new RandomAccessList<T>(
                     list.m_size - 1,
-                    SinglyLinkedList<CompleteBinaryTree<T>>.Prepend(
+                    SinglyLinkedList<CompleteBinaryTree<T>>.PushFront(
                         t1,
-                        SinglyLinkedList<CompleteBinaryTree<T>>.Prepend(
+                        SinglyLinkedList<CompleteBinaryTree<T>>.PushFront(
                             t2,
                             list.m_trees.m_tail)));
             } else {
@@ -107,13 +107,13 @@ namespace PersistentDataStructures
             }
             if (0 <= i && i < trees.m_head.Size)
             {
-                return SinglyLinkedList<CompleteBinaryTree<T>>.Prepend(
+                return SinglyLinkedList<CompleteBinaryTree<T>>.PushFront(
                     CompleteBinaryTree<T>.SetIndex(trees.m_head, i, value),
                     trees.m_tail);
             }
             else
             {
-                return SinglyLinkedList<CompleteBinaryTree<T>>.Prepend(
+                return SinglyLinkedList<CompleteBinaryTree<T>>.PushFront(
                     trees.m_head,
                     SetValue(trees.m_tail, i - trees.m_head.Size, value));
             }
