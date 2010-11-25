@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 namespace PersistentDataStructures
 {
-    abstract class Node<T, U> : IEnumerable<T>
+    internal abstract class Node<T, U> : IEnumerable<T>
     {
         public readonly U m_monoid_value;
 
@@ -10,6 +10,8 @@ namespace PersistentDataStructures
         {
             m_monoid_value = monoid_value;
         }
+
+        public abstract SinglyLinkedList<T> ToList();
 
         protected abstract IEnumerator<T> GetEnumeratorImp();
 
@@ -44,6 +46,13 @@ namespace PersistentDataStructures
             yield return m_a;
             yield return m_b;
         }
+
+        public override SinglyLinkedList<T> ToList()
+        {
+            return
+                SinglyLinkedList<T>.PushFront(m_a,
+                    SinglyLinkedList<T>.CreateSingle(m_b));
+        }
     }
 
     sealed class Node3<T, U> : Node<T, U>
@@ -70,6 +79,14 @@ namespace PersistentDataStructures
             yield return m_a;
             yield return m_b;
             yield return m_c;
+        }
+
+        public override SinglyLinkedList<T> ToList()
+        {
+            return
+                SinglyLinkedList<T>.PushFront(m_a,
+                    SinglyLinkedList<T>.PushFront(m_b,
+                        SinglyLinkedList<T>.CreateSingle(m_c)));
         }
     }
 }

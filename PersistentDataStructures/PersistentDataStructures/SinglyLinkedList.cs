@@ -29,9 +29,14 @@ namespace PersistentDataStructures
             return new SinglyLinkedList<T>(head, tail);
         }
 
+        public static bool IsEmpty(SinglyLinkedList<T> list)
+        {
+            return (list == null);
+        }
+
         public static int Length(SinglyLinkedList<T> list)
         {
-            return (list == null) ? 0 : (list.m_length);
+            return IsEmpty(list) ? 0 : (list.m_length);
         }
 
         // O(Length(head))
@@ -44,6 +49,22 @@ namespace PersistentDataStructures
             else
             {
                 return PushFront(head.m_head, Concatenate(head.m_tail, tail));
+            }
+        }
+
+        public static SinglyLinkedList<T> PopFront(SinglyLinkedList<T> list)
+        {
+            return list.m_tail;
+        }
+        public static SinglyLinkedList<T> PopBack(SinglyLinkedList<T> list)
+        {
+            if (list.m_tail == null)
+            {
+                return null;
+            }
+            else
+            {
+                return PushFront(list.m_head, PopBack(list.m_tail));
             }
         }
     }

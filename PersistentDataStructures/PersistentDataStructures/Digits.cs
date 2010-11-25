@@ -1,12 +1,43 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System;
 namespace PersistentDataStructures
 {
     // Hmm..  Could digits and nodes be the same thing?
-    abstract class Digits<T> : IEnumerable<T>
+    internal abstract class Digits<T> : IEnumerable<T>
     {
-        public abstract U ApplyMonoid<U>(Monoid<T, U> monoid);
+        public static Digits<T> FromList(SinglyLinkedList<T> list)
+        {
+            switch (SinglyLinkedList<T>.Length(list))
+            {
+                case 1:
+                    return new Digits1<T>(
+                        list.m_head
+                    );
+                case 2:
+                    return new Digits2<T>(
+                        list.m_head,
+                        list.m_tail.m_head
+                    );
+                case 3:
+                    return new Digits3<T>(
+                        list.m_head,
+                        list.m_tail.m_head,
+                        list.m_tail.m_tail.m_head
+                    );
+                case 4:
+                    return new Digits4<T>(
+                        list.m_head,
+                        list.m_tail.m_head,
+                        list.m_tail.m_tail.m_head,
+                        list.m_tail.m_tail.m_tail.m_head
+                    );
+                default:
+                    throw new ArgumentException("Expecting a list from 1-4 elements only.");
+            }
+        }
 
+        public abstract U ApplyMonoid<U>(Monoid<T, U> monoid);
         public abstract int Count();
         public abstract Digits<T> PushFront(T value);
         public abstract Digits<T> PushBack(T value);
@@ -14,7 +45,7 @@ namespace PersistentDataStructures
         public abstract Digits<T> PopBack();
         public abstract T Front();
         public abstract T Back();
-        public abstract SinglyLinkedList<T> AsList();
+        public abstract SinglyLinkedList<T> ToList();
 
         protected abstract IEnumerator<T> GetEnumeratorImp();
 
@@ -43,7 +74,7 @@ namespace PersistentDataStructures
             m_a = a;
         }
 
-        public override SinglyLinkedList<T> AsList()
+        public override SinglyLinkedList<T> ToList()
         {
             return
                 SinglyLinkedList<T>.CreateSingle(m_a);
@@ -115,7 +146,7 @@ namespace PersistentDataStructures
                     monoid.Measure(m_b));
         }
 
-        public override SinglyLinkedList<T> AsList()
+        public override SinglyLinkedList<T> ToList()
         {
             return
                 SinglyLinkedList<T>.PushFront(m_a,
@@ -186,7 +217,7 @@ namespace PersistentDataStructures
             yield return m_c;
         }
 
-        public override SinglyLinkedList<T> AsList()
+        public override SinglyLinkedList<T> ToList()
         {
             return
                 SinglyLinkedList<T>.PushFront(m_a,
@@ -269,7 +300,7 @@ namespace PersistentDataStructures
             m_d = d;
         }
 
-        public override SinglyLinkedList<T> AsList()
+        public override SinglyLinkedList<T> ToList()
         {
             return
                 SinglyLinkedList<T>.PushFront(m_a,

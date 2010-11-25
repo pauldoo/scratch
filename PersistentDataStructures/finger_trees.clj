@@ -228,7 +228,7 @@
 (defmethod split-tree finger-tree-deep [{monoid :monoid l :l m :m r :r} p i]
     (let [cfn (:combine-fn monoid)
             ems (fn [v] (extract-measure v monoid))
-            vl (cfn i (apply + (map ems l)))
+            vl (cfn i (apply + (map ems l))) ; TODO: Shouldn't be '+'
             vm (cfn vl (ems (force m)))]
         (if (p vl)
             (let [[a b c] (split-digit p i l ems cfn)]
