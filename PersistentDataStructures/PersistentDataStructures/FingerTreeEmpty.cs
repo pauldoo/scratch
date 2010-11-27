@@ -75,5 +75,12 @@ namespace PersistentDataStructures
         {
             throw new InvalidOperationException("Colleciton is empty.");
         }
+
+        public override Pair<Delay<FingerTree<T, U>>, Delay<FingerTree<T, U>>> Split(Func<U, bool> predicate)
+        {
+            return new Pair<Delay<FingerTree<T, U>>, Delay<FingerTree<T, U>>>(
+                new Delay<FingerTree<T, U>>(this),
+                new Delay<FingerTree<T, U>>(this));
+        }
     }
 }

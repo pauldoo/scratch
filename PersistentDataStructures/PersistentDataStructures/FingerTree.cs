@@ -28,6 +28,34 @@ namespace PersistentDataStructures
         public abstract FingerTree<T, U> PopFront();
         public abstract FingerTree<T, U> PopBack();
         public abstract Split<Delay<FingerTree<T, U>>, T> SplitTree(Func<U, bool> predicate, U offset);
+        
+        public virtual Pair<Delay<FingerTree<T, U>>, Delay<FingerTree<T, U>>> Split(Func<U, bool> predicate)
+        {
+            var split = SplitTree(predicate, m_monoid.Identity());
+            if (predicate(MonoidValue()))
+            {
+                return new Pair<Delay<FingerTree<T, U>>, Delay<FingerTree<T, U>>>(
+                    split.m_left,
+                    new Delay<FingerTree<T, U>>(() =>
+                        split.m_right.Force().PushFront(split.m_value)));
+            }
+            else
+            {
+                return new Pair<Delay<FingerTree<T, U>>, Delay<FingerTree<T, U>>>(
+                    new Delay<FingerTree<T, U>>(this),
+                    new Delay<FingerTree<T, U>>(new FingerTreeEmpty<T, U>(m_monoid)));
+            }
+        }
+
+        public FingerTree<T, U> TakeUntil(Func<U, bool> predicate)
+        {
+            return Split(predicate).m_first.Force();
+        }
+
+        public FingerTree<T, U> DropUntil(Func<U, bool> predicate)
+        {
+            return Split(predicate).m_second.Force();
+        }
 
         public FingerTree<T, U> PushBackAll(SinglyLinkedList<T> values)
         {
