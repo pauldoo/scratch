@@ -2,7 +2,7 @@
 using System;
 namespace PersistentDataStructures.EphemeralAdapters
 {
-    sealed public class List<T> : IList<T>
+    sealed public class List<T> : IList<T>, ICloneable
     {
         private FingerTree<T, int> m_finger_tree;
 
@@ -91,6 +91,25 @@ namespace PersistentDataStructures.EphemeralAdapters
             {
                 yield return val;
             }
+        }
+
+        /// <summary>
+        ///  For Cloning only.
+        /// </summary>
+        /// <param name="finger_tree"></param>
+        private List(FingerTree<T, int> finger_tree)
+        {
+            m_finger_tree = finger_tree;
+        }
+
+        public object Clone()
+        {
+            return new List<T>(m_finger_tree);
+        }
+
+        public List<T> Concatenate(List<T> other)
+        {
+            return new List<T>(m_finger_tree.Append(other.m_finger_tree));
         }
     }
 
