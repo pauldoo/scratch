@@ -1,10 +1,18 @@
 ; :mode=clojure:
 
+; Asteroids written in Clojure
+
 (import
     '(java.awt Color Dimension Polygon RenderingHints)
     '(javax.swing JComponent JFrame JLabel Timer)
-    '(java.awt.event ActionListener KeyAdapter)
+    '(java.awt.event ActionListener KeyAdapter KeyEvent)
 )
+
+(def acceleration 100.0)
+(def efficiency 0.7)
+(def angular-acceleration 10.0)
+(def width 640)
+(def height 480)
 
 (defn do-mod [coll func v]
     (dosync (alter coll (fn [x] (apply func [x v])))))
@@ -21,6 +29,7 @@
         (.setColor g (Color/WHITE))
         (let [old-transform (.getTransform g)]
             (.translate g (:x player) (:y player))
+            (.rotate g (:a player))
             (.fill g (player-shape))
             (.setTransform g old-transform))))
 
@@ -41,7 +50,7 @@
     (doto
         (proxy [JComponent] []
             (paint [g] (dosync (game-render (deref game-state) g))))
-        (.setPreferredSize (new Dimension 640 480))
+        (.setPreferredSize (new Dimension width height))
         (.setDoubleBuffered true)
         (.setFocusable true)))
 
@@ -49,18 +58,51 @@
 
 (defn default-state [] {
     :time (now)
-    :player { :x 100.0 :y 100.0 :xv 10.0 :yv 5.0 } } )
+    :player { :x 100.0 :y 100.0 :xv 0.0 :yv 0.0 :a 0.0 :av 0.0 } } )
 
-(defn player-step [player time-step]
-    (assoc player
-        :x (+ (:x player) (* (:xv player) time-step))
-        :y (+ (:y player) (* (:yv player) time-step))))
+
+
+(defn player-step [player time-step keys-pressed]
+    (let [
+        player
+            (if
+                (contains? keys-pressed KeyEvent/VK_UP)
+                (assoc player
+                    :xv (+ (:xv player) (* time-step acceleration (Math/cos (:a player))))
+                    :yv (+ (:yv player) (* time-step acceleration (Math/sin (:a player)))))
+                player)
+        player
+            (if
+                (contains? keys-pressed KeyEvent/VK_LEFT)
+                (assoc player
+                    :av (- (:av player) (* time-step angular-acceleration)))
+                player)
+        player
+            (if
+                (contains? keys-pressed KeyEvent/VK_RIGHT)
+                (assoc player
+                    :av (+ (:av player) (* time-step angular-acceleration)))
+                player)
+        eff
+            (Math/pow efficiency time-step)
+
+        player
+            (assoc player
+                :x (mod (+ (:x player) (* (:xv player) time-step)) width)
+                :y (mod (+ (:y player) (* (:yv player) time-step)) height)
+                :a (mod (+ (:a player) (* (:av player) time-step)) (* Math/PI 2.0))
+                :xv (* (:xv player) eff)
+                :yv (* (:yv player) eff)
+                :av (* (:av player) eff))]
+
+        player))
+
 
 (defn game-step [state keys-pressed]
     (let [new-time (now) time-step (- new-time (:time state))]
         (assoc state
             :time new-time
-            :player (player-step (:player state) time-step))))
+            :player (player-step (:player state) time-step keys-pressed))))
 
 (defn create-game []
     (let [
