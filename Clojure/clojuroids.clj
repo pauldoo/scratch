@@ -13,6 +13,8 @@
 (def angular-acceleration 10.0)
 (def width 640)
 (def height 480)
+(def fire-delay 0.3)
+(def bullet-velocity 100)
 
 (defn do-mod [coll func v]
     (dosync (alter coll (fn [x] (apply func [x v])))))
@@ -23,6 +25,13 @@
         (.addPoint 10 0)
         (.addPoint -3 5)
         (.addPoint -3 -5)))
+
+(defn bullet-shape []
+    (doto
+        (new Polygon)
+        (.addPoint 2 0)
+        (.addPoint -2 1)
+        (.addPoint -2 -1)))
 
 (defn draw-player [player g]
     (do
@@ -59,6 +68,15 @@
             (.fill g (asteroid-shape (:radii asteroid)))
             (.setTransform g old-transform))))
 
+(defn draw-bullet [bullet g]
+    (do
+        (.setColor g (Color/YELLOW))
+        (let [old-transform (.getTransform g)]
+            (.translate g (:x bullet) (:y bullet))
+            (.rotate g (:a bullet))
+            (.fill g (bullet-shape))
+            (.setTransform g old-transform))))
+
 (defn game-render [state g]
     (do
         (.setRenderingHint g
@@ -71,7 +89,8 @@
         (let [rect (.getClipBounds g)]
             (.fillRect g (.x rect) (.y rect) (.width rect) (.height rect)))
         (draw-player (:player state) g))
-        (doseq [a (:asteroids state)] (draw-asteroid a g)))
+        (doseq [a (:asteroids state)] (draw-asteroid a g))
+        (doseq [b (:bullets state)] (draw-bullet b g)))
 
 (defn create-component [game-state]
     (doto
@@ -110,6 +129,7 @@
 (defn default-state [] {
     :time (now)
     :player { :x 100.0 :y 100.0 :xv 0.0 :yv 0.0 :a 0.0 :av 0.0 }
+    :next-fire-time (now)
     :asteroids (take 10 (repeatedly generate-asteroid))
 } )
 
@@ -136,18 +156,45 @@
                 player)
         eff
             (Math/pow efficiency time-step)
+
+        player
+            (step-thing player time-step eff)
         ]
-    (step-thing player time-step eff)))
+    player))
 
 (defn asteroid-step [asteroid time-step]
     (step-thing asteroid time-step 1.0))
 
+(defn new-bullet [player]
+    (assoc player
+        :xv (+ (:xv player) (* (Math/cos (:a player)) bullet-velocity))
+        :yv (+ (:yv player) (* (Math/sin (:a player)) bullet-velocity))
+))
+
+(defn bullet-step [bullet time-step]
+    (step-thing bullet time-step 1.0))
+
 (defn game-step [state keys-pressed]
-    (let [new-time (now) time-step (- new-time (:time state))]
+    (let [
+        new-time (now)
+        time-step (- new-time (:time state))
+        spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-time (:next-fire-time state)))
+        ]
         (assoc state
             :time new-time
             :player (player-step (:player state) time-step keys-pressed)
             :asteroids (map (fn [a] (asteroid-step a time-step)) (:asteroids state))
+            :bullets
+                (map (fn [b] (bullet-step b time-step))
+                    (concat
+                        (if spawn-new-bullet
+                            [(new-bullet (:player state))]
+                            [])
+                    (:bullets state)))
+            :next-fire-time
+                (if spawn-new-bullet
+                    (+ new-time fire-delay)
+                    (:next-fire-time state))
 )))
 
 (defn create-game []
