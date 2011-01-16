@@ -128,6 +128,7 @@
 
 (defn default-state [] {
     :time (now)
+    :time-step 0.0
     :player { :x 100.0 :y 100.0 :xv 0.0 :yv 0.0 :a 0.0 :av 0.0 }
     :next-fire-time (now)
     :asteroids (take 10 (repeatedly generate-asteroid))
@@ -177,11 +178,12 @@
 (defn game-step [state keys-pressed]
     (let [
         new-time (now)
-        time-step (- new-time (:time state))
+        time-step (+ (* 0.95 (:time-step state)) (* 0.05 (- new-time (:time state))))
         spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-time (:next-fire-time state)))
         ]
         (assoc state
             :time new-time
+            :time-step time-step
             :player (player-step (:player state) time-step keys-pressed)
             :asteroids (map (fn [a] (asteroid-step a time-step)) (:asteroids state))
             :bullets
