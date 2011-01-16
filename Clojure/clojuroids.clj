@@ -65,7 +65,7 @@
         (let [old-transform (.getTransform g)]
             (.translate g (:x asteroid) (:y asteroid))
             (.rotate g (:a asteroid))
-            (.fill g (asteroid-shape (:radii asteroid)))
+            (.fill g (:poly asteroid))
             (.setTransform g old-transform))))
 
 (defn draw-bullet [bullet g]
@@ -124,7 +124,7 @@
             (- (:x bullet) (:x asteroid))
             (- (:y bullet) (:y asteroid))
             (:a asteroid))
-        p (asteroid-shape (:radii asteroid))]
+        p (:poly asteroid)]
         (.contains p x y)))
 
 (defn filter-collisions [bullets asteroids]
@@ -141,15 +141,18 @@
             asteroids)])
 
 (defn generate-asteroid []
-    {
-        :x (rand width)
-        :y (rand height)
-        :xv (rand 10)
-        :yv (rand 10)
-        :a 0.0
-        :av (rand)
-        :radii (take 10 (repeatedly #(myrand 5 30)))
-    })
+    (let [a
+        {
+            :x (rand width)
+            :y (rand height)
+            :xv (rand 10)
+            :yv (rand 10)
+            :a 0.0
+            :av (rand)
+            :radii (take 10 (repeatedly #(myrand 5 30)))
+        }]
+    (assoc a
+        :poly (asteroid-shape (:radii a)))))
 
 (defn default-state [] {
     :time (now)
