@@ -114,6 +114,31 @@
         :yv (* (:yv thing) eff)
         :av (* (:av thing) eff)))
 
+(defn rotate [x y a] [
+    (+ (* (Math/cos a) x) (* (Math/sin a) y))
+    (+ (* (- (Math/sin a)) x) (* (Math/cos a) y))])
+
+(defn collided? [bullet asteroid]
+    (let [
+        [x y] (rotate
+            (- (:x bullet) (:x asteroid))
+            (- (:y bullet) (:y asteroid))
+            (:a asteroid))
+        p (asteroid-shape (:radii asteroid))]
+        (.contains p x y)))
+
+(defn filter-collisions [bullets asteroids]
+    [
+        (filter
+            (fn [b] (nil? (some
+                (fn [a] (collided? b a))
+                asteroids)))
+            bullets)
+        (filter
+            (fn [a] (nil? (some
+                (fn [b] (collided? b a))
+                bullets)))
+            asteroids)])
 
 (defn generate-asteroid []
     {
@@ -123,7 +148,7 @@
         :yv (rand 10)
         :a 0.0
         :av (rand)
-        :radii (take 10 (repeatedly #(myrand 5 10)))
+        :radii (take 10 (repeatedly #(myrand 5 30)))
     })
 
 (defn default-state [] {
@@ -180,24 +205,30 @@
         new-time (now)
         time-step (+ (* 0.95 (:time-step state)) (* 0.05 (- new-time (:time state))))
         spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-time (:next-fire-time state)))
-        ]
-        (assoc state
-            :time new-time
-            :time-step time-step
-            :player (player-step (:player state) time-step keys-pressed)
-            :asteroids (map (fn [a] (asteroid-step a time-step)) (:asteroids state))
-            :bullets
-                (map (fn [b] (bullet-step b time-step))
-                    (concat
-                        (if spawn-new-bullet
-                            [(new-bullet (:player state))]
-                            [])
-                    (:bullets state)))
-            :next-fire-time
-                (if spawn-new-bullet
-                    (+ new-time fire-delay)
-                    (:next-fire-time state))
-)))
+        state
+            (assoc state
+                :time new-time
+                :time-step time-step
+                :player (player-step (:player state) time-step keys-pressed)
+                :asteroids (map (fn [a] (asteroid-step a time-step)) (:asteroids state))
+                :bullets
+                    (map (fn [b] (bullet-step b time-step))
+                        (concat
+                            (if spawn-new-bullet
+                                [(new-bullet (:player state))]
+                                [])
+                        (:bullets state)))
+                :next-fire-time
+                    (if spawn-new-bullet
+                        (+ new-time fire-delay)
+                        (:next-fire-time state)))
+        [fb fa]
+            (filter-collisions (:bullets state) (:asteroids state))
+        state
+            (assoc state
+                :bullets fb
+                :asteroids fa)]
+    state))
 
 (defn create-game []
     (let [
