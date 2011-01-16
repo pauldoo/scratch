@@ -33,6 +33,32 @@
             (.fill g (player-shape))
             (.setTransform g old-transform))))
 
+(defn asteroid-shape [radii]
+    ((fn [p r a ai]
+        (if (empty? r)
+            p
+            (recur
+                (doto p
+                    (.addPoint
+                        (* (Math/cos a) (first r))
+                        (* (Math/sin a) (first r))))
+                (rest r)
+                (+ a ai)
+                ai)))
+        (new Polygon)
+        radii
+        0.0
+        (/ (* Math/PI 2.0) (count radii))))
+
+(defn draw-asteroid [asteroid g]
+    (do
+        (.setColor g (Color/GRAY))
+        (let [old-transform (.getTransform g)]
+            (.translate g (:x asteroid) (:y asteroid))
+            (.rotate g (:a asteroid))
+            (.fill g (asteroid-shape (:radii asteroid)))
+            (.setTransform g old-transform))))
+
 (defn game-render [state g]
     (do
         (.setRenderingHint g
@@ -44,7 +70,8 @@
         (.setColor g (Color/BLACK))
         (let [rect (.getClipBounds g)]
             (.fillRect g (.x rect) (.y rect) (.width rect) (.height rect)))
-        (draw-player (:player state) g)))
+        (draw-player (:player state) g))
+        (doseq [a (:asteroids state)] (draw-asteroid a g)))
 
 (defn create-component [game-state]
     (doto
@@ -56,11 +83,35 @@
 
 (defn now [] (* 0.001 (System/currentTimeMillis)))
 
+(defn myrand [min max]
+    (+ min (rand (- max min))))
+
+(defn step-thing [thing time-step eff]
+    (assoc thing
+        :x (mod (+ (:x thing) (* (:xv thing) time-step)) width)
+        :y (mod (+ (:y thing) (* (:yv thing) time-step)) height)
+        :a (mod (+ (:a thing) (* (:av thing) time-step)) (* Math/PI 2.0))
+        :xv (* (:xv thing) eff)
+        :yv (* (:yv thing) eff)
+        :av (* (:av thing) eff)))
+
+
+(defn generate-asteroid []
+    {
+        :x (rand width)
+        :y (rand height)
+        :xv (rand 10)
+        :yv (rand 10)
+        :a 0.0
+        :av (rand)
+        :radii (take 10 (repeatedly #(myrand 5 10)))
+    })
+
 (defn default-state [] {
     :time (now)
-    :player { :x 100.0 :y 100.0 :xv 0.0 :yv 0.0 :a 0.0 :av 0.0 } } )
-
-
+    :player { :x 100.0 :y 100.0 :xv 0.0 :yv 0.0 :a 0.0 :av 0.0 }
+    :asteroids (take 10 (repeatedly generate-asteroid))
+} )
 
 (defn player-step [player time-step keys-pressed]
     (let [
@@ -85,24 +136,19 @@
                 player)
         eff
             (Math/pow efficiency time-step)
+        ]
+    (step-thing player time-step eff)))
 
-        player
-            (assoc player
-                :x (mod (+ (:x player) (* (:xv player) time-step)) width)
-                :y (mod (+ (:y player) (* (:yv player) time-step)) height)
-                :a (mod (+ (:a player) (* (:av player) time-step)) (* Math/PI 2.0))
-                :xv (* (:xv player) eff)
-                :yv (* (:yv player) eff)
-                :av (* (:av player) eff))]
-
-        player))
-
+(defn asteroid-step [asteroid time-step]
+    (step-thing asteroid time-step 1.0))
 
 (defn game-step [state keys-pressed]
     (let [new-time (now) time-step (- new-time (:time state))]
         (assoc state
             :time new-time
-            :player (player-step (:player state) time-step keys-pressed))))
+            :player (player-step (:player state) time-step keys-pressed)
+            :asteroids (map (fn [a] (asteroid-step a time-step)) (:asteroids state))
+)))
 
 (defn create-game []
     (let [
