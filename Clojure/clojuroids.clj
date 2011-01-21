@@ -9,12 +9,15 @@
 )
 
 (def acceleration 100.0)
-(def efficiency 0.7)
 (def angular-acceleration 10.0)
+
+(def player-efficiency 0.7)
+(def bullet-efficiency 0.5)
+(def bullet-acceleration 200)
+
 (def width 640)
 (def height 480)
 (def fire-delay 0.3)
-(def bullet-velocity 100)
 
 (defn do-mod [coll func v]
     (dosync (alter coll (fn [x] (apply func [x v])))))
@@ -105,14 +108,16 @@
 (defn myrand [min max]
     (+ min (rand (- max min))))
 
-(defn step-thing [thing time-step eff]
-    (assoc thing
-        :x (mod (+ (:x thing) (* (:xv thing) time-step)) width)
-        :y (mod (+ (:y thing) (* (:yv thing) time-step)) height)
-        :a (mod (+ (:a thing) (* (:av thing) time-step)) (* Math/PI 2.0))
-        :xv (* (:xv thing) eff)
-        :yv (* (:yv thing) eff)
-        :av (* (:av thing) eff)))
+(defn step-thing [thing time-step]
+    (let [eff (Math/pow (:eff thing) time-step)]
+        (assoc thing
+            :xv (+ (* (:xv thing) eff) (* time-step (:acc thing) (Math/cos (:a thing))))
+            :yv (+ (* (:yv thing) eff) (* time-step (:acc thing) (Math/sin (:a thing))))
+            :av (* (:av thing) eff)
+
+            :x (mod (+ (:x thing) (* (:xv thing) time-step)) width)
+            :y (mod (+ (:y thing) (* (:yv thing) time-step)) height)
+            :a (mod (+ (:a thing) (* (:av thing) time-step)) (* Math/PI 2.0)))))
 
 (defn rotate [x y a] [
     (+ (* (Math/cos a) x) (* (Math/sin a) y))
@@ -150,6 +155,8 @@
             :a 0.0
             :av (rand)
             :radii (take 10 (repeatedly #(myrand 5 30)))
+            :eff 1.0
+            :acc 0.0
         }]
     (assoc a
         :poly (asteroid-shape (:radii a)))))
@@ -157,20 +164,25 @@
 (defn default-state [] {
     :time (now)
     :time-step 0.0
-    :player { :x 100.0 :y 100.0 :xv 0.0 :yv 0.0 :a 0.0 :av 0.0 }
+    :player {
+        :x 100.0
+        :y 100.0
+        :xv 0.0
+        :yv 0.0
+        :a 0.0
+        :av 0.0
+        :acc 0.0
+        :eff player-efficiency }
     :next-fire-time (now)
     :asteroids (take 10 (repeatedly generate-asteroid))
+    :sparkles []
 } )
 
 (defn player-step [player time-step keys-pressed]
     (let [
         player
-            (if
-                (contains? keys-pressed KeyEvent/VK_UP)
-                (assoc player
-                    :xv (+ (:xv player) (* time-step acceleration (Math/cos (:a player))))
-                    :yv (+ (:yv player) (* time-step acceleration (Math/sin (:a player)))))
-                player)
+            (assoc player
+                :acc (if (contains? keys-pressed KeyEvent/VK_UP) acceleration 0.0))
         player
             (if
                 (contains? keys-pressed KeyEvent/VK_LEFT)
@@ -183,25 +195,17 @@
                 (assoc player
                     :av (+ (:av player) (* time-step angular-acceleration)))
                 player)
-        eff
-            (Math/pow efficiency time-step)
 
         player
-            (step-thing player time-step eff)
+            (step-thing player time-step)
         ]
     player))
 
-(defn asteroid-step [asteroid time-step]
-    (step-thing asteroid time-step 1.0))
-
 (defn new-bullet [player]
     (assoc player
-        :xv (+ (:xv player) (* (Math/cos (:a player)) bullet-velocity))
-        :yv (+ (:yv player) (* (Math/sin (:a player)) bullet-velocity))
+        :eff bullet-efficiency
+        :acc bullet-acceleration
 ))
-
-(defn bullet-step [bullet time-step]
-    (step-thing bullet time-step 1.0))
 
 (defn game-step [state keys-pressed]
     (let [
@@ -213,14 +217,14 @@
                 :time new-time
                 :time-step time-step
                 :player (player-step (:player state) time-step keys-pressed)
-                :asteroids (map (fn [a] (asteroid-step a time-step)) (:asteroids state))
+                :asteroids (doall (map (fn [a] (step-thing a time-step)) (:asteroids state)))
                 :bullets
-                    (map (fn [b] (bullet-step b time-step))
+                    (doall (map (fn [b] (step-thing b time-step))
                         (concat
                             (if spawn-new-bullet
                                 [(new-bullet (:player state))]
                                 [])
-                        (:bullets state)))
+                        (:bullets state))))
                 :next-fire-time
                     (if spawn-new-bullet
                         (+ new-time fire-delay)
@@ -256,11 +260,14 @@
                         (actionPerformed [this event] (.repaint result))))
                 (.start))
 
-            (future (loop []
-                (do
-                    (Thread/sleep 1)
-                    (dosync (alter game-state (fn [state] (game-step state (deref keys-pressed)))))
-                    (recur))))
+            (future
+                (try
+                    (loop []
+                        (do
+                            (Thread/sleep 1)
+                            (dosync (alter game-state (fn [state] (game-step state (deref keys-pressed)))))
+                            (recur)))
+                    (catch Exception e (.printStackTrace e))))
 
             result)))
 
