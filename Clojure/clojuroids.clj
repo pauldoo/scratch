@@ -15,7 +15,8 @@
 (def bullet-efficiency 0.5)
 (def bullet-acceleration 200)
 (def sparkle-efficiency 0.3)
-(def sparkle-velocity 0.25)
+(def sparkle-spread-velocity 0.25)
+(def sparkle-kick-velocity 1.0)
 (def sparkle-amount 0.3)
 
 (def width 640)
@@ -227,12 +228,19 @@
         (fn [o]
             (let [
                 a (rand (* 2.0 Math/PI))
-                v (rand sparkle-velocity)]
+                sv (* (rand sparkle-spread-velocity) (:acc o))
+                v (* (rand sparkle-kick-velocity) (:acc o))]
                 (assoc o
                     :acc 0.0
                     :eff sparkle-efficiency
-                    :xv (+ (:xv o) (* v (:acc o) (Math/cos a)))
-                    :yv (+ (:yv o) (* v (:acc o) (Math/sin a))))))
+                    :xv (+
+                        (:xv o)
+                        (* sv (Math/cos a))
+                        (* v (- (Math/cos (:a o)))))
+                    :yv (+
+                        (:yv o)
+                        (* sv (Math/sin a))
+                        (* v (- (Math/sin (:a o))))))))
         (filter
             (fn [o] (> (* (:acc o) time-step sparkle-amount) (rand)))
             objects)))
