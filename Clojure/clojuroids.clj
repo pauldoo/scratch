@@ -14,6 +14,9 @@
 (def player-efficiency 0.7)
 (def bullet-efficiency 0.5)
 (def bullet-acceleration 200)
+(def sparkle-efficiency 0.3)
+(def sparkle-velocity 0.25)
+(def sparkle-amount 0.3)
 
 (def width 640)
 (def height 480)
@@ -32,9 +35,9 @@
 (defn bullet-shape []
     (doto
         (new Polygon)
-        (.addPoint 2 0)
-        (.addPoint -2 1)
-        (.addPoint -2 -1)))
+        (.addPoint 3 0)
+        (.addPoint -3 1.5)
+        (.addPoint -3 -1.5)))
 
 (defn draw-player [player g]
     (do
@@ -80,6 +83,14 @@
             (.fill g (bullet-shape))
             (.setTransform g old-transform))))
 
+(defn draw-sparkle [sparkle g]
+    (do
+        (.setColor g (:sparkle-color sparkle))
+        (let [old-transform (.getTransform g)]
+            (.translate g (:x sparkle) (:y sparkle))
+            (.fillRect g 0 0 1 1)
+            (.setTransform g old-transform))))
+
 (defn game-render [state g]
     (do
         (.setRenderingHint g
@@ -91,9 +102,11 @@
         (.setColor g (Color/BLACK))
         (let [rect (.getClipBounds g)]
             (.fillRect g (.x rect) (.y rect) (.width rect) (.height rect)))
-        (draw-player (:player state) g))
+        (doseq [s (:sparkles state)] (draw-sparkle s g))
         (doseq [a (:asteroids state)] (draw-asteroid a g))
-        (doseq [b (:bullets state)] (draw-bullet b g)))
+        (doseq [b (:bullets state)] (draw-bullet b g))
+        (draw-player (:player state) g)
+))
 
 (defn create-component [game-state]
     (doto
@@ -172,7 +185,8 @@
         :a 0.0
         :av 0.0
         :acc 0.0
-        :eff player-efficiency }
+        :eff player-efficiency
+        :sparkle-color Color/RED}
     :next-fire-time (now)
     :asteroids (take 10 (repeatedly generate-asteroid))
     :sparkles []
@@ -205,7 +219,28 @@
     (assoc player
         :eff bullet-efficiency
         :acc bullet-acceleration
+        :sparkle-color Color/PINK
 ))
+
+(defn make-new-sparkles [objects time-step]
+    (map
+        (fn [o]
+            (let [
+                a (rand (* 2.0 Math/PI))
+                v (rand sparkle-velocity)]
+                (assoc o
+                    :acc 0.0
+                    :eff sparkle-efficiency
+                    :xv (+ (:xv o) (* v (:acc o) (Math/cos a)))
+                    :yv (+ (:yv o) (* v (:acc o) (Math/sin a))))))
+        (filter
+            (fn [o] (> (* (:acc o) time-step sparkle-amount) (rand)))
+            objects)))
+
+(defn mag [x y] (Math/sqrt (+ (* x x) (* y y))))
+
+(defn sparkle-is-alive [sparkle]
+    (> (mag (:xv sparkle) (:yv sparkle)) 2.0))
 
 (defn game-step [state keys-pressed]
     (let [
@@ -228,7 +263,12 @@
                 :next-fire-time
                     (if spawn-new-bullet
                         (+ new-time fire-delay)
-                        (:next-fire-time state)))
+                        (:next-fire-time state))
+                :sparkles
+                    (doall (map (fn [s] (step-thing s time-step))
+                        (concat
+                            (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
+                            (filter sparkle-is-alive (:sparkles state))))))
         [fb fa]
             (filter-collisions (:bullets state) (:asteroids state))
         state
