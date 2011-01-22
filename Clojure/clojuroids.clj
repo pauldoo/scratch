@@ -18,6 +18,7 @@
 (def sparkle-spread-velocity 0.25)
 (def sparkle-kick-velocity 1.0)
 (def sparkle-amount 0.3)
+(def sparkle-limit 200)
 
 (def width 640)
 (def height 480)
@@ -273,10 +274,11 @@
                         (+ new-time fire-delay)
                         (:next-fire-time state))
                 :sparkles
-                    (doall (map (fn [s] (step-thing s time-step))
-                        (concat
-                            (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
-                            (filter sparkle-is-alive (:sparkles state))))))
+                    (doall (take sparkle-limit
+                        (map (fn [s] (step-thing s time-step))
+                            (concat
+                                (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
+                                (filter sparkle-is-alive (:sparkles state)))))))
         [fb fa]
             (filter-collisions (:bullets state) (:asteroids state))
         state
