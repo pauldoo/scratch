@@ -19,10 +19,18 @@
 (def sparkle-kick-velocity 1.0)
 (def sparkle-amount 0.3)
 (def sparkle-limit 200)
+(def smallest-asteroid 5.0)
+(def initial-asteroid-size 30.0)
 
 (def width 640)
 (def height 480)
 (def fire-delay 0.3)
+
+(declare generate-asteroid)
+
+(defn separate [f s]
+    (let [t (map vector (map f s) s)]
+    [ (map second (filter first t)), (map second (filter (complement first) t)) ]))
 
 (defn do-mod [coll func v]
     (dosync (alter coll (fn [x] (apply func [x v])))))
@@ -147,6 +155,17 @@
         p (:poly asteroid)]
         (.contains p x y)))
 
+(defn average [radii]
+    (/ (apply + radii) (count radii)))
+
+(defn split-asteroid [asteroid]
+    (let [current-radius (average (:radii asteroid))]
+        (filter (fn [ast] (>= (average (:radii ast)) smallest-asteroid))
+            [
+                (generate-asteroid (:x asteroid) (:y asteroid) (* current-radius 0.6))
+                (generate-asteroid (:x asteroid) (:y asteroid) (* current-radius 0.4))
+            ])))
+
 (defn filter-collisions [bullets asteroids]
     [
         (filter
@@ -154,22 +173,25 @@
                 (fn [a] (collided? b a))
                 asteroids)))
             bullets)
-        (filter
-            (fn [a] (nil? (some
-                (fn [b] (collided? b a))
-                bullets)))
-            asteroids)])
+        (let [
+            [survived hit]
+                (separate
+                    (fn [a] (nil? (some
+                        (fn [b] (collided? b a))
+                        bullets)))
+                    asteroids)]
+            (apply concat (cons survived (map split-asteroid hit))))])
 
-(defn generate-asteroid []
+(defn generate-asteroid [x y radius]
     (let [a
         {
-            :x (rand width)
-            :y (rand height)
+            :x x
+            :y y
             :xv (rand 10)
             :yv (rand 10)
             :a 0.0
             :av (rand)
-            :radii (take 10 (repeatedly #(myrand 5 30)))
+            :radii (take 10 (repeatedly #(myrand (* radius 0.5) (* radius 1.5))))
             :eff 1.0
             :acc 0.0
         }]
@@ -190,7 +212,8 @@
         :eff player-efficiency
         :sparkle-color Color/RED}
     :next-fire-time (now)
-    :asteroids (take 10 (repeatedly generate-asteroid))
+    :asteroids
+        (take 10 (repeatedly #(generate-asteroid (rand width) (rand height) initial-asteroid-size)))
     :sparkles []
 } )
 
