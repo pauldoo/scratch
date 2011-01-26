@@ -159,11 +159,16 @@
     (/ (apply + radii) (count radii)))
 
 (defn split-asteroid [asteroid]
-    (let [current-radius (average (:radii asteroid))]
+    (let [
+        current-radius (average (:radii asteroid))
+        a (rand (* Math/PI 2.0))
+        xo (* current-radius (Math/cos a) 0.5)
+        yo (* current-radius (Math/sin a) 0.5)
+        ]
         (filter (fn [ast] (>= (average (:radii ast)) smallest-asteroid))
             [
-                (generate-asteroid (:x asteroid) (:y asteroid) (* current-radius 0.6))
-                (generate-asteroid (:x asteroid) (:y asteroid) (* current-radius 0.4))
+                (generate-asteroid (+ (:x asteroid) xo) (+ (:y asteroid) yo) (* current-radius 0.6))
+                (generate-asteroid (- (:x asteroid) xo) (- (:y asteroid) yo) (* current-radius 0.4))
             ])))
 
 (defn filter-collisions [bullets asteroids]
@@ -187,8 +192,8 @@
         {
             :x x
             :y y
-            :xv (rand 10)
-            :yv (rand 10)
+            :xv (myrand -20 20)
+            :yv (myrand -20 20)
             :a 0.0
             :av (rand)
             :radii (take 10 (repeatedly #(myrand (* radius 0.5) (* radius 1.5))))
