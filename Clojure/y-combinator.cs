@@ -25,6 +25,18 @@ Func<object[], object> fib = Y((f) =>
             return ((int)f(new object[]{n - 1})) + ((int)f(new object[]{n - 2}));
     });
 
+Func<object[], object> gcd = Y((f) =>
+                               (object[] args) =>
+                                   {
+                                       int a = (int) args[0];
+                                       int b = (int) args[1];
+                                       if (b == 0)
+                                           return a;
+                                       else
+                                           return f(new object[] {b, a%b});
+                                   });
+
 System.Diagnostics.Trace.WriteLine(factorial(new object[]{5}));
 System.Diagnostics.Trace.WriteLine(fib(new object[] { 10 }));
+System.Diagnostics.Trace.WriteLine(gcd(new object[] { 258, 852 }));
 
