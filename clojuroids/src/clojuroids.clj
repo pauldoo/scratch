@@ -2,6 +2,9 @@
 
 ; Asteroids written in Clojure
 
+(ns clojuroids
+    (:gen-class))
+
 (import
     '(java.awt Color Dimension Polygon RenderingHints)
     '(javax.swing JComponent JFrame JLabel Timer)
@@ -349,10 +352,11 @@
 
             result)))
 
-(let [frame (new JFrame)]
-    (do
-        (.add (.getContentPane frame) (create-game))
-        (.pack frame)
-        (.setResizable frame false)
-        (.show frame)))
+(defn -main [& args]
+    (let [frame (new JFrame)]
+        (do
+            (.add (.getContentPane frame) (create-game))
+            (.pack frame)
+            (.setResizable frame false)
+            (.show frame))))
 
