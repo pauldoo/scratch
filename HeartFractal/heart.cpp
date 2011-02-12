@@ -9,8 +9,8 @@
 namespace {
     const std::vector<std::pair<double, double> > createApproximateCurve();
 
-    const int width = 512;
-    const int height = 512;
+    const int width = 2048;
+    const int height = 2048;
     const int maxColorValue = 255;
     const double minX = -1.5;
     const double minY = -1.7;
@@ -26,7 +26,7 @@ namespace {
     const int maxIterations = 1000;
     const double brightness = 0.03;
     const double heartFactorA = 0.07;
-    const int distanceEstimateSamples = 10000;
+    const int distanceEstimateSamples = 20000;
     const std::vector<std::pair<double, double> > approximateCurve = createApproximateCurve();
     
     const std::pair<double, double> heart5(const double t)
@@ -98,7 +98,6 @@ namespace {
                     count++;
                     z = juliaC * sin(z); 
                 }
-                
             
                 const double factor = 1.0 - exp(-count * brightness);    
             

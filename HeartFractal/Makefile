@@ -1,7 +1,7 @@
 all: image.png
 
 image.png: image.pnm
-	convert image.pnm image.png
+	convert image.pnm -resize 50% image.png
 
 image.pnm: heart
 	./heart > image.pnm
