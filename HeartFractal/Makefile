@@ -7,5 +7,5 @@ image.pnm: heart
 	./heart > image.pnm
 
 heart: heart.cpp
-	g++ -Wall -O3 -o heart heart.cpp
+	g++ -Wall -O3 -ffast-math -o heart heart.cpp
 

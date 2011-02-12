@@ -2,24 +2,67 @@
 #include <cmath>
 #include <complex>
 #include <cstdlib>
+#include <utility>
+#include <vector>
+#include <limits>
 
 namespace {
+    const std::vector<std::pair<double, double> > createApproximateCurve();
+
     const int width = 512;
     const int height = 512;
     const int maxColorValue = 255;
     const double minX = -1.5;
-    const double minY = -1.5;
+    const double minY = -1.7;
     const double maxX = 1.5;
-    const double maxY = 1.5;
+    const double maxY = 1.3;
     const double centerX = 0.0;
-    const double centerY = 0.25;
-    const std::complex<double> juliaC = std::complex<double>(1.0, 0.5);
-    const double angleMultiplier = 10.0;
-    const double anglePhase = 1.0 * M_PI;
-    const double distanceMultiplier = 30.0;
+    const double centerY = 0.3;
+    const std::complex<double> juliaC = std::complex<double>(1.0, 0.3);
+    const double angleMultiplier = 6.0;
+    const double anglePhase = 0.0 * M_PI;
+    const double distanceMultiplier = 15.0;
     const double escapeDistance = 50.0;
     const int maxIterations = 1000;
-    const double brightness = 0.05;
+    const double brightness = 0.03;
+    const double heartFactorA = 0.07;
+    const int distanceEstimateSamples = 10000;
+    const std::vector<std::pair<double, double> > approximateCurve = createApproximateCurve();
+    
+    const std::pair<double, double> heart5(const double t)
+    {
+        return std::make_pair(
+            heartFactorA * (12*sin(t) - 4*sin(3*t)),
+            heartFactorA * (13*cos(t) - 5*cos(2*t) - 2*cos(3*t) - cos(4*t)));
+    }
+    
+    const std::vector<std::pair<double, double> > createApproximateCurve()
+    {
+        std::vector<std::pair<double, double> > result;
+        for (int i = 0; i < distanceEstimateSamples; i++) {
+            const double a = ((i + 0.5) / distanceEstimateSamples) * M_PI * 2.0;
+            const std::pair<double, double> p = heart5(a);
+            result.push_back(p);
+        }
+        return result;
+    }
+    
+    const double distanceToCurve(const std::pair<double, double>& v)
+    {
+        double minDistanceSquared = std::numeric_limits<double>::max();
+        for (
+            std::vector<std::pair<double, double> >::const_iterator i = approximateCurve.begin();
+            i != approximateCurve.end();
+            ++i) {
+            
+            const double distanceSquared = 
+                (i->first - v.first) * (i->first - v.first) +
+                (i->second - v.second) * (i->second - v.second);
+
+            minDistanceSquared = std::min(distanceSquared, minDistanceSquared);                
+        }
+        return sqrt(minDistanceSquared);
+    }
     
     void writePixel(std::ostream& out, int r, int g, int b)
     {
@@ -43,7 +86,7 @@ namespace {
                 const double x = ((ix + 0.5) / width) * (maxX - minX) + minX;
                 const double y = (1.0 - ((iy + 0.5) / height)) * (maxY - minY) + minY;
                 const double angle = atan2(y - centerY, x - centerX);
-                const double distance = pow(x * x + y * y - 1.0, 3) - (x*x * pow(y,3));
+                const double distance = distanceToCurve(std::make_pair(x, y));
                 
                 const std::complex<double> z0 = std::complex<double>(
                     angle * angleMultiplier + anglePhase, 
@@ -66,7 +109,10 @@ namespace {
                     clamp<int>(0, static_cast<int>((1.0 - factor) * maxColorValue), maxColorValue));
             }
             out << std::endl;
+            std::clog << "\r" << (((iy + 1) * 100) / height);
+            std::clog.flush();
         }
+        std::clog << std::endl;
     }
 }
 
