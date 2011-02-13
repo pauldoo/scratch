@@ -19,7 +19,7 @@ namespace {
     const double centerX = 0.0;
     const double centerY = 0.3;
     const std::complex<double> juliaC = std::complex<double>(1.0, 0.3);
-    const double angleMultiplier = 6.0;
+    const double angleMultiplier = 8.0;
     const double anglePhase = 0.0 * M_PI;
     const double distanceMultiplier = 15.0;
     const double escapeDistance = 50.0;
