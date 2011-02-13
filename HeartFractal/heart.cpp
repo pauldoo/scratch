@@ -26,8 +26,7 @@ namespace {
     const int maxIterations = 1000;
     const double brightness = 0.03;
     const double heartFactorA = 0.07;
-    const int distanceEstimateSamples = 20000;
-    const std::vector<std::pair<double, double> > approximateCurve = createApproximateCurve();
+    const int distanceEstimateSamples = 2000;
     
     const std::pair<double, double> heart5(const double t)
     {
@@ -47,21 +46,52 @@ namespace {
         return result;
     }
     
-    const double distanceToCurve(const std::pair<double, double>& v)
+    const double distanceSquared(
+        const std::pair<double, double>& a,
+        const std::pair<double, double>& b)
     {
-        double minDistanceSquared = std::numeric_limits<double>::max();
-        for (
-            std::vector<std::pair<double, double> >::const_iterator i = approximateCurve.begin();
-            i != approximateCurve.end();
-            ++i) {
-            
-            const double distanceSquared = 
-                (i->first - v.first) * (i->first - v.first) +
-                (i->second - v.second) * (i->second - v.second);
-
-            minDistanceSquared = std::min(distanceSquared, minDistanceSquared);                
+        const double dx = a.first - b.first;
+        const double dy = a.second - b.second;
+        return dx*dx + dy*dy;
+    }
+    
+    const double distanceToLineSegment(
+        const std::pair<double, double>& begin,
+        const std::pair<double, double>& end,
+        const std::pair<double, double>& v)
+    {
+        const double d1s = distanceSquared(begin, v);
+        const double d2s = distanceSquared(end, v);                
+        const double d3s = distanceSquared(begin, end);
+        if (d2s >= (d1s + d3s)) {
+            return sqrt(d1s);
+        } else if (d1s >= (d2s + d3s)) {
+            return sqrt(d2s);
+        } else {
+            const double a = sqrt(d1s);
+            const double b = sqrt(d2s);
+            const double c = sqrt(d3s);
+            const double s = (a + b + c) / 2.0;
+            const double area = sqrt(std::max(0.0, s * (s - a) * (s - b) * (s - c)));
+            const double distance = 2 * area / c;
+            return distance;
         }
-        return sqrt(minDistanceSquared);
+    }
+    
+    const double distanceToCurve(
+        const std::vector<std::pair<double, double> >& approximateCurve, 
+        const std::pair<double, double>& v)
+    {
+        double minDistance = std::numeric_limits<double>::max();
+        for (int i = 0; i < static_cast<int>(approximateCurve.size()); i++) {
+            const double distance = distanceToLineSegment(
+                approximateCurve.at(i),
+                approximateCurve.at((i + 1) % approximateCurve.size()),
+                v);
+
+            minDistance = std::min(distance, minDistance);                
+        }
+        return minDistance;
     }
     
     void writePixel(std::ostream& out, int r, int g, int b)
@@ -81,12 +111,14 @@ namespace {
             << width << " " << height << std::endl
             << maxColorValue << std::endl;
             
+        const std::vector<std::pair<double, double> > approximateCurve = createApproximateCurve();
+            
         for (int iy = 0; iy < height; iy++) {
             for (int ix = 0; ix < width; ix++) {
                 const double x = ((ix + 0.5) / width) * (maxX - minX) + minX;
                 const double y = (1.0 - ((iy + 0.5) / height)) * (maxY - minY) + minY;
                 const double angle = atan2(y - centerY, x - centerX);
-                const double distance = distanceToCurve(std::make_pair(x, y));
+                const double distance = distanceToCurve(approximateCurve, std::make_pair(x, y));
                 
                 const std::complex<double> z0 = std::complex<double>(
                     angle * angleMultiplier + anglePhase, 
