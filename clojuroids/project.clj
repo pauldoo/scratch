@@ -6,5 +6,5 @@
         [org.clojure/clojure-contrib "1.2.0"]]
     :dev-dependencies [
         [marginalia "0.5.0-alpha"]]
-    :main clojuroids)
+    :main clojuroids.core)
 
