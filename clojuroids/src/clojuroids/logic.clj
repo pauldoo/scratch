@@ -110,8 +110,7 @@
     "Creates a fresh game state, which consists of the player, list of asteroids, timestamp, etc."
     []
     {
-        :time (now)
-        :time-step 0.0
+        :game-time 0.0
         :player {
             :x 100.0
             :y 100.0
@@ -122,7 +121,7 @@
             :acc 0.0
             :eff player-efficiency
             :sparkle-color Color/RED}
-        :next-fire-time (now)
+        :next-fire-time 0.0
         :asteroids
             (take 10 (repeatedly #(generate-asteroid (rand width) (rand height) initial-asteroid-size)))
         :sparkles []
@@ -199,44 +198,45 @@
     (> (mag (:xv sparkle) (:yv sparkle)) 2.0))
 
 (defn game-step
-    "Updates the game state by the elapsed wallclock time since the previous update.  Takes
+    "Updates the game state by the given timestep in seconds.  Takes
     into consideration any player actions that are represented by the set of currently held keyboard
     keys."
-    [state keys-pressed]
-    (let [
-        ;; Should probably take the new time as a function argument, to be more pure.
-        new-time (now)
-        time-step (+ (* 0.95 (:time-step state)) (* 0.05 (- new-time (:time state))))
-        spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-time (:next-fire-time state)))
+    [state time-step keys-pressed]
+    (if
+        (or (= time-step 0.0) (contains? keys-pressed KeyEvent/VK_P))
         state
-            (assoc state
-                :time new-time
-                :time-step time-step
-                :player (player-step (:player state) time-step keys-pressed)
-                :asteroids (doall (map (fn [a] (step-thing a time-step)) (:asteroids state)))
-                :bullets
-                    (doall (map (fn [b] (step-thing b time-step))
-                        (concat
-                            (if spawn-new-bullet
-                                [(new-bullet (:player state))]
-                                [])
-                        (:bullets state))))
-                :next-fire-time
-                    (if spawn-new-bullet
-                        (+ new-time fire-delay)
-                        (:next-fire-time state))
-                :sparkles
-                    (doall (take sparkle-limit
-                        (map (fn [s] (step-thing s time-step))
+        (let [
+            time-step (* time-step (if (contains? keys-pressed KeyEvent/VK_S) 0.2 1.0))
+            new-game-time (+ (:game-time state) time-step)
+            spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-game-time (:next-fire-time state)))
+            state
+                (assoc state
+                    :game-time new-game-time
+                    :player (player-step (:player state) time-step keys-pressed)
+                    :asteroids (doall (map (fn [a] (step-thing a time-step)) (:asteroids state)))
+                    :bullets
+                        (doall (map (fn [b] (step-thing b time-step))
                             (concat
-                                (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
-                                (filter sparkle-is-alive (:sparkles state)))))))
-        [fb fa]
-            (filter-collisions (:bullets state) (:asteroids state))
-        state
-            (assoc state
-                :bullets fb
-                :asteroids fa)]
-    state))
+                                (if spawn-new-bullet
+                                    [(new-bullet (:player state))]
+                                    [])
+                            (:bullets state))))
+                    :next-fire-time
+                        (if spawn-new-bullet
+                            (+ new-game-time fire-delay)
+                            (:next-fire-time state))
+                    :sparkles
+                        (doall (take sparkle-limit
+                            (map (fn [s] (step-thing s time-step))
+                                (concat
+                                    (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
+                                    (filter sparkle-is-alive (:sparkles state)))))))
+            [fb fa]
+                (filter-collisions (:bullets state) (:asteroids state))
+            state
+                (assoc state
+                    :bullets fb
+                    :asteroids fa)]
+        state)))
 
 

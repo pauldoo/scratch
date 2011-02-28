@@ -9,9 +9,10 @@
     [coll func v]
     (dosync (alter coll (fn [x] (apply func [x v])))))
 
-(defn now
-    "Wall clock time in seconds relative to an arbitary epoch."
-    [] (* 0.001 (System/currentTimeMillis)))
+(def ^{:doc "Wall clock time in seconds relative to an arbitary epoch."}
+    wall-time
+    (let [offset (System/currentTimeMillis)]
+        (fn [] (* 0.001 (- (System/currentTimeMillis) offset)))))
 
 (defn myrand
     "Returns a random number in the range [min max), note inclusive exclusive."

@@ -53,11 +53,16 @@
             (future
                 ;; Need to consider the lifetime of this thread
                 (try
-                    (loop []
+                    (loop [
+                        old-wall-time (wall-time)
+                        time-step 0.0]
                         (do
                             (Thread/sleep 1)
-                            (dosync (alter game-state (fn [state] (game-step state (deref keys-pressed)))))
-                            (recur)))
+                            (dosync (alter game-state (fn [state] (game-step state time-step (deref keys-pressed)))))
+                            (let [new-wall-time (wall-time)]
+                                (recur
+                                    new-wall-time
+                                    (+  (* 0.95 time-step) (* 0.05 (- new-wall-time old-wall-time)))))))
                     (catch Exception e (.printStackTrace e))))
 
             result)))
