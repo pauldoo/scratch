@@ -25,8 +25,8 @@
 
 (defn create-game
     "Creates a Swing JComponent that represents the game window.  A swing timer
-    is already attached to cause it to repaint at approximately 60Hz.  Also a background thread
-    is created to update the game state at no faster than 1000Hz."
+    is already attached to cause it to repaint at approximately 60Hz.  Also returns a background
+    thread which is created to update the game state at no faster than 1000Hz."
     []
     (let [
         keys-pressed (ref (hash-set))
@@ -50,6 +50,7 @@
                         (actionPerformed [this event] (.repaint result))))
                 (.start))
 
+            [result
             (future
                 ;; Need to consider the lifetime of this thread
                 (try
@@ -63,8 +64,8 @@
                                 (recur
                                     new-wall-time
                                     (+  (* 0.95 time-step) (* 0.05 (- new-wall-time old-wall-time)))))))
+                    (catch InterruptedException e (println "Stopping update thread."))
                     (catch Exception e (.printStackTrace e))))
-
-            result)))
+            ])))
 
 
