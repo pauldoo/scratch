@@ -11,7 +11,9 @@
 
 (ns clojuroids.core
     (:gen-class)
-    (:use [clojuroids [ui]]))
+    (:use
+        [clojuroids [ui] [utilities]]
+        [clojure.contrib.swing-utils :only [do-swing]]))
 
 (import
     '(java.awt.event WindowAdapter)
@@ -24,13 +26,20 @@
     [& args]
     (let [
         frame (new JFrame)
-        [component update-thread] (create-game)
+        [component & futures] (create-game)
         ]
         (do
             (.add (.getContentPane frame) component)
             (.addWindowListener frame (proxy [WindowAdapter] []
-                (windowClosing [event] (.dispose frame))
-                (windowClosed [event] (future-cancel update-thread))))
+                (windowClosing [event]
+                    (future
+                        (dorun (map future-cancel futures))
+                        (wait-for-futures futures)
+                        (do-swing (.dispose frame))))
+                (windowClosed [event]
+                    (println "Closed.")
+                    (System/exit 0))
+            ))
             (.pack frame)
             (.setResizable frame false)
             (.show frame))))

@@ -3,10 +3,12 @@
 ;; # Top level Swing UI #
 
 (ns clojuroids.ui
-    (:use [clojuroids [constants] [logic] [render] [utilities]]))
+    (:use
+        [clojuroids [constants] [logic] [render] [utilities]]
+        [clojure.contrib.swing-utils :only [do-swing-and-wait]]))
 
 (import
-    '(javax.swing JComponent Timer)
+    '(javax.swing JComponent SwingUtilities)
     '(java.awt.event ActionListener KeyAdapter KeyEvent)
     '(java.awt Dimension)
 )
@@ -23,6 +25,18 @@
         (.setDoubleBuffered true)
         (.setFocusable true)))
 
+(defn loopy-future
+    "Creates a Clojure future that calls the supplied function 'func' in a loop.
+    The function is initially supplied the given 'initial-args' as arguments, and on future
+    iterations is given its previous output."
+    [func & initial-args]
+    (future (try
+        (loop [args initial-args] (recur (apply func args)))
+        (catch InterruptedException e
+            (do-swing-and-wait (println "Loopy future canceled.")))
+        (catch Exception e
+            (do-swing-and-wait (.printStackTrace e))))))
+
 (defn create-game
     "Creates a Swing JComponent that represents the game window.  A swing timer
     is already attached to cause it to repaint at approximately 60Hz.  Also returns a background
@@ -34,38 +48,27 @@
         result (create-component game-state)
         ]
         (do
-            (doto
+            (.addKeyListener result (proxy [KeyAdapter] []
+                (keyPressed [event] (if (not (.isConsumed event)) (do
+                    (do-mod keys-pressed conj (.getKeyCode event))
+                    (.consume event))))
+                (keyReleased [event] (if (not (.isConsumed event)) (do
+                    (do-mod keys-pressed disj (.getKeyCode event))
+                    (.consume event))))))
+
+            [
                 result
-                (.addKeyListener (proxy [KeyAdapter] []
-                    (keyPressed [event] (if (not (.isConsumed event)) (do
-                        (do-mod keys-pressed conj (.getKeyCode event))
-                        (.consume event))))
-                    (keyReleased [event] (if (not (.isConsumed event)) (do
-                        (do-mod keys-pressed disj (.getKeyCode event))
-                        (.consume event)))))))
-
-            (doto
-                (new Timer (/ 1000 60)
-                    (reify ActionListener
-                        (actionPerformed [this event] (.repaint result))))
-                (.start))
-
-            [result
-            (future
-                ;; Need to consider the lifetime of this thread
-                (try
-                    (loop [
-                        old-wall-time (wall-time)
-                        time-step 0.0]
-                        (do
-                            (Thread/sleep 1)
-                            (dosync (alter game-state (fn [state] (game-step state time-step (deref keys-pressed)))))
-                            (let [new-wall-time (wall-time)]
-                                (recur
-                                    new-wall-time
-                                    (+  (* 0.95 time-step) (* 0.05 (- new-wall-time old-wall-time)))))))
-                    (catch InterruptedException e (println "Stopping update thread."))
-                    (catch Exception e (.printStackTrace e))))
+                (loopy-future
+                    (fn [old-wall-time time-step]
+                        (Thread/sleep 1)
+                        (dosync (alter game-state (fn [state] (game-step state time-step (deref keys-pressed)))))
+                        (let [new-wall-time (wall-time)] [
+                            new-wall-time
+                            (+  (* 0.95 time-step) (* 0.05 (- new-wall-time old-wall-time)))]))
+                    (wall-time) 0.0)
+                (loopy-future (fn []
+                    (Thread/sleep (/ 1000 60))
+                    (do-swing-and-wait (.repaint result))))
             ])))
 
 

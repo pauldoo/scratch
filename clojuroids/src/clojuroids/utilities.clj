@@ -18,5 +18,14 @@
     "Returns a random number in the range [min max), note inclusive exclusive."
     [min max] (+ min (rand (- max min))))
 
-
+(defn wait-for-futures
+    "Waits for the given collection of futures to all be completed. Enters a sleep-loop
+    while it waits."
+    [futures]
+    (if (empty? futures)
+        nil
+        (do
+            (while (not (future-done? (first futures)))
+                (Thread/sleep 1))
+            (recur (rest futures)))))
 
