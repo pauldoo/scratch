@@ -91,7 +91,7 @@
                 (println "My guess: " my-guess " scored " my-guess-score)
                 (if (= my-guess solution-code)
                     my-guess
-                    (play-game
+                    (recur
                         all-codes
                         (filter (fn [p] (= (score p my-guess) my-guess-score)) possible-codes)
                         solution-code))))))
