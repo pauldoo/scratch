@@ -50,9 +50,15 @@
             :whites (score-whites ra rg)
         }))
 
+(defn weighted-average
+    [& values]
+    (/
+        (reduce + (map #(* % %) values))
+        (reduce + values)))
+
 (defn rate-guess
-    [possible-codes guess]
-    (apply max (map second
+    [possible-codes guess rate-fn]
+    (apply rate-fn (map second
         (frequencies
         (map (fn [code] (score code guess)) possible-codes)))))
 
@@ -63,13 +69,13 @@
         (for [h colours t (gen-all-codes colours (dec length))] (cons h t))))
 
 (defn next-guess
-    [all-codes possible-codes]
+    [all-codes possible-codes rate-fn]
     (assert (not (empty? possible-codes)))
     (if (= 1 (count possible-codes))
-        (first possible-codes)
-        (first (reduce
+        [(first possible-codes) 0]
+        (reduce
             (fn [a b] (if (< (second a) (second b)) a b))
-            (pmap (juxt identity (fn [g] (rate-guess possible-codes g))) all-codes)))))
+            (pmap (juxt identity (fn [g] (rate-guess possible-codes g rate-fn))) all-codes))))
 
 ; ----------------------
 
@@ -78,27 +84,30 @@
 
 (defn play-game
     ([solution-code]
-        (play-game default-codes default-codes solution-code))
+        [
+            (play-game default-codes default-codes solution-code max)
+            (play-game default-codes default-codes solution-code weighted-average)
+        ])
 
-    ([all-codes possible-codes solution-code]
+    ([all-codes possible-codes solution-code rate-fn]
         (assert (not (empty? possible-codes)))
         (assert (contains? (set possible-codes) solution-code))
         (let [
-            my-guess (next-guess all-codes possible-codes)
+            [my-guess rating] (next-guess all-codes possible-codes rate-fn)
             my-guess-score (score solution-code my-guess)
             ]
-            (do
-                (println "My guess: " my-guess " scored " my-guess-score)
+            (cons [(count possible-codes) my-guess my-guess-score (float rating)]
                 (if (= my-guess solution-code)
-                    my-guess
-                    (recur
+                    [my-guess]
+                    (play-game
                         all-codes
                         (filter (fn [p] (= (score p my-guess) my-guess-score)) possible-codes)
-                        solution-code))))))
+                        solution-code
+                        rate-fn))))))
 
 (try
-    (println (play-game [:a :b :c :d]))
-    (println (play-game [:c :c :c :c]))
-    (println (play-game [:f :a :f :d]))
+    (println (doall (map println (reduce concat (play-game [:a :b :c :d])))))
+    (println (doall (map println (reduce concat (play-game [:c :c :c :c])))))
+    (println (doall (map println (reduce concat (play-game [:f :a :f :d])))))
     (catch Exception e (.printStackTrace e)))
 
