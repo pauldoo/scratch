@@ -7,7 +7,7 @@
 ;; # Todo list #
 ;; * Consider pure-ness of rendering functions, add ! if appropriate.
 ;; * Consider pure-ness of random number generation.. (hmm..)
-;; * Consider pure-ness of game updates basing on wall clock time (should be passed from outside?)
+;; * Hm, rewind is waaay to fast.
 
 (ns clojuroids.core
     (:gen-class)

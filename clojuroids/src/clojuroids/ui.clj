@@ -45,6 +45,7 @@
     (let [
         keys-pressed (ref (hash-set))
         game-state (ref (default-state))
+        previous-states (ref (vector))
         result (create-component game-state)
         ]
         (do
@@ -61,7 +62,16 @@
                 (loopy-future
                     (fn [old-wall-time time-step]
                         (Thread/sleep 1)
-                        (dosync (alter game-state (fn [state] (game-step state time-step (deref keys-pressed)))))
+                        (dosync
+                            (let
+                                [[new-game-state new-previous-states]
+                                (game-step
+                                    (deref game-state)
+                                    (deref previous-states)
+                                    time-step
+                                    (deref keys-pressed))]
+                                (ref-set game-state new-game-state)
+                                (ref-set previous-states new-previous-states)))
                         (let [new-wall-time (wall-time)] [
                             new-wall-time
                             (+  (* 0.95 time-step) (* 0.05 (- new-wall-time old-wall-time)))]))
@@ -69,6 +79,10 @@
                 (loopy-future (fn []
                     (Thread/sleep (/ 1000 60))
                     (do-swing-and-wait (.repaint result))))
+                (loopy-future (fn []
+                    (Thread/sleep (/ 1000 20))
+                    (dosync (ref-set previous-states (cons (deref game-state) (deref previous-states))))
+                    nil))
             ])))
 
 
