@@ -29,3 +29,9 @@
                 (Thread/sleep 1))
             (recur (rest futures)))))
 
+(defn drop-until
+    "Drops elements from the front of a sequence until a predicate turns true.
+    Returns the remainder of the sequence."
+    [pred coll]
+    (drop-while (complement pred) coll))
+

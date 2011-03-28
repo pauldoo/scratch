@@ -198,48 +198,69 @@
     (> (mag (:xv sparkle) (:yv sparkle)) 2.0))
 
 (defn game-step
-    "Updates the game state by the given timestep in seconds.  Takes
-    into consideration any player actions that are represented by the set of currently held keyboard
-    keys."
+    "Updates only the game state by the given timestep in wall seconds.  Takes
+    into consideration action keys, but not 'meta' keys like rewind or pause."
+    [state time-step keys-pressed]
+    (let [
+        time-step (* time-step (if (contains? keys-pressed KeyEvent/VK_S) slow-mo-speed 1.0))
+        new-game-time (+ (:game-time state) time-step)
+        spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-game-time (:next-fire-time state)))
+        state
+            (assoc state
+                :game-time new-game-time
+                :player (player-step (:player state) time-step keys-pressed)
+                :asteroids (doall (map (fn [a] (step-thing a time-step)) (:asteroids state)))
+                :bullets
+                    (doall (map (fn [b] (step-thing b time-step))
+                        (concat
+                            (if spawn-new-bullet
+                                [(new-bullet (:player state))]
+                                [])
+                        (:bullets state))))
+                :next-fire-time
+                    (if spawn-new-bullet
+                        (+ new-game-time fire-delay)
+                        (:next-fire-time state))
+                :sparkles
+                    (doall (take sparkle-limit
+                        (map (fn [s] (step-thing s time-step))
+                            (concat
+                                (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
+                                (filter sparkle-is-alive (:sparkles state)))))))
+        [fb fa]
+            (filter-collisions (:bullets state) (:asteroids state))
+        state
+            (assoc state
+                :bullets fb
+                :asteroids fa)]
+
+        state))
+
+(defn system-step
+    "Updates the game state, history states, etc by the given timestep in seconds.  Takes
+    into consideration all player keys including 'action' and 'meta' keys."
     [state previous-states time-step keys-pressed]
     (cond
-        (and (contains? keys-pressed KeyEvent/VK_R) (not (empty? previous-states)))
-            [(first previous-states) (rest previous-states)]
+        (empty? previous-states)
+            (let [new-state (assoc state :game-time 0.0)]
+                [new-state [new-state]])
+        (contains? keys-pressed KeyEvent/VK_R)
+            (let [
+                new-game-time (max 0.0 (- (:game-time state) (* rewind-speed time-step)))
+                new-previous-states (drop-until
+                    (fn [s] (>= new-game-time (:game-time s)))
+                    previous-states)
+                new-game-state
+                    (game-step
+                        (first new-previous-states)
+                        (- new-game-time (:game-time (first new-previous-states)))
+                        {})]
+                [new-game-state new-previous-states])
         (or (= time-step 0.0) (contains? keys-pressed KeyEvent/VK_P))
             [state previous-states]
         :else
-            (let [
-                time-step (* time-step (if (contains? keys-pressed KeyEvent/VK_S) 0.2 1.0))
-                new-game-time (+ (:game-time state) time-step)
-                spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-game-time (:next-fire-time state)))
-                state
-                    (assoc state
-                        :game-time new-game-time
-                        :player (player-step (:player state) time-step keys-pressed)
-                        :asteroids (doall (map (fn [a] (step-thing a time-step)) (:asteroids state)))
-                        :bullets
-                            (doall (map (fn [b] (step-thing b time-step))
-                                (concat
-                                    (if spawn-new-bullet
-                                        [(new-bullet (:player state))]
-                                        [])
-                                (:bullets state))))
-                        :next-fire-time
-                            (if spawn-new-bullet
-                                (+ new-game-time fire-delay)
-                                (:next-fire-time state))
-                        :sparkles
-                            (doall (take sparkle-limit
-                                (map (fn [s] (step-thing s time-step))
-                                    (concat
-                                        (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
-                                        (filter sparkle-is-alive (:sparkles state)))))))
-                [fb fa]
-                    (filter-collisions (:bullets state) (:asteroids state))
-                state
-                    (assoc state
-                        :bullets fb
-                        :asteroids fa)]
-            [state previous-states])))
+            [
+                (game-step state time-step keys-pressed)
+                previous-states]))
 
 

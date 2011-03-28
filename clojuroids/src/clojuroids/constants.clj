@@ -59,4 +59,9 @@
 (def ^{:doc "The minimum delay (in seconds) between each bullet."}
     fire-delay 0.3)
 
+(def ^{:doc "The rewind speed (in multiples of normal speed)."}
+    rewind-speed 2.0)
+
+(def ^{:doc "The slow-mo speed (in multiples of normal speed)."}
+    slow-mo-speed 0.2)
 

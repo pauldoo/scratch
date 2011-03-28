@@ -65,7 +65,7 @@
                         (dosync
                             (let
                                 [[new-game-state new-previous-states]
-                                (game-step
+                                (system-step
                                     (deref game-state)
                                     (deref previous-states)
                                     time-step
@@ -80,7 +80,7 @@
                     (Thread/sleep (/ 1000 60))
                     (do-swing-and-wait (.repaint result))))
                 (loopy-future (fn []
-                    (Thread/sleep (/ 1000 20))
+                    (Thread/sleep (/ 1000 10))
                     (dosync (ref-set previous-states (cons (deref game-state) (deref previous-states))))
                     nil))
             ])))

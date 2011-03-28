@@ -7,7 +7,7 @@
 ;; # Todo list #
 ;; * Consider pure-ness of rendering functions, add ! if appropriate.
 ;; * Consider pure-ness of random number generation.. (hmm..)
-;; * Hm, rewind is waaay to fast.
+;; * (This is affecting rewind playback in forward predictor thingie..)
 
 (ns clojuroids.core
     (:gen-class)
