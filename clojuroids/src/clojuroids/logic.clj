@@ -5,7 +5,7 @@
 
 (ns clojuroids.logic
     (:use
-        [clojuroids [constants] [render] [utilities]]
+        [clojuroids [constants] [utilities]]
         [clojure.contrib.seq :only [separate]]))
 
 (import
@@ -13,6 +13,43 @@
     '(java.awt.event ActionListener KeyAdapter KeyEvent)
     '(javax.swing JComponent JFrame JLabel Timer)
 )
+
+(def
+    ^{:doc "An AWT polygon which is used as the shape of the player's ship on screen."}
+    player-shape
+    (doto
+        (new Polygon)
+        (.addPoint 10 0)
+        (.addPoint -3 5)
+        (.addPoint -3 -5)))
+
+(def
+    ^{:doc "An AWT polygon which is used as the shape of each bullet on the screen."}
+    bullet-shape
+    (doto
+        (new Polygon)
+        (.addPoint 3 0)
+        (.addPoint -3 1.5)
+        (.addPoint -3 -1.5)))
+
+(defn asteroid-shape
+    "Constructs an AWT polygon from the polar radii of an asteroid."
+    [radii]
+    ((fn [p r a ai]
+        (if (empty? r)
+            p
+            (recur
+                (doto p
+                    (.addPoint
+                        (* (Math/cos a) (first r))
+                        (* (Math/sin a) (first r))))
+                (rest r)
+                (+ a ai)
+                ai)))
+        (new Polygon)
+        radii
+        0.0
+        (/ (* Math/PI 2.0) (count radii))))
 
 (defn step-thing
     "Updates an object (can be player, asteroid, or bullet) by the given time step (in seconds)
@@ -36,17 +73,22 @@
     (+ (* (- (Math/sin a)) x) (* (Math/cos a) y))])
 
 (defn collided?
-    "Determines whether the given thing and asteroid object have collided."
-    [thing asteroid]
-    (let [
-        ;; First transform the thing into a frame of reference local to the asteroid.
-        ;; This allows us to use the AWT Polgon's '.contains()' method.
-        [x y] (rotate
-            (- (:x thing) (:x asteroid))
-            (- (:y thing) (:y asteroid))
-            (:a asteroid))
-        p (:poly asteroid)]
-        (.contains p x y)))
+    "Determines whether the given things have collided.  This is done by testing whether
+    one object's center is within the other object's polygon (or vise versa).  This is an approximation
+    which works so long as one of the objects is small and point-like."
+    [thing1 thing2]
+    (let [test-fn
+        (fn [a b]
+            (let [
+                ;; First transform the thing into a frame of reference local to the asteroid.
+                ;; This allows us to use the AWT Polgon's '.contains()' method.
+                [x y] (rotate
+                    (- (:x b) (:x a))
+                    (- (:y b) (:y a))
+                    (:a a))
+                p (:poly a)]
+                (.contains p x y)))]
+        (or (test-fn thing1 thing2) (test-fn thing2 thing1))))
 
 (defn average
     "Given the polar radii for an asteroid, compute the average radius.  This is used
@@ -150,7 +192,8 @@
             :av 0.0
             :acc 0.0
             :eff player-efficiency
-            :sparkle-color Color/RED}
+            :sparkle-color Color/RED
+            :poly player-shape}
         :next-fire-time 0.0
         :asteroids
             (take 10 (repeatedly #(generate-asteroid (myrand 200 width) (rand height) initial-asteroid-size (zero? (rand-int 3)))))
@@ -191,7 +234,8 @@
         :eff bullet-efficiency
         :acc bullet-acceleration
         :live-time bullet-live-time
-        :sparkle-color Color/PINK))
+        :sparkle-color Color/PINK
+        :poly bullet-shape))
 
 (defn make-new-sparkles
     "Creates new sparkle objects as needed for the list of objects given (typically

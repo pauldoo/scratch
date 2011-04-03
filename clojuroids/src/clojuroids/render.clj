@@ -7,26 +7,8 @@
         [clojuroids [constants]]))
 
 (import
-    '(java.awt Color Dimension Polygon RenderingHints)
+    '(java.awt Color Dimension RenderingHints)
 )
-
-(defn player-shape
-    "Creates an AWT polygon which is used as the shape of the player's ship on screen."
-    []
-    (doto
-        (new Polygon)
-        (.addPoint 10 0)
-        (.addPoint -3 5)
-        (.addPoint -3 -5)))
-
-(defn bullet-shape
-    "Creates an AWT polygon which is used as tht shape of each bullet on the screen."
-    []
-    (doto
-        (new Polygon)
-        (.addPoint 3 0)
-        (.addPoint -3 1.5)
-        (.addPoint -3 -1.5)))
 
 (defn draw-player
     "Draws the player's ship to the given AWT Graphics2D object."
@@ -37,36 +19,17 @@
             (let [old-transform (.getTransform g)]
                 (.translate g (:x player) (:y player))
                 (.rotate g (:a player))
-                (.fill g (player-shape))
+                (.fill g (:poly player))
                 (.setTransform g old-transform)))
         (do
             (.setColor g (Color/RED))
             (.drawString g "Game Over!" (/ width 2) (/ height 2)))))
 
-(defn asteroid-shape
-    "Constructs an AWT polygon from the polar radii of an asteroid."
-    [radii]
-    ((fn [p r a ai]
-        (if (empty? r)
-            p
-            (recur
-                (doto p
-                    (.addPoint
-                        (* (Math/cos a) (first r))
-                        (* (Math/sin a) (first r))))
-                (rest r)
-                (+ a ai)
-                ai)))
-        (new Polygon)
-        radii
-        0.0
-        (/ (* Math/PI 2.0) (count radii))))
-
 (defn draw-asteroid
     "Draws an asteroid object to the given AWT Graphics2D object."
     [asteroid g]
     (do
-        (.setColor g (if (:special asteroid) Color/BLUE Color/GRAY))
+        (.setColor g (if (:special asteroid) Color/CYAN Color/GRAY))
         (let [old-transform (.getTransform g)]
             (.translate g (:x asteroid) (:y asteroid))
             (.rotate g (:a asteroid))
@@ -81,7 +44,7 @@
         (let [old-transform (.getTransform g)]
             (.translate g (:x bullet) (:y bullet))
             (.rotate g (:a bullet))
-            (.fill g (bullet-shape))
+            (.fill g (:poly bullet))
             (.setTransform g old-transform))))
 
 (defn draw-sparkle

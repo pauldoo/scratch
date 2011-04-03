@@ -45,7 +45,7 @@
     sparkle-limit 200)
 
 (def ^{:doc "The radius of the smallest allowed asteroid."}
-    smallest-asteroid 5.0)
+    smallest-asteroid 2.0)
 
 (def ^{:doc "The radius of the staring asteroids."}
     initial-asteroid-size 30.0)
