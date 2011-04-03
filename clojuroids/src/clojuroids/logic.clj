@@ -55,7 +55,7 @@
 
 (defn generate-asteroid
     "Generates a random asteroid from fresh."
-    [x y radius]
+    [x y radius special]
     (let [a
         {
             :x x
@@ -67,6 +67,7 @@
             :radii (take 10 (repeatedly #(myrand (* radius 0.5) (* radius 1.5))))
             :eff 1.0
             :acc 0.0
+            :special special
         }]
     (assoc a
         :poly (asteroid-shape (:radii a)))))
@@ -83,8 +84,8 @@
         ]
         (filter (fn [ast] (>= (average (:radii ast)) smallest-asteroid))
             [
-                (generate-asteroid (+ (:x asteroid) xo) (+ (:y asteroid) yo) (* current-radius 0.6))
-                (generate-asteroid (- (:x asteroid) xo) (- (:y asteroid) yo) (* current-radius 0.4))
+                (generate-asteroid (+ (:x asteroid) xo) (+ (:y asteroid) yo) (* current-radius 0.6) (:special asteroid))
+                (generate-asteroid (- (:x asteroid) xo) (- (:y asteroid) yo) (* current-radius 0.4) (:special asteroid))
             ])))
 
 (defn filter-collisions
@@ -123,7 +124,7 @@
             :sparkle-color Color/RED}
         :next-fire-time 0.0
         :asteroids
-            (take 10 (repeatedly #(generate-asteroid (rand width) (rand height) initial-asteroid-size)))
+            (take 10 (repeatedly #(generate-asteroid (rand width) (rand height) initial-asteroid-size (zero? (rand-int 3)))))
         :sparkles []
     } )
 
@@ -240,6 +241,16 @@
             :bullets fb
             :asteroids fa)))
 
+(defn backport-state
+    "Combines an old state with a newer state, taking care to preserve the special
+    asteroids from the newer state."
+    [old-state new-state]
+    (assoc old-state
+        :asteroids
+        (concat
+            (filter (complement :special) (:asteroids old-state))
+            (filter :special (:asteroids new-state)))))
+
 (defn system-step
     "Updates the game state, history states, etc by the given timestep in seconds.  Takes
     into consideration all player keys including 'action' and 'meta' keys."
@@ -255,10 +266,12 @@
                     (fn [s] (>= new-game-time (:game-time s)))
                     previous-states)
                 new-game-state
-                    (game-step
-                        (first new-previous-states)
-                        (- new-game-time (:game-time (first new-previous-states)))
-                        {})]
+                    (backport-state
+                        (game-step
+                            (first new-previous-states)
+                            (- new-game-time (:game-time (first new-previous-states)))
+                            {})
+                    state)]
                 [new-game-state new-previous-states])
         (or (= time-step 0.0) (contains? keys-pressed KeyEvent/VK_P))
             [state previous-states]

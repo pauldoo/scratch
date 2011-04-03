@@ -60,7 +60,7 @@
     "Draws an asteroid object to the given AWT Graphics2D object."
     [asteroid g]
     (do
-        (.setColor g (Color/GRAY))
+        (.setColor g (if (:special asteroid) Color/BLUE Color/GRAY))
         (let [old-transform (.getTransform g)]
             (.translate g (:x asteroid) (:y asteroid))
             (.rotate g (:a asteroid))
