@@ -35,3 +35,8 @@
     [pred coll]
     (drop-while (complement pred) coll))
 
+(defn to-vec-if-not-nil
+    "If x is nil returns an empty vector, otherwise the single-element vector [x]."
+    [x]
+    (if (nil? x) [] [x]))
+

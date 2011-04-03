@@ -7,6 +7,7 @@
 ;; # Todo list #
 ;; * Consider pure-ness of rendering functions, add ! if appropriate.
 ;; * Consider pure-ness of random number generation.. (hmm..)
+;; * Some tidy up - especially to do with sparkles.
 
 (ns clojuroids.core
     (:gen-class)

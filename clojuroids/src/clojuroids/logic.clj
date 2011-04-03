@@ -1,6 +1,7 @@
 ; :mode=clojure:
 
 ;; # Game logic #
+;; I use the term 'thing' to refer to various objects that have position, velocity, etc..
 
 (ns clojuroids.logic
     (:use
@@ -35,14 +36,14 @@
     (+ (* (- (Math/sin a)) x) (* (Math/cos a) y))])
 
 (defn collided?
-    "Determines whether the given bullet and asteroid object have collided."
-    [bullet asteroid]
+    "Determines whether the given thing and asteroid object have collided."
+    [thing asteroid]
     (let [
-        ;; First transform the bullet into a frame of reference local to the asteroid.
+        ;; First transform the thing into a frame of reference local to the asteroid.
         ;; This allows us to use the AWT Polgon's '.contains()' method.
         [x y] (rotate
-            (- (:x bullet) (:x asteroid))
-            (- (:y bullet) (:y asteroid))
+            (- (:x thing) (:x asteroid))
+            (- (:y thing) (:y asteroid))
             (:a asteroid))
         p (:poly asteroid)]
         (.contains p x y)))
@@ -67,6 +68,7 @@
             :radii (take 10 (repeatedly #(myrand (* radius 0.5) (* radius 1.5))))
             :eff 1.0
             :acc 0.0
+            :sparkle-color Color/LIGHT_GRAY
             :special special
         }]
     (assoc a
@@ -88,24 +90,51 @@
                 (generate-asteroid (- (:x asteroid) xo) (- (:y asteroid) yo) (* current-radius 0.4) (:special asteroid))
             ])))
 
-(defn filter-collisions
-    "Given a list of bullets and asteroids, will detect collisions, split asteroids
-    that need splitting, and remove the associated bullets."
-    [bullets asteroids]
-    [
-        (filter
-            (fn [b] (nil? (some
-                (fn [a] (collided? b a))
-                asteroids)))
-            bullets)
+(defn explode
+    "Creates sparkles as if the given thing was exploding."
+    [thing size]
+    (take size (repeatedly (fn []
         (let [
-            [survived hit]
-                (separate
-                    (fn [a] (nil? (some
-                        (fn [b] (collided? b a))
-                        bullets)))
-                    asteroids)]
-            (apply concat (cons survived (map split-asteroid hit))))])
+            o (rand (* 2.0 Math/PI))
+            a (rand (* 2.0 Math/PI))
+            v (rand size)]
+            (assoc thing
+                :acc 0.0
+                :eff sparkle-efficiency
+                :x (+
+                    (:x thing)
+                    (* v (Math/cos o)))
+                :y (+
+                    (:y thing)
+                    (* v (Math/sin o)))
+                :xv (+
+                    (:xv thing)
+                    (* v (Math/cos a)))
+                :yv (+
+                    (:yv thing)
+                    (* v (Math/sin a)))))))))
+
+
+(defn filter-collisions
+    "Given a list of things and asteroids, will detect collisions, split asteroids
+    that need splitting, and remove the associated things."
+    [bullets asteroids]
+    (let [
+        [survived hit]
+            (separate
+                (fn [a] (nil? (some
+                    (fn [b] (collided? b a))
+                    bullets)))
+                asteroids)]
+        [
+            (filter
+                (fn [b] (nil? (some
+                    (fn [a] (collided? b a))
+                    asteroids)))
+                bullets)
+            (apply concat (cons survived (map split-asteroid hit)))
+            (apply concat (map (fn [h] (explode h (Math/ceil (average (:radii h))))) hit))
+        ]))
 
 (defn default-state
     "Creates a fresh game state, which consists of the player, list of asteroids, timestamp, etc."
@@ -124,7 +153,7 @@
             :sparkle-color Color/RED}
         :next-fire-time 0.0
         :asteroids
-            (take 10 (repeatedly #(generate-asteroid (rand width) (rand height) initial-asteroid-size (zero? (rand-int 3)))))
+            (take 10 (repeatedly #(generate-asteroid (myrand 200 width) (rand height) initial-asteroid-size (zero? (rand-int 3)))))
         :sparkles []
     } )
 
@@ -132,27 +161,28 @@
     "Updates the player object by the given timestep, applying whatever movements are indicated by
     the currently pressed set of keyboard keys."
     [player time-step keys-pressed]
-    (let [
-        player
-            (assoc player
-                :acc (if (contains? keys-pressed KeyEvent/VK_UP) acceleration 0.0))
-        player
-            (if
-                (contains? keys-pressed KeyEvent/VK_LEFT)
+    (if (nil? player) nil
+        (let [
+            player
                 (assoc player
-                    :av (- (:av player) (* time-step angular-acceleration)))
-                player)
-        player
-            (if
-                (contains? keys-pressed KeyEvent/VK_RIGHT)
-                (assoc player
-                    :av (+ (:av player) (* time-step angular-acceleration)))
-                player)
+                    :acc (if (contains? keys-pressed KeyEvent/VK_UP) acceleration 0.0))
+            player
+                (if
+                    (contains? keys-pressed KeyEvent/VK_LEFT)
+                    (assoc player
+                        :av (- (:av player) (* time-step angular-acceleration)))
+                    player)
+            player
+                (if
+                    (contains? keys-pressed KeyEvent/VK_RIGHT)
+                    (assoc player
+                        :av (+ (:av player) (* time-step angular-acceleration)))
+                    player)
 
-        player
-            (step-thing player time-step)
-        ]
-    player))
+            player
+                (step-thing player time-step)
+            ]
+        player)))
 
 (defn new-bullet
     "Creates a new bullet object being released from the player's ship."
@@ -160,6 +190,7 @@
     (assoc player
         :eff bullet-efficiency
         :acc bullet-acceleration
+        :live-time bullet-live-time
         :sparkle-color Color/PINK))
 
 (defn make-new-sparkles
@@ -198,6 +229,19 @@
     [sparkle]
     (> (mag (:xv sparkle) (:yv sparkle)) 2.0))
 
+(defn bullet-step
+    "Steps a bullet forward in time by the given timestep."
+    [bullet time-step]
+    (step-thing
+        (assoc bullet
+            :live-time (- (:live-time bullet) time-step))
+        time-step))
+
+(defn bullet-is-alive
+    "Determines if a bullet should still be considered alive, or if it has flown for the maximum allowed time."
+    [bullet]
+    (> (:live-time bullet) 0))
+
 (defn game-step
     "Updates only the game state by the given timestep in wall seconds.  Takes
     into consideration action keys, but not 'meta' keys like rewind or pause, or even
@@ -206,18 +250,18 @@
     (let [
         time-step (* time-step (if (contains? keys-pressed KeyEvent/VK_S) slow-mo-speed 1.0))
         new-game-time (+ (:game-time state) time-step)
-        spawn-new-bullet (and (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-game-time (:next-fire-time state)))]
+        spawn-new-bullet (and (not (nil? (:player state))) (contains? keys-pressed KeyEvent/VK_SPACE) (>= new-game-time (:next-fire-time state)))]
         (assoc state
             :game-time new-game-time
             :player (player-step (:player state) time-step keys-pressed)
             :asteroids (doall (map (fn [a] (step-thing a time-step)) (:asteroids state)))
             :bullets
-                (doall (map (fn [b] (step-thing b time-step))
+                (doall (map (fn [b] (bullet-step b time-step))
                     (concat
                         (if spawn-new-bullet
                             [(new-bullet (:player state))]
                             [])
-                    (:bullets state))))
+                    (filter bullet-is-alive (:bullets state)))))
             :next-fire-time
                 (if spawn-new-bullet
                     (+ new-game-time fire-delay)
@@ -226,8 +270,19 @@
                 (doall (take sparkle-limit
                     (map (fn [s] (step-thing s time-step))
                         (concat
-                            (make-new-sparkles (cons (:player state) (:bullets state)) time-step)
+                            (make-new-sparkles (concat (to-vec-if-not-nil (:player state)) (:bullets state)) time-step)
                             (filter sparkle-is-alive (:sparkles state)))))))))
+
+(defn filter-player-collision
+    "Determines if the player has collided with an asteroid.  Returns the player (nil on collision),
+    remaining asteroids, and new sparkles coming from any collisions (usually empty)."
+    [player asteroids]
+    (let [[fp fa new-sparkles] (filter-collisions (to-vec-if-not-nil player) asteroids)]
+        [
+            (if (empty? fp) nil (first fp))
+            fa
+            new-sparkles
+        ]))
 
 (defn collisions-step
     "Processes a game state for object collisions.  This is not done as part
@@ -235,9 +290,15 @@
     the differing PRNG outputs to show different collision results."
     [state]
     (let [
-        [fb fa]
-        (filter-collisions (:bullets state) (:asteroids state))]
+        [fb fa new-sparkles1]
+            (filter-collisions (:bullets state) (:asteroids state))
+        [new-player fa new-sparkles2]
+            (filter-player-collision (:player state) fa)
+        ]
         (assoc state
+            :player new-player
+            :sparkles
+                (concat new-sparkles1 new-sparkles2 (:sparkles state))
             :bullets fb
             :asteroids fa)))
 

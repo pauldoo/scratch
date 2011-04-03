@@ -2,7 +2,9 @@
 
 ;; # AWT/Swing graphics #
 
-(ns clojuroids.render)
+(ns clojuroids.render
+    (:use
+        [clojuroids [constants]]))
 
 (import
     '(java.awt Color Dimension Polygon RenderingHints)
@@ -29,13 +31,17 @@
 (defn draw-player
     "Draws the player's ship to the given AWT Graphics2D object."
     [player g]
-    (do
-        (.setColor g (Color/WHITE))
-        (let [old-transform (.getTransform g)]
-            (.translate g (:x player) (:y player))
-            (.rotate g (:a player))
-            (.fill g (player-shape))
-            (.setTransform g old-transform))))
+    (if (not (nil? player))
+        (do
+            (.setColor g (Color/WHITE))
+            (let [old-transform (.getTransform g)]
+                (.translate g (:x player) (:y player))
+                (.rotate g (:a player))
+                (.fill g (player-shape))
+                (.setTransform g old-transform)))
+        (do
+            (.setColor g (Color/RED))
+            (.drawString g "Game Over!" (/ width 2) (/ height 2)))))
 
 (defn asteroid-shape
     "Constructs an AWT polygon from the polar radii of an asteroid."

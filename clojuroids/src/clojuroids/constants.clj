@@ -65,3 +65,6 @@
 (def ^{:doc "The slow-mo speed (in multiples of normal speed)."}
     slow-mo-speed 0.2)
 
+(def ^{:doc "The number of seconds for which missiles survive for."}
+    bullet-live-time 3.0)
+
