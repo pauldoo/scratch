@@ -133,9 +133,9 @@
             ])))
 
 (defn explode
-    "Creates sparkles as if the given thing was exploding."
+    "Creates sparkles as if the given thing was exploding. The size is the initial radius of the explosion."
     [thing size]
-    (take size (repeatedly (fn []
+    (take (Math/ceil (* size sparkle-explosion-amount)) (repeatedly (fn []
         (let [
             o (rand (* 2.0 Math/PI))
             a (rand (* 2.0 Math/PI))
@@ -151,10 +151,10 @@
                     (* v (Math/sin o)))
                 :xv (+
                     (:xv thing)
-                    (* v (Math/cos a)))
+                    (* sparkle-explosion-amount v (Math/cos a)))
                 :yv (+
                     (:yv thing)
-                    (* v (Math/sin a)))))))))
+                    (* sparkle-explosion-amount v (Math/sin a)))))))))
 
 
 (defn filter-collisions
@@ -175,7 +175,7 @@
                     asteroids)))
                 bullets)
             (apply concat (cons survived (map split-asteroid hit)))
-            (apply concat (map (fn [h] (explode h (Math/ceil (average (:radii h))))) hit))
+            (apply concat (map (fn [h] (explode h (average (:radii h)))) hit))
         ]))
 
 (defn default-state

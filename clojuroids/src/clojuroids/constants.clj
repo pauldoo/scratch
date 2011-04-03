@@ -38,7 +38,10 @@
     sparkle-kick-velocity 1.0)
 
 (def ^{:doc "Each accelerating object will emit roughly 'sparkle-amount * current-acceleration' sparkles per second."}
-    sparkle-amount 0.3)
+    sparkle-amount 0.2)
+
+(def ^{:doc "Each exploding asteroid will emit some sparkles proportional to it's radius multiplied by this factor."}
+    sparkle-explosion-amount 2.0)
 
 (def ^{:doc "Total number of sparkles permitted on the screen at once.  The limit is only
     present to keep performance good."}
