@@ -11,8 +11,7 @@
 (ns clojuroids.core
     (:gen-class)
     (:use
-        [clojuroids [ui] [utilities]]
-        [clojure.contrib.swing-utils :only [do-swing]]))
+        [clojuroids [ui] [utilities]]))
 
 (import
     '(java.awt.event WindowAdapter)
@@ -20,26 +19,15 @@
 )
 
 (defn -main
-    "Java entry point.  Creates a JFrame containing the appropriate Swing contents.
-    Also ensures that the game update thread is terminated when the window closes."
+    "Java entry point.  Counts number of visible frames (via callbacks) and
+    terminates the application when none are visible."
     [& args]
     (let [
-        frame (new JFrame)
-        [component & futures] (create-game)
-        ]
-        (do
-            (.add (.getContentPane frame) component)
-            (.addWindowListener frame (proxy [WindowAdapter] []
-                (windowClosing [event]
-                    (future
-                        (dorun (map future-cancel futures))
-                        (wait-for-futures futures)
-                        (do-swing (.dispose frame))))
-                (windowClosed [event]
-                    (println "Closed.")
-                    (System/exit 0))
-            ))
-            (.pack frame)
-            (.setResizable frame false)
-            (.show frame))))
+        counter (ref 0)
+        inc-fn (fn []
+            (dosync (alter counter inc)))
+        dec-fn (fn []
+            (if (= 0 (dosync (alter counter dec)))
+            (System/exit 0)))]
+    (create-frame inc-fn dec-fn)))
 

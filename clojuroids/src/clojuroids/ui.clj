@@ -5,11 +5,11 @@
 (ns clojuroids.ui
     (:use
         [clojuroids [constants] [logic] [render] [utilities]]
-        [clojure.contrib.swing-utils :only [do-swing-and-wait]]))
+        [clojure.contrib.swing-utils :only [do-swing do-swing-and-wait]]))
 
 (import
-    '(javax.swing JComponent SwingUtilities)
-    '(java.awt.event ActionListener KeyAdapter KeyEvent)
+    '(javax.swing JComponent JFrame SwingUtilities)
+    '(java.awt.event ActionListener KeyAdapter KeyEvent WindowAdapter)
     '(java.awt Dimension)
 )
 
@@ -41,11 +41,11 @@
     "Creates a Swing JComponent that represents the game window.  A swing timer
     is already attached to cause it to repaint at approximately 60Hz.  Also returns a background
     thread which is created to update the game state at no faster than 1000Hz."
-    []
+    [history create-frame-fn]
     (let [
         keys-pressed (ref (hash-set))
-        game-state (ref (default-state))
-        previous-states (ref (vector))
+        game-state (ref (first history))
+        previous-states (ref history)
         result (create-component game-state)
         ]
         (do
@@ -54,6 +54,8 @@
                     (do-mod keys-pressed conj (.getKeyCode event))
                     (.consume event))))
                 (keyReleased [event] (if (not (.isConsumed event)) (do
+                    (if (= (.getKeyCode event) KeyEvent/VK_F)
+                        (create-frame-fn (deref previous-states)))
                     (do-mod keys-pressed disj (.getKeyCode event))
                     (.consume event))))))
 
@@ -84,5 +86,34 @@
                     (dosync (ref-set previous-states (cons (deref game-state) (deref previous-states))))
                     nil))
             ])))
+
+(defn create-frame
+    "Creates a JFrame containing the appropriate Swing contents.
+    Also ensures that the game update threads are terminated when the window closes."
+    ([inc-fn dec-fn]
+    (create-frame inc-fn dec-fn [(default-state)]))
+
+    ([inc-fn dec-fn previous-states]
+    (let [
+        frame (new JFrame)
+        [component & futures] (create-game
+            previous-states (partial create-frame inc-fn dec-fn))
+    ]
+    (do
+        (.add (.getContentPane frame) component)
+        (.addWindowListener frame (proxy [WindowAdapter] []
+            (windowClosing [event]
+                (future
+                    (dorun (map future-cancel futures))
+                    (wait-for-futures futures)
+                    (do-swing (.dispose frame))))
+            (windowClosed [event]
+                (println "Closed.")
+                (dec-fn))
+        ))
+        (.pack frame)
+        (.setResizable frame false)
+        (inc-fn)
+        (.show frame)))))
 
 
