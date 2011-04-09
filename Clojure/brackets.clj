@@ -4,7 +4,7 @@
     ([n]
         (bracket (* 2 n) 0))
     ([r h]
-        (if (zero? r)
+        (lazy-seq (if (zero? r)
             '("")
             (concat
                 (if (> r h)
@@ -14,11 +14,12 @@
                 (if (> h 0)
                     (map
                         (partial str ")")
-                        (bracket (dec r) (dec h))))))))
+                        (bracket (dec r) (dec h)))))))))
 
 (apply println (bracket 0))
 (apply println (bracket 1))
 (apply println (bracket 2))
 (apply println (bracket 3))
 (apply println (bracket 4))
+(apply println (take 10 (bracket 100)))
 
