@@ -5,6 +5,6 @@
         [org.clojure/clojure "1.2.0"]
         [org.clojure/clojure-contrib "1.2.0"]]
     :dev-dependencies [
-        [marginalia "0.5.0-alpha"]]
+        [marginalia "0.5.1"]]
     :main clojuroids.core)
 
