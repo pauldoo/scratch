@@ -1,11 +1,12 @@
 ; :mode=clojure:
 
+; Fibonacci sequence in O(log(n)) iterations
+
 (defn T [p q]
     (fn [a b] [
         (+ (* b q) (* a q) (* a p))
         (+ (* b p) (* a q))]))
 
-(defn id [a b] [a b])
 (defn comb-fn [A B]
     (fn [a b] (apply A (B a b))))
 
@@ -25,3 +26,4 @@
 
 
 (fib 20)
+
