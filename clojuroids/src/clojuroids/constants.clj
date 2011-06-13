@@ -45,10 +45,10 @@
 
 (def ^{:doc "Total number of sparkles permitted on the screen at once.  The limit is only
     present to keep performance good."}
-    sparkle-limit 200)
+    sparkle-limit 10)
 
 (def ^{:doc "The radius of the smallest allowed asteroid."}
-    smallest-asteroid 2.0)
+    smallest-asteroid 3.0)
 
 (def ^{:doc "The radius of the staring asteroids."}
     initial-asteroid-size 30.0)
@@ -70,4 +70,7 @@
 
 (def ^{:doc "The number of seconds for which missiles survive for."}
     bullet-live-time 3.0)
+
+(def ^{:doc "The speed of light in pixels per second.  (Objects may travel faster than this.)"}
+    speed-of-light 200)
 

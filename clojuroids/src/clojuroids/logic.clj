@@ -264,10 +264,6 @@
             (fn [o] (> (* (:acc o) time-step sparkle-amount) (rand)))
             objects)))
 
-(defn mag
-    "Magnitude of a 2D vector (i.e. (x^2 + y^2)^0.5)."
-    [x y] (Math/sqrt (+ (* x x) (* y y))))
-
 (defn sparkle-is-alive
     "Determines if a sparkle is moving fast enough to warrant surviving to the next game state."
     [sparkle]

@@ -13,6 +13,17 @@
     '(java.awt Dimension)
 )
 
+(defn cons-game
+    "Conses a gamestate to a list of gamespaces if the game-time is newer
+    than the first state in the sequence."
+    [state states]
+    (if
+        (or
+            (empty? states)
+            (> (:game-time state) (:game-time (first states))))
+        (cons state states)
+        states))
+
 (defn create-component
     "Creates a Swing JComponent which will deref and draw the given game-state
     when painted.  It is currently the responsibility of the owning container to arrange
@@ -20,7 +31,7 @@
     [game-state previous-states]
     (doto
         (proxy [JComponent] []
-            (paint [g] (dosync (game-render (cons (deref game-state) (deref previous-states)) g))))
+            (paint [g] (dosync (game-render (cons-game (deref game-state) (deref previous-states)) g))))
         (.setPreferredSize (new Dimension width height))
         (.setDoubleBuffered true)
         (.setFocusable true)))
@@ -82,8 +93,8 @@
                     (Thread/sleep (/ 1000 60))
                     (do-swing-and-wait (.repaint result))))
                 (loopy-future (fn []
-                    (Thread/sleep (/ 1000 10))
-                    (dosync (ref-set previous-states (cons (deref game-state) (deref previous-states))))
+                    (Thread/sleep (/ 1000 20))
+                    (dosync (ref-set previous-states (cons-game (deref game-state) (deref previous-states))))
                     nil))
             ])))
 
