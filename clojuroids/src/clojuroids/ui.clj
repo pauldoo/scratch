@@ -17,10 +17,10 @@
     "Creates a Swing JComponent which will deref and draw the given game-state
     when painted.  It is currently the responsibility of the owning container to arrange
     for regular repaints."
-    [game-state]
+    [game-state previous-states]
     (doto
         (proxy [JComponent] []
-            (paint [g] (dosync (game-render (deref game-state) g))))
+            (paint [g] (dosync (game-render (cons (deref game-state) (deref previous-states)) g))))
         (.setPreferredSize (new Dimension width height))
         (.setDoubleBuffered true)
         (.setFocusable true)))
@@ -46,7 +46,7 @@
         keys-pressed (ref (hash-set))
         game-state (ref (first history))
         previous-states (ref history)
-        result (create-component game-state)
+        result (create-component game-state previous-states)
         ]
         (do
             (.addKeyListener result (proxy [KeyAdapter] []
