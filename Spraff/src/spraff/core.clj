@@ -63,16 +63,16 @@
         (let [[prefix [c & _]] (split-at prefix-length words)]
             (recur (update-transition prefix c table) (rest words)))
         table))
-(defn update-message! [message botname]
-    (if (not (.contains message botname)) (dosync
+(defn update-message! [message]
+    (dosync
         (let [words (split-sentence-to-words message)]
             (ref-set table (update-table @table words))
             (if (>= (count words) prefix-length)
-                (ref-set starters (conj @starters (take prefix-length words))))))))
-(defn log-sentence! [message botname]
+                (ref-set starters (conj @starters (take prefix-length words)))))))
+(defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))
-        (update-message! message botname)))
+        (update-message! message)))
 
 (defn -main
     "Java entry point.  Counts number of visible frames (via callbacks) and
@@ -84,14 +84,14 @@
                 :server irc-server
                 :fnmap {
                     :on-message (fn [{:keys [nick channel message irc]}] (do
-                        (log-sentence! message (:name @irc))
+                        (log-sentence! message)
                         (if (and (not (= nick (:name @irc))) (.contains message (:name @irc)))
                             (send-message irc channel
                                 (apply str (interpose " " (generate-sentence)))))))
                 }
             })
             :channels irc-channels)]
-        (dorun (map #(update-message! % (:name @bot)) (line-seq (reader corpus-file))))))
+        (dorun (map update-message! (line-seq (reader corpus-file))))))
 
 
 
