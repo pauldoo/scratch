@@ -21,6 +21,7 @@
 (def corpus-file "corpus.txt")
 (def word-pattern #"\S+")
 (def generated-sentence-length 10)
+(def prefix-length 3)
 
 (def table (ref {}))
 (def starters (ref []))
@@ -32,19 +33,20 @@
         (if (< i weight)
             word
             (recur (rest c) (- i weight)))))
-(defn pick-next-word [a b t]
-    (when-let [candidates (t [a b])]
+(defn pick-next-word [prefix t]
+    (when-let [candidates (t prefix)]
         (select candidates
             (rand-int (reduce + 0 (vals candidates))))))
-(defn further-stream-of-shite [a b t]
+(defn further-stream-of-shite [prefix t]
     (lazy-seq
-        (when-let [c (pick-next-word a b t)]
-            (cons c (further-stream-of-shite b c t)))))
-(defn stream-of-shite [a b t]
-    (concat [a b] (further-stream-of-shite a b t)))
+        (when-let [c (pick-next-word prefix t)]
+            (cons c (further-stream-of-shite (concat (rest prefix) [c]) t)))))
+(defn stream-of-shite [prefix t]
+    (concat prefix (further-stream-of-shite prefix t)))
 (defn generate-sentence []
-    (let [[a b] (nth @starters (rand-int (count @starters)))]
-        (take generated-sentence-length (stream-of-shite a b @table))))
+    (take generated-sentence-length (stream-of-shite
+        (nth @starters (rand-int (count @starters)))
+        @table)))
 
 (defn value-or-default [value default]
     (if (nil? value) default value))
@@ -52,23 +54,23 @@
     (assoc m
         c
         (inc (value-or-default (m c) 0))))
-(defn update-triple [a b c t]
+(defn update-transition [prefix c t]
     (assoc t
-        [a b]
+        prefix
         (update-count
-            (value-or-default (t [a b]) {})
+            (value-or-default (t prefix) {})
             c)))
 (defn update-table [table words]
-    (if (>= (count words) 3)
-        (let [[a b c & _] words]
-            (recur (update-triple a b c table) (rest words)))
+    (if (> (count words) prefix-length)
+        (let [[prefix [c & _]] (split-at prefix-length words)]
+            (recur (update-transition prefix c table) (rest words)))
         table))
 (defn update-message! [message]
     (dosync
         (let [words (split-sentence-to-words message)]
             (ref-set table (update-table @table words))
-            (if (>= (count words) 2)
-                (ref-set starters (conj @starters (take 2 words)))))))
+            (if (>= (count words) prefix-length)
+                (ref-set starters (conj @starters (take prefix-length words)))))))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))
