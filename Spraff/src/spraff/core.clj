@@ -21,7 +21,7 @@
 (def word-pattern #"\S+")
 (def generated-sentence-length 30)
 (def prefix-length 3)
-(def retries 5)
+(def retries 3)
 
 (def table (ref {}))
 (def starters (ref []))
