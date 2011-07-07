@@ -10,6 +10,7 @@
     (:gen-class)
     (:use
         [clojure.java.io]
+        [clojure.string :only [join]]
         [irclj.core])
 )
 
@@ -20,6 +21,7 @@
 (def word-pattern #"\S+")
 (def generated-sentence-length 30)
 (def prefix-length 3)
+(def retries 5)
 
 (def table (ref {}))
 (def starters (ref []))
@@ -32,19 +34,24 @@
             word
             (recur (rest c) (- i weight)))))
 (defn pick-next-word [prefix t]
-    (when-let [candidates (t prefix)]
+    (when-let [candidates (t prefix)] [
         (select candidates
-            (rand-int (reduce + 0 (vals candidates))))))
+            (rand-int (reduce + 0 (vals candidates))))
+        (> (count candidates) 1)
+        ]))
 (defn further-stream-of-shite [prefix t]
     (lazy-seq
-        (when-let [c (pick-next-word prefix t)]
-            (cons c (further-stream-of-shite (concat (rest prefix) [c]) t)))))
+        (when-let [[word had-choice] (pick-next-word prefix t)]
+            (cons [word had-choice] (further-stream-of-shite (concat (rest prefix) [word]) t)))))
 (defn stream-of-shite [prefix t]
-    (concat prefix (further-stream-of-shite prefix t)))
-(defn generate-sentence []
-    (take generated-sentence-length (stream-of-shite
-        (nth @starters (rand-int (count @starters)))
-        @table)))
+    (concat (map vector prefix (repeat false)) (further-stream-of-shite prefix t)))
+(defn generate-sentence [] (dosync
+    (map first
+        (apply max-key #(count (filter true? (map second %)))
+            (take retries (repeatedly
+                #(take generated-sentence-length (stream-of-shite
+                    (nth @starters (rand-int (count @starters)))
+                    @table))))))))
 
 (defn value-or-default [value default]
     (if (nil? value) default value))
@@ -71,23 +78,21 @@
                 (ref-set starters (conj @starters (take prefix-length words)))))))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
-        (.write out (str message "\n"))
-        (update-message! message)))
+        (.write out (str message "\n")))
+    (update-message! message))
 
 (defn -main
-    "Java entry point.  Counts number of visible frames (via callbacks) and
-    terminates the application when none are visible."
     [& args]
     (let [bot (connect
             (create-irc {
                 :name bot-nick
                 :server irc-server
                 :fnmap {
-                    :on-message (fn [{:keys [nick channel message irc]}] (do
+                    :on-message (fn [{:keys [nick channel message irc]}]
                         (log-sentence! message)
                         (if (and (not (= nick (:name @irc))) (.contains message (:name @irc)))
                             (send-message irc channel
-                                (apply str (interpose " " (generate-sentence)))))))
+                                (join " " (generate-sentence)))))
                 }
             })
             :channels irc-channels)]
