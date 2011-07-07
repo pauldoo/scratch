@@ -15,9 +15,16 @@
         [irclj.core])
 )
 
+(def irc-server "localhost")
+(def bot-nick "spraffbot")
+(def irc-channels ["#sprafftest"])
+(def corpus-file "corpus.txt")
+(def word-pattern #"\S+")
+(def generated-sentence-length 10)
+
 (def table (ref {}))
 
-(defn split-sentence-to-words [sentence] (re-seq #"\w+" sentence))
+(defn split-sentence-to-words [sentence] (re-seq word-pattern sentence))
 
 (defn select [c i]
     (let [[word weight] (first c)]
@@ -25,17 +32,17 @@
             word
             (recur (rest c) (- i weight)))))
 (defn pick-next-word [a b t]
-    (let [candidates (t [a b])]
+    (when-let [candidates (t [a b])]
         (select candidates
             (rand-int (reduce + 0 (vals candidates))))))
 (defn further-stream-of-shite [a b t]
     (lazy-seq
-        (let [c (pick-next-word a b t)]
+        (when-let [c (pick-next-word a b t)]
             (cons c (further-stream-of-shite b c t)))))
 (defn stream-of-shite [a b t]
     (concat [a b] (further-stream-of-shite a b t)))
 (defn generate-sentence [a b & _]
-    (take 10 (stream-of-shite a b @table)))
+    (take generated-sentence-length (stream-of-shite a b @table)))
 
 
 (defn value-or-default [value default]
@@ -58,7 +65,7 @@
 (defn update-message! [message]
     (dosync (ref-set table (update-table @table (split-sentence-to-words message)))))
 (defn log-sentence! [message]
-    (with-open [out (writer "log.txt" :append true)]
+    (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))
         (update-message! message)))
 
@@ -67,11 +74,11 @@
     terminates the application when none are visible."
     [& args]
     (do
-        (dorun (map update-message! (line-seq (reader "log.txt"))))
+        (dorun (map update-message! (line-seq (reader corpus-file))))
         (connect
             (create-irc {
-                :name "spraffbot"
-                :server "localhost"
+                :name bot-nick
+                :server irc-server
                 :fnmap {
                     :on-message (fn [{:keys [nick channel message irc]}]
                         (if (not (= nick (:name @irc)))
@@ -82,7 +89,7 @@
                                 (log-sentence! message))))
                 }
             })
-            :channels ["#sprafftest"])))
+            :channels irc-channels)))
 
 
 
