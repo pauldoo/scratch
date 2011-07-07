@@ -4,9 +4,7 @@
 ;; IRC bot which spraffs randomly generated sentences.
 
 ;; # Todo list #
-;; * Log all messages.
-;; * Update markov tables based on channel chat.
-;; * Rehydrate tables from old log files on startup.
+;; * Think of next feature..
 
 (ns spraff.core
     (:gen-class)
