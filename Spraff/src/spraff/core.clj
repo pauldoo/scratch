@@ -23,6 +23,7 @@
 (def generated-sentence-length 10)
 
 (def table (ref {}))
+(def starters (ref []))
 
 (defn split-sentence-to-words [sentence] (re-seq word-pattern sentence))
 
@@ -41,9 +42,9 @@
             (cons c (further-stream-of-shite b c t)))))
 (defn stream-of-shite [a b t]
     (concat [a b] (further-stream-of-shite a b t)))
-(defn generate-sentence [a b & _]
-    (take generated-sentence-length (stream-of-shite a b @table)))
-
+(defn generate-sentence []
+    (let [[a b] (nth @starters (rand-int (count @starters)))]
+        (take generated-sentence-length (stream-of-shite a b @table))))
 
 (defn value-or-default [value default]
     (if (nil? value) default value))
@@ -57,13 +58,17 @@
         (update-count
             (value-or-default (t [a b]) {})
             c)))
-(defn update-table [table message]
-    (if (>= (count message) 3)
-        (let [[a b c & _] message]
-            (recur (update-triple a b c table) (rest message)))
+(defn update-table [table words]
+    (if (>= (count words) 3)
+        (let [[a b c & _] words]
+            (recur (update-triple a b c table) (rest words)))
         table))
 (defn update-message! [message]
-    (dosync (ref-set table (update-table @table (split-sentence-to-words message)))))
+    (dosync
+        (let [words (split-sentence-to-words message)]
+            (ref-set table (update-table @table words))
+            (if (>= (count words) 2)
+                (ref-set starters (conj @starters (take 2 words)))))))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))
@@ -84,8 +89,7 @@
                         (if (not (= nick (:name @irc)))
                             (if (.contains message (:name @irc))
                                 (send-message irc channel
-                                    (apply str (interpose " "
-                                        (apply generate-sentence (split-sentence-to-words message)))))
+                                    (apply str (interpose " " (generate-sentence))))
                                 (log-sentence! message))))
                 }
             })
