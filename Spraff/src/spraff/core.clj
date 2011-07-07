@@ -21,7 +21,7 @@
 (def corpus-file "corpus.txt")
 (def word-pattern #"\S+")
 (def generated-sentence-length 10)
-(def prefix-length 3)
+(def prefix-length 2)
 
 (def table (ref {}))
 (def starters (ref []))
