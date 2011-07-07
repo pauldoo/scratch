@@ -18,13 +18,13 @@
 (def irc-channels ["#sprafftest"])
 (def corpus-file "corpus.txt")
 (def word-pattern #"\S+")
-(def generated-sentence-length 10)
-(def prefix-length 2)
+(def generated-sentence-length 30)
+(def prefix-length 3)
 
 (def table (ref {}))
 (def starters (ref []))
 
-(defn split-sentence-to-words [sentence] (re-seq word-pattern sentence))
+(defn split-sentence-to-words [sentence] (map #(.intern %) (re-seq word-pattern sentence)))
 
 (defn select [c i]
     (let [[word weight] (first c)]
@@ -63,37 +63,35 @@
         (let [[prefix [c & _]] (split-at prefix-length words)]
             (recur (update-transition prefix c table) (rest words)))
         table))
-(defn update-message! [message]
-    (dosync
+(defn update-message! [message botname]
+    (if (not (.contains message botname)) (dosync
         (let [words (split-sentence-to-words message)]
             (ref-set table (update-table @table words))
             (if (>= (count words) prefix-length)
-                (ref-set starters (conj @starters (take prefix-length words)))))))
-(defn log-sentence! [message]
+                (ref-set starters (conj @starters (take prefix-length words))))))))
+(defn log-sentence! [message botname]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))
-        (update-message! message)))
+        (update-message! message botname)))
 
 (defn -main
     "Java entry point.  Counts number of visible frames (via callbacks) and
     terminates the application when none are visible."
     [& args]
-    (do
-        (dorun (map update-message! (line-seq (reader corpus-file))))
-        (connect
+    (let [bot (connect
             (create-irc {
                 :name bot-nick
                 :server irc-server
                 :fnmap {
-                    :on-message (fn [{:keys [nick channel message irc]}]
-                        (if (not (= nick (:name @irc)))
-                            (if (.contains message (:name @irc))
-                                (send-message irc channel
-                                    (apply str (interpose " " (generate-sentence))))
-                                (log-sentence! message))))
+                    :on-message (fn [{:keys [nick channel message irc]}] (do
+                        (log-sentence! message (:name @irc))
+                        (if (and (not (= nick (:name @irc))) (.contains message (:name @irc)))
+                            (send-message irc channel
+                                (apply str (interpose " " (generate-sentence)))))))
                 }
             })
-            :channels irc-channels)))
+            :channels irc-channels)]
+        (dorun (map #(update-message! % (:name @bot)) (line-seq (reader corpus-file))))))
 
 
 

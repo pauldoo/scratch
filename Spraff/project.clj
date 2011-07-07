@@ -1,9 +1,8 @@
 ; :mode=clojure:
-(defproject clojuroids "1.0.0-SNAPSHOT"
+(defproject spraff "1.0.0-SNAPSHOT"
     :description "IRC bot."
     :dependencies [
         [org.clojure/clojure "1.2.0"]
-        [org.clojure/clojure-contrib "1.2.0"]
         [irclj "0.4.1-SNAPSHOT"]
         ]
     :dev-dependencies [
