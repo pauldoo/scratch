@@ -7,5 +7,11 @@
         [clojure.test])
 )
 
-(deftest foobar
-    (is false "TODO."))
+(deftest sentence-ends
+    ;; Test that the Markov chain can terminate early if it wants
+    (let [state (update-state "a b a b a b a b a b" empty-state)]
+        ;; Should be able to create sentences of different lengths
+        ;; Failure would be an infinite loop.
+        (dorun
+            (take 2 (distinct
+                (map count (repeatedly #(generate-sentence state))))))))
