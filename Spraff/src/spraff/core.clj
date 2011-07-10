@@ -9,14 +9,13 @@
 (ns spraff.core
     (:gen-class)
     (:use
+        [clojure.contrib.command-line]
         [clojure.java.io]
         [clojure.string :only [join]]
-        [irclj.core])
+        [irclj.core]
+    )
 )
 
-(def irc-server "localhost")
-(def bot-nick "spraffbot")
-(def irc-channels ["#sprafftest"])
 (def corpus-file "corpus.txt")
 (def word-pattern #"\S+")
 (def prefix-length 3)
@@ -101,18 +100,27 @@
 
 (defn -main
     [& args]
-    (let [state-ref (ref empty-state)] (do
-        (connect
-            (create-irc {
-                :name bot-nick
-                :server irc-server
-                :fnmap {
-                    :on-message (fn [event] (on-message event state-ref))
-                }
-            })
-            :channels irc-channels)
-        (with-open [in (reader corpus-file)]
-            (dorun (map #(update-state! % state-ref) (line-seq in)))))))
+    (with-command-line
+        args
+        "Arguments: -channel #mychannel -nick botnick -server irc.server.com"
+        [
+            [channel c "IRC Channel to join." "#sprafftest"]
+            [nick n "Bot's IRC nick." "spraffbot"]
+            [server s "IRC server address." "localhost"]
+        ]
+        (let [state-ref (ref empty-state)] (do
+            (println channel nick server)
+            (connect
+                (create-irc {
+                    :name nick
+                    :server server
+                    :fnmap {
+                        :on-message (fn [event] (on-message event state-ref))
+                    }
+                })
+                :channels [channel])
+            (with-open [in (reader corpus-file)]
+                (dorun (map #(update-state! % state-ref) (line-seq in))))))))
 
 
 
