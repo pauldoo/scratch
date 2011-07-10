@@ -111,9 +111,8 @@
                 }
             })
             :channels irc-channels)
-        (dorun (map
-            #(update-state! % state-ref)
-            (line-seq (reader corpus-file)))))))
+        (with-open [in (reader corpus-file)]
+            (dorun (map #(update-state! % state-ref) (line-seq in)))))))
 
 
 
