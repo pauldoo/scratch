@@ -48,9 +48,9 @@
 (defn generate-sentence [{:keys [table starters]}]
     (drop-last (map first
         (apply max-key #(count (filter true? (map second %)))
-            (take retries (repeatedly #(stream-of-shite
+            (take retries (repeatedly #(take 1000 (stream-of-shite
                     (nth starters (rand-int (count starters)))
-                    table)))))))
+                    table))))))))
 
 (defn value-or-default [value default]
     (if (nil? value) default value))
