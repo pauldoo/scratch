@@ -80,10 +80,9 @@
             :table
                 (update-table (:table state) words)
             :starters
-                (concat (:starters state)
-                    (if (>= (count words) prefix-length)
-                        [(take prefix-length words)]
-                        [])))))
+                (if (>= (count words) prefix-length)
+                    (conj (:starters state) (take prefix-length words))
+                    (:starters state)))))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))))
