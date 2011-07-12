@@ -45,12 +45,25 @@
             (cons [word had-choice] (further-stream-of-shite (concat (rest prefix) [word]) t)))))
 (defn stream-of-shite [prefix t]
     (concat (map vector prefix (repeat false)) (further-stream-of-shite prefix t)))
-(defn generate-sentence [{:keys [table starters]}]
-    (drop-last (map first
-        (apply max-key #(count (filter true? (map second %)))
-            (take retries (repeatedly #(take 1000 (stream-of-shite
-                    (nth starters (rand-int (count starters)))
-                    table))))))))
+(defn generate-sentence [state keywords]
+    (let [{:keys [table starters]} state]
+        (if (empty? keywords)
+            (drop-last (map first
+                (apply max-key #(count (filter true? (map second %)))
+                    (take retries (repeatedly #(take 1000 (stream-of-shite
+                        (nth starters (rand-int (count starters)))
+                        table)))))))
+            (let [filtered-starters
+                    (filter
+                        (fn [s] (not (empty? (filter
+                            (fn [k] (not (empty? (filter #(.contains % k) s))))
+                            keywords))))
+                        starters)]
+                (if (empty? filtered-starters)
+                    (generate-sentence state [])
+                    (generate-sentence
+                        (assoc state :starters filtered-starters)
+                        []))))))
 
 (defn value-or-default [value default]
     (if (nil? value) default value))
@@ -95,7 +108,9 @@
     (update-state! message state-ref)
     (if (and (not (= nick (:name @irc))) (.contains message (:name @irc)))
         (send-message irc channel
-            (join " " (generate-sentence @state-ref)))))
+            (join " " (generate-sentence
+                @state-ref
+                (set (filter #(not (.contains % (:name @irc))) (split-sentence-to-words message))))))))
 
 (defn -main
     [& args]
