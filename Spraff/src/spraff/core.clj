@@ -110,7 +110,8 @@
         (send-message irc channel
             (join " " (generate-sentence
                 @state-ref
-                (set (filter #(not (.contains % (:name @irc))) (split-sentence-to-words message))))))))
+                (let [keywords (set (filter #(not (.contains % (:name @irc))) (split-sentence-to-words message)))]
+                    (if (<= (count keywords) 3) keywords #{})))))))
 
 (defn -main
     [& args]
