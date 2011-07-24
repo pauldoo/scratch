@@ -4,6 +4,14 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>Atom.h</itemPath>
+      <itemPath>AtomImp.h</itemPath>
+      <itemPath>Heap.h</itemPath>
+      <itemPath>Interpreter.h</itemPath>
+      <itemPath>Object.h</itemPath>
+      <itemPath>ObjectFwd.h</itemPath>
+      <itemPath>ObjectImp.h</itemPath>
+      <itemPath>Pair.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -12,6 +20,10 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>Heap.cpp</itemPath>
+      <itemPath>Interpreter.cpp</itemPath>
+      <itemPath>Object.cpp</itemPath>
+      <itemPath>Pair.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"
@@ -34,6 +46,12 @@
         <compilerSet>default</compilerSet>
       </toolsSet>
       <compileType>
+        <ccTool>
+          <incDir>
+            <pElem>/opt/local/include</pElem>
+          </incDir>
+          <warningLevel>2</warningLevel>
+        </ccTool>
       </compileType>
     </conf>
     <conf name="Release" type="1">
@@ -47,6 +65,10 @@
         </cTool>
         <ccTool>
           <developmentMode>5</developmentMode>
+          <incDir>
+            <pElem>/opt/local/include</pElem>
+          </incDir>
+          <warningLevel>2</warningLevel>
         </ccTool>
         <fortranCompilerTool>
           <developmentMode>5</developmentMode>

@@ -34,7 +34,11 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
-	${OBJECTDIR}/main.o
+	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/Interpreter.o \
+	${OBJECTDIR}/Object.o \
+	${OBJECTDIR}/Pair.o \
+	${OBJECTDIR}/Heap.o
 
 
 # C Compiler Flags
@@ -64,7 +68,27 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sili: ${OBJECTFILES}
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
-	$(COMPILE.cc) -O2 -MMD -MP -MF $@.d -o ${OBJECTDIR}/main.o main.cpp
+	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/main.o main.cpp
+
+${OBJECTDIR}/Interpreter.o: Interpreter.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/Interpreter.o Interpreter.cpp
+
+${OBJECTDIR}/Object.o: Object.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/Object.o Object.cpp
+
+${OBJECTDIR}/Pair.o: Pair.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/Pair.o Pair.cpp
+
+${OBJECTDIR}/Heap.o: Heap.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/Heap.o Heap.cpp
 
 # Subprojects
 .build-subprojects:
