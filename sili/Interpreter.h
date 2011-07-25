@@ -4,9 +4,12 @@
 
 namespace sili {
     namespace Interpreter {
-        const ObjectPtr eval(const ObjectPtr& expression, const ObjectPtr& environment);
+        extern const std::wstring LAMBDA;
+        extern const std::wstring COMPOUND_PROCEDURE;
         
-        const ObjectPtr apply(const ObjectPtr& procedure, const ObjectPtr& arguments);
+        const ObjectPtr Eval(const ObjectPtr& expression, const ObjectPtr& environment);
+        
+        const ObjectPtr Apply(const ObjectPtr& procedure, const ObjectPtr& arguments);
     };
 }
 

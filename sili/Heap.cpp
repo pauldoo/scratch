@@ -109,7 +109,6 @@ namespace sili {
             mAllObjects.begin(), mAllObjects.end(),
             reachable.begin(), reachable.end(),
             std::back_inserter(unreachable));
-        //std::vector<ObjectPtr> unreachable2(unreachable.begin(), unreachable.end());
 
         typedef std::vector<ObjectPtr>::const_iterator T;
         for (T i = unreachable.begin(); i != unreachable.end(); ++i) {

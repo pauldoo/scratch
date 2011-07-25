@@ -10,10 +10,11 @@ namespace sili {
         
         const std::vector<ObjectPtr> References() const;
         void NullAllReferences();
+        void WriteAsString(std::wostream&) const;
 
         ObjectPtr mFirst;
         ObjectPtr mSecond;
-        
+
     private:
         Pair(const ObjectPtr& first, const ObjectPtr& second);
         ~Pair();

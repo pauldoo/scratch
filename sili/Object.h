@@ -12,9 +12,21 @@ namespace sili {
         virtual void NullAllReferences() = 0;
         
         template<typename T>
-        const boost::intrusive_ptr<T> As();
+        const boost::intrusive_ptr<T> AsA();
         template<typename T>
-        const boost::intrusive_ptr<T> As() const;
+        const boost::intrusive_ptr<T> AsA() const;
+
+        template<typename T>
+        const boost::intrusive_ptr<T> AsA00();
+        template<typename T>
+        const boost::intrusive_ptr<T> AsA00() const;
+        
+        template<typename T> const bool IsA();
+        template<typename T> const bool IsA() const;
+        
+        
+        virtual void WriteAsString(std::wostream&) const = 0;
+        
         
     protected:
         Object();
@@ -29,5 +41,6 @@ namespace sili {
         friend void ::intrusive_ptr_add_ref(const sili::Object* const);
         friend void ::intrusive_ptr_release(const sili::Object* const);
     };
+
 }
-    
+

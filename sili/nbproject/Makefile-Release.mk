@@ -34,7 +34,9 @@ OBJECTDIR=${CND_BUILDDIR}/${CND_CONF}/${CND_PLATFORM}
 
 # Object Files
 OBJECTFILES= \
+	${OBJECTDIR}/Symbol.o \
 	${OBJECTDIR}/main.o \
+	${OBJECTDIR}/Primitive.o \
 	${OBJECTDIR}/Interpreter.o \
 	${OBJECTDIR}/Object.o \
 	${OBJECTDIR}/Pair.o \
@@ -65,10 +67,20 @@ ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sili: ${OBJECTFILES}
 	${MKDIR} -p ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}
 	${LINK.cc} -o ${CND_DISTDIR}/${CND_CONF}/${CND_PLATFORM}/sili ${OBJECTFILES} ${LDLIBSOPTIONS} 
 
+${OBJECTDIR}/Symbol.o: Symbol.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/Symbol.o Symbol.cpp
+
 ${OBJECTDIR}/main.o: main.cpp 
 	${MKDIR} -p ${OBJECTDIR}
 	${RM} $@.d
 	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/main.o main.cpp
+
+${OBJECTDIR}/Primitive.o: Primitive.cpp 
+	${MKDIR} -p ${OBJECTDIR}
+	${RM} $@.d
+	$(COMPILE.cc) -O2 -Wall -I/opt/local/include -MMD -MP -MF $@.d -o ${OBJECTDIR}/Primitive.o Primitive.cpp
 
 ${OBJECTDIR}/Interpreter.o: Interpreter.cpp 
 	${MKDIR} -p ${OBJECTDIR}

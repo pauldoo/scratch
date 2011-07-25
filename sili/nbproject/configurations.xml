@@ -4,14 +4,15 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>Atom.h</itemPath>
-      <itemPath>AtomImp.h</itemPath>
       <itemPath>Heap.h</itemPath>
       <itemPath>Interpreter.h</itemPath>
       <itemPath>Object.h</itemPath>
       <itemPath>ObjectFwd.h</itemPath>
       <itemPath>ObjectImp.h</itemPath>
       <itemPath>Pair.h</itemPath>
+      <itemPath>Primitive.h</itemPath>
+      <itemPath>PrimitiveImp.h</itemPath>
+      <itemPath>Symbol.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
                    displayName="Resource Files"
@@ -24,6 +25,8 @@
       <itemPath>Interpreter.cpp</itemPath>
       <itemPath>Object.cpp</itemPath>
       <itemPath>Pair.cpp</itemPath>
+      <itemPath>Primitive.cpp</itemPath>
+      <itemPath>Symbol.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>
     <logicalFolder name="TestFiles"

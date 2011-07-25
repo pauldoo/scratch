@@ -33,4 +33,24 @@ namespace sili {
         mFirst.reset();
         mSecond.reset();
     }
+    
+    namespace {
+        void WriteInner(std::wostream& out, const boost::intrusive_ptr<Pair const>& pair)
+        {
+            if (pair.get() != NULL) {
+                out << (*(pair->mFirst.get()));
+                if (pair->mSecond.get() != NULL) {
+                    out << L" ";
+                    WriteInner(out, pair->mSecond->AsA<Pair>());
+                }
+            }
+        }
+    }
+    
+    void Pair::WriteAsString(std::wostream& out) const
+    {
+        out << L"(";
+        WriteInner(out, this);
+        out << L")";
+    }
 }

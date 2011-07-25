@@ -5,13 +5,11 @@
 namespace sili {
     Object::Object() : mReferenceCount(0)
     {
-        std::wcout << __FUNCTION__ << L"\n";
         Heap::Instance()->NotifyCreated(this);
     }
     
     Object::~Object()
     {
-        std::wcout << __FUNCTION__ << L"\n";
         Heap::Instance()->NotifyDestroyed(this);
     }
     
@@ -40,4 +38,14 @@ void intrusive_ptr_add_ref(const sili::Object* const object) {
 
 void intrusive_ptr_release(const sili::Object* const object) {
     object->DecrementCount();
+}
+
+std::wostream& operator << (std::wostream& out, const sili::Object& object)
+{
+    if (&object == NULL) {
+        out << L"()";
+    } else {
+        object.WriteAsString(out);
+    }
+    return out;
 }
