@@ -5,5 +5,9 @@ Written in C++ to prevent accidental cheating (inheriting features from host lan
 TODO:
 * Create sensible nil
 * Macros
+* Tail recursion
+* Defines
+* Mutual recursion
+* Side effects (set!)
 
 
