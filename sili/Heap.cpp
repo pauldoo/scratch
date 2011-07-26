@@ -1,8 +1,8 @@
 #include "Heap.h"
 
-#include "Assert.h"
 #include "Object.h"
 
+#include <algorithm>
 #include <boost/assert.hpp>
 #include <map>
 #include <stack>

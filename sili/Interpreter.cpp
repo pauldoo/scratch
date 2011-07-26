@@ -6,6 +6,7 @@
 #include "Primitive.h"
 #include "Symbol.h"
 
+#include <iostream>
 #include <string>
 
 namespace sili {
@@ -45,7 +46,7 @@ namespace sili {
             
             const ObjectPtr LookupVariableValue(const ObjectPtr& exp, const ObjectPtr& env)
             {
-                BOOST_ASSERT_MSG(env != NULL, "unbound variable");
+                BOOST_ASSERT(env != NULL /*, "unbound variable"*/);
                 
                 const std::wstring& nameToResolve = exp->AsA<Symbol>()->mName;
                 const std::wstring& nameInEnvironment = env->AsA<Pair>()->mFirst->AsA<Pair>()->mFirst->AsA<Symbol>()->mName;
@@ -141,8 +142,8 @@ namespace sili {
                 if (parameterNames == NULL && parameterValues == NULL) {
                     return baseEnv;
                 }
-                BOOST_ASSERT_MSG(parameterNames != NULL, "Too many arguments");
-                BOOST_ASSERT_MSG(parameterValues != NULL, "Too few arguments");
+                BOOST_ASSERT(parameterNames != NULL /*, "Too many arguments"*/);
+                BOOST_ASSERT(parameterValues != NULL /*, "Too few arguments"*/);
                 
                 return
                     Pair::New(
@@ -196,7 +197,7 @@ namespace sili {
                             arguments,
                             ProcedureEnvironment(procedure)));
             } else {
-                BOOST_ASSERT_MSG(false, "Not a compound procedure");
+                BOOST_ASSERT(false /*, "Not a compound procedure"*/);
             }
         }
     }

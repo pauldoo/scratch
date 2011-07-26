@@ -2,6 +2,8 @@
 
 #include "Primitive.h"
 
+#include <iostream>
+
 namespace sili {
     template<typename T>
     const boost::intrusive_ptr<Primitive<T> > Primitive<T>::New(const T& value)

@@ -2,6 +2,8 @@
 
 #include "Heap.h"
 
+#include <iostream>
+
 namespace sili {
     Object::Object() : mReferenceCount(0)
     {

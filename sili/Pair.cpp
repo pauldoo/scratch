@@ -1,5 +1,6 @@
 #include "Pair.h"
 
+#include <iostream>
 
 namespace sili {
     const boost::intrusive_ptr<Pair> Pair::New(
@@ -30,8 +31,8 @@ namespace sili {
     void Pair::NullAllReferences()
     {
         std::wcout << __FUNCTION__ << "\n";
-        mFirst.reset();
-        mSecond.reset();
+        mFirst = NULL;
+        mSecond = NULL;
     }
     
     namespace {
