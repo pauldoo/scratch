@@ -1,5 +1,7 @@
 #include "Pair.h"
 
+#include "ObjectImp.h"
+
 #include <iostream>
 
 namespace sili {

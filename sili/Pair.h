@@ -13,6 +13,7 @@ namespace sili {
         void WriteAsString(std::wostream&) const;
 
         ObjectPtr mFirst;
+        // TODO: Change type of mSecond to boost::intrusive_ptr<Pair>, and s/Pair/Cons/.
         ObjectPtr mSecond;
 
     private:

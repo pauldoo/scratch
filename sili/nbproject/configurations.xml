@@ -10,6 +10,7 @@
       <itemPath>ObjectFwd.h</itemPath>
       <itemPath>ObjectImp.h</itemPath>
       <itemPath>Pair.h</itemPath>
+      <itemPath>Parser.h</itemPath>
       <itemPath>Primitive.h</itemPath>
       <itemPath>PrimitiveImp.h</itemPath>
       <itemPath>Symbol.h</itemPath>
@@ -25,6 +26,7 @@
       <itemPath>Interpreter.cpp</itemPath>
       <itemPath>Object.cpp</itemPath>
       <itemPath>Pair.cpp</itemPath>
+      <itemPath>Parser.cpp</itemPath>
       <itemPath>Primitive.cpp</itemPath>
       <itemPath>Symbol.cpp</itemPath>
       <itemPath>main.cpp</itemPath>

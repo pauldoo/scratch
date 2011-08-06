@@ -3,6 +3,7 @@
 #include "Interpreter.h"
 #include "ObjectImp.h"
 #include "Pair.h"
+#include "Parser.h"
 #include "Primitive.h"
 #include "PrimitiveImp.h"
 #include "Symbol.h"
@@ -50,6 +51,12 @@ int main(int argc, char** argv) {
             
             std::wcout << (*result) << L"\n";
         }
+        
+        ObjectPtr obj = Parser::ParseFromStream(std::wcin);
+        std::wcout << *(obj.get()) << "\n";
+        obj = NULL;
+
+        sili::Heap::Shutdown();
         
         return EXIT_SUCCESS;
     } catch (const std::exception& ex) {
