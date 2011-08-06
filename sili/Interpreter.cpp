@@ -6,7 +6,6 @@
 #include "Primitive.h"
 #include "Symbol.h"
 
-#include <iostream>
 #include <string>
 
 namespace sili {
@@ -51,10 +50,6 @@ namespace sili {
                 const std::wstring& nameToResolve = exp->AsA<Symbol>()->mName;
                 const std::wstring& nameInEnvironment = env->AsA<Pair>()->mFirst->AsA<Pair>()->mFirst->AsA<Symbol>()->mName;
                 
-                std::wcout << L"Looking up '" << nameToResolve << L"\n";
-                std::wcout << L"Using environment: " << (*(env.get())) << L"\n";
-                
-                
                 if (nameInEnvironment == nameToResolve) {
                     return env->AsA<Pair>()->mFirst->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
                 } else {
@@ -64,10 +59,6 @@ namespace sili {
             
             const ObjectPtr MakeProcedure(const ObjectPtr& parameters, const ObjectPtr& body, const ObjectPtr& env)
             {
-                std::wcout << "MakeProcedure: " << (*(body.get())) << "\n";
-                std::wcout << "  with Params: " << (*(parameters.get())) << "\n";
-                std::wcout << "  with Env: " << (*(env.get())) << "\n";
-                
                 return
                     Pair::New(Symbol::New(COMPOUND_PROCEDURE),
                         Pair::New(parameters,
@@ -164,9 +155,6 @@ namespace sili {
         
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
         {
-            std::wcout << "Eval: " << (*(exp.get())) << "\n";
-            std::wcout << "  in Env: " << (*(env.get())) << "\n";
-            
             if (IsSelfEvaluating(exp)) {
                 return exp;
             } else if (IsVariable(exp)) {
@@ -186,9 +174,6 @@ namespace sili {
         
         const ObjectPtr Apply(const ObjectPtr& procedure, const ObjectPtr& arguments)
         {
-            std::wcout << "Apply: " << (*(procedure.get())) << "\n";
-            std::wcout << "  with Args: " << (*(arguments.get())) << "\n";
-
             if (IsCompoundProcedure(procedure)) {
                 return Eval(
                         ProcedureBody(procedure),
