@@ -43,17 +43,35 @@ namespace sili {
                 return exp->IsA<Pair>();
             }
             
-            const ObjectPtr LookupVariableValue(const ObjectPtr& exp, const ObjectPtr& env)
+            const ObjectPtr LookupVariableEntryInFrame(const ObjectPtr& exp, const ObjectPtr& frame)
             {
-                BOOST_ASSERT(env != NULL /*, "unbound variable"*/);
-                
-                const std::wstring& nameToResolve = exp->AsA<Symbol>()->mName;
-                const std::wstring& nameInEnvironment = env->AsA<Pair>()->mFirst->AsA<Pair>()->mFirst->AsA<Symbol>()->mName;
-                
-                if (nameInEnvironment == nameToResolve) {
-                    return env->AsA<Pair>()->mFirst->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+                if (frame == NULL) {
+                    return ObjectPtr();
                 } else {
-                    return LookupVariableValue(exp, env->AsA<Pair>()->mSecond);
+                    const std::wstring& nameToResolve = exp->AsA<Symbol>()->mName;
+                    const ObjectPtr entry = frame->AsA<Pair>()->mFirst;
+                    const std::wstring& nameInEnvironment = entry->AsA<Pair>()->mFirst->AsA<Symbol>()->mName;
+
+                    if (nameInEnvironment == nameToResolve) {
+                        return entry;
+                    } else {
+                        return LookupVariableEntryInFrame(exp, frame->AsA<Pair>()->mSecond);
+                    }
+                }
+            }
+
+            const ObjectPtr LookupVariableValueInEnvironment(const ObjectPtr& exp, const ObjectPtr& env)
+            {
+                std::wcerr << *(exp.get()) << "\n";
+                std::wcerr << *(env.get()) << "\n";
+                
+                BOOST_ASSERT(env != NULL /*, "unbound variable"*/);
+            
+                const ObjectPtr entry = LookupVariableEntryInFrame(exp, env->AsA<Pair>()->mFirst);
+                if (entry != NULL) {
+                    return entry->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+                } else {
+                    return LookupVariableValueInEnvironment(exp, env->AsA<Pair>()->mSecond);
                 }
             }
             
@@ -125,6 +143,29 @@ namespace sili {
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
+            const ObjectPtr CreateFrame(
+                const ObjectPtr& variableNames,
+                const ObjectPtr& variableValues)
+            {
+                if (variableNames == NULL && variableValues == NULL) {
+                    return ObjectPtr();
+                }
+                BOOST_ASSERT(variableNames != NULL /*, "Too many arguments"*/);
+                BOOST_ASSERT(variableValues != NULL /*, "Too few arguments"*/);
+                
+                return
+                    Pair::New(
+                        Pair::New(
+                            variableNames->AsA<Pair>()->mFirst->AsA<Symbol>(),
+                            Pair::New(
+                                variableValues->AsA<Pair>()->mFirst,
+                                NULL)),
+                        CreateFrame(
+                            variableNames->AsA<Pair>()->mSecond,
+                            variableValues->AsA<Pair>()->mSecond));
+            }
+                    
+            
             const ObjectPtr ExtendEnvironment(
                 const ObjectPtr& parameterNames, 
                 const ObjectPtr& parameterValues, 
@@ -138,15 +179,8 @@ namespace sili {
                 
                 return
                     Pair::New(
-                        Pair::New(
-                            parameterNames->AsA<Pair>()->mFirst->AsA<Symbol>(),
-                            Pair::New(
-                                parameterValues->AsA<Pair>()->mFirst,
-                                NULL)),
-                        ExtendEnvironment(
-                            parameterNames->AsA<Pair>()->mSecond,
-                            parameterValues->AsA<Pair>()->mSecond,
-                            baseEnv));
+                        CreateFrame(parameterNames, parameterValues),
+                        baseEnv);
             }
         }
         
@@ -158,7 +192,7 @@ namespace sili {
             if (IsSelfEvaluating(exp)) {
                 return exp;
             } else if (IsVariable(exp)) {
-                return LookupVariableValue(exp, env);
+                return LookupVariableValueInEnvironment(exp, env);
             } else if (IsLambda(exp)) {
                 return
                     MakeProcedure(LambdaParameters(exp), LambdaBody(exp), env);
