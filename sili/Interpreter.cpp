@@ -96,7 +96,7 @@ namespace sili {
             const ObjectPtr LambdaBody(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambda(exp));
-                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond;
             }
             
             const ObjectPtr Operator(const ObjectPtr& exp)
@@ -176,12 +176,6 @@ namespace sili {
                 const ObjectPtr& parameterValues, 
                 const ObjectPtr& baseEnv)
             {
-                if (parameterNames == NULL && parameterValues == NULL) {
-                    return baseEnv;
-                }
-                BOOST_ASSERT(parameterNames != NULL /*, "Too many arguments"*/);
-                BOOST_ASSERT(parameterValues != NULL /*, "Too few arguments"*/);
-                
                 return
                     Pair::New(
                         ExtendFrame(parameterNames, parameterValues, ObjectPtr()),
@@ -207,6 +201,16 @@ namespace sili {
                             Pair::New(name, ObjectPtr()),
                             Pair::New(value, ObjectPtr()),
                             env->AsA<Pair>()->mFirst);
+            }
+            
+            const ObjectPtr EvalExpressions(const ObjectPtr& exps, const ObjectPtr& env)
+            {
+                ObjectPtr result = Eval(exps->AsA<Pair>()->mFirst, env);
+                if (exps->AsA<Pair>()->mSecond == NULL) {
+                    return result;
+                } else {
+                    return EvalExpressions(exps->AsA<Pair>()->mSecond, env);
+                }
             }
         }
         
@@ -242,7 +246,7 @@ namespace sili {
         const ObjectPtr Apply(const ObjectPtr& procedure, const ObjectPtr& arguments)
         {
             if (IsCompoundProcedure(procedure)) {
-                return Eval(
+                return EvalExpressions(
                         ProcedureBody(procedure),
                         ExtendEnvironment(
                             ProcedureParameters(procedure),
