@@ -7,8 +7,7 @@ TODO:
 * Parse string primitives
 * Create sensible nil
 * Macros
-* Tail recursion
-* Mutual recursion
+* Mutual tail recursion
 * Side effects (set!)
 
 
