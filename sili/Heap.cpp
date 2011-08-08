@@ -85,13 +85,17 @@ namespace sili {
                 Object* const object = stack.back();
                 stack.pop_back();
                 
+                BOOST_ASSERT(object != NULL);
+                
                 if (result.find(object) == result.end()) {
                     result.insert(object);
                     
                     const std::vector<ObjectPtr> targets = object->References();
                     typedef std::vector<ObjectPtr>::const_iterator U;
                     for (U j = targets.begin(); j != targets.end(); ++j) {
-                        stack.push_back(j->get());
+                        if (j->get() != NULL) {
+                            stack.push_back(j->get());
+                        }
                     }
                 }
             }

@@ -37,6 +37,11 @@ namespace sili {
             {
                 return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA);
             }
+
+            const bool IsDefine(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, DEFINE);
+            }
             
             const bool IsApplication(const ObjectPtr& exp)
             {
@@ -62,9 +67,6 @@ namespace sili {
 
             const ObjectPtr LookupVariableValueInEnvironment(const ObjectPtr& exp, const ObjectPtr& env)
             {
-                std::wcerr << *(exp.get()) << "\n";
-                std::wcerr << *(env.get()) << "\n";
-                
                 BOOST_ASSERT(env != NULL /*, "unbound variable"*/);
             
                 const ObjectPtr entry = LookupVariableEntryInFrame(exp, env->AsA<Pair>()->mFirst);
@@ -143,16 +145,18 @@ namespace sili {
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
-            const ObjectPtr CreateFrame(
+            const ObjectPtr ExtendFrame(
                 const ObjectPtr& variableNames,
-                const ObjectPtr& variableValues)
+                const ObjectPtr& variableValues,
+                const ObjectPtr& baseFrame)
             {
                 if (variableNames == NULL && variableValues == NULL) {
-                    return ObjectPtr();
+                    return baseFrame;
                 }
                 BOOST_ASSERT(variableNames != NULL /*, "Too many arguments"*/);
                 BOOST_ASSERT(variableValues != NULL /*, "Too few arguments"*/);
-                
+
+                // TODO: assert that names don't clash with existing variables
                 return
                     Pair::New(
                         Pair::New(
@@ -160,9 +164,10 @@ namespace sili {
                             Pair::New(
                                 variableValues->AsA<Pair>()->mFirst,
                                 NULL)),
-                        CreateFrame(
+                        ExtendFrame(
                             variableNames->AsA<Pair>()->mSecond,
-                            variableValues->AsA<Pair>()->mSecond));
+                            variableValues->AsA<Pair>()->mSecond,
+                            baseFrame));
             }
                     
             
@@ -179,12 +184,34 @@ namespace sili {
                 
                 return
                     Pair::New(
-                        CreateFrame(parameterNames, parameterValues),
+                        ExtendFrame(parameterNames, parameterValues, ObjectPtr()),
                         baseEnv);
+            }
+            
+            const ObjectPtr DefineName(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsDefine(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            }
+            
+            const ObjectPtr DefineExpression(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsDefine(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            }
+            
+            void DefineVariable(const ObjectPtr& name, const ObjectPtr& value, const ObjectPtr& env)
+            {
+                env->AsA<Pair>()->mFirst =
+                        ExtendFrame(
+                            Pair::New(name, ObjectPtr()),
+                            Pair::New(value, ObjectPtr()),
+                            env->AsA<Pair>()->mFirst);
             }
         }
         
         const std::wstring LAMBDA = L"lambda";
+        const std::wstring DEFINE = L"define";
         const std::wstring COMPOUND_PROCEDURE = L"compound-procedure";
         
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
@@ -196,6 +223,12 @@ namespace sili {
             } else if (IsLambda(exp)) {
                 return
                     MakeProcedure(LambdaParameters(exp), LambdaBody(exp), env);
+            } else if (IsDefine(exp)) {
+                DefineVariable(
+                        DefineName(exp),
+                        Eval(DefineExpression(exp), env),
+                        env);
+                return ObjectPtr();
             } else if (IsApplication(exp)) {
                 return
                     Apply(
