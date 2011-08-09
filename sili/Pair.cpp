@@ -32,7 +32,6 @@ namespace sili {
     
     void Pair::NullAllReferences()
     {
-        std::wcout << __FUNCTION__ << "\n";
         mFirst = NULL;
         mSecond = NULL;
     }

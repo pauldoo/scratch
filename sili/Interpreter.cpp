@@ -6,7 +6,6 @@
 #include "Primitive.h"
 #include "Symbol.h"
 
-#include <iostream>
 #include <string>
 
 namespace sili {
@@ -38,36 +37,48 @@ namespace sili {
             {
                 return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA);
             }
+
+            const bool IsDefine(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, DEFINE);
+            }
             
             const bool IsApplication(const ObjectPtr& exp)
             {
                 return exp->IsA<Pair>();
             }
             
-            const ObjectPtr LookupVariableValue(const ObjectPtr& exp, const ObjectPtr& env)
+            const ObjectPtr LookupVariableEntryInFrame(const ObjectPtr& exp, const ObjectPtr& frame)
+            {
+                if (frame == NULL) {
+                    return ObjectPtr();
+                } else {
+                    const std::wstring& nameToResolve = exp->AsA<Symbol>()->mName;
+                    const ObjectPtr entry = frame->AsA<Pair>()->mFirst;
+                    const std::wstring& nameInEnvironment = entry->AsA<Pair>()->mFirst->AsA<Symbol>()->mName;
+
+                    if (nameInEnvironment == nameToResolve) {
+                        return entry;
+                    } else {
+                        return LookupVariableEntryInFrame(exp, frame->AsA<Pair>()->mSecond);
+                    }
+                }
+            }
+
+            const ObjectPtr LookupVariableValueInEnvironment(const ObjectPtr& exp, const ObjectPtr& env)
             {
                 BOOST_ASSERT(env != NULL /*, "unbound variable"*/);
-                
-                const std::wstring& nameToResolve = exp->AsA<Symbol>()->mName;
-                const std::wstring& nameInEnvironment = env->AsA<Pair>()->mFirst->AsA<Pair>()->mFirst->AsA<Symbol>()->mName;
-                
-                std::wcout << L"Looking up '" << nameToResolve << L"\n";
-                std::wcout << L"Using environment: " << (*(env.get())) << L"\n";
-                
-                
-                if (nameInEnvironment == nameToResolve) {
-                    return env->AsA<Pair>()->mFirst->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            
+                const ObjectPtr entry = LookupVariableEntryInFrame(exp, env->AsA<Pair>()->mFirst);
+                if (entry != NULL) {
+                    return entry->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
                 } else {
-                    return LookupVariableValue(exp, env->AsA<Pair>()->mSecond);
+                    return LookupVariableValueInEnvironment(exp, env->AsA<Pair>()->mSecond);
                 }
             }
             
             const ObjectPtr MakeProcedure(const ObjectPtr& parameters, const ObjectPtr& body, const ObjectPtr& env)
             {
-                std::wcout << "MakeProcedure: " << (*(body.get())) << "\n";
-                std::wcout << "  with Params: " << (*(parameters.get())) << "\n";
-                std::wcout << "  with Env: " << (*(env.get())) << "\n";
-                
                 return
                     Pair::New(Symbol::New(COMPOUND_PROCEDURE),
                         Pair::New(parameters,
@@ -85,7 +96,7 @@ namespace sili {
             const ObjectPtr LambdaBody(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambda(exp));
-                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond;
             }
             
             const ObjectPtr Operator(const ObjectPtr& exp)
@@ -134,46 +145,94 @@ namespace sili {
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
+            const ObjectPtr ExtendFrame(
+                const ObjectPtr& variableNames,
+                const ObjectPtr& variableValues,
+                const ObjectPtr& baseFrame)
+            {
+                if (variableNames == NULL && variableValues == NULL) {
+                    return baseFrame;
+                }
+                BOOST_ASSERT(variableNames != NULL /*, "Too many arguments"*/);
+                BOOST_ASSERT(variableValues != NULL /*, "Too few arguments"*/);
+
+                // TODO: assert that names don't clash with existing variables
+                return
+                    Pair::New(
+                        Pair::New(
+                            variableNames->AsA<Pair>()->mFirst->AsA<Symbol>(),
+                            Pair::New(
+                                variableValues->AsA<Pair>()->mFirst,
+                                NULL)),
+                        ExtendFrame(
+                            variableNames->AsA<Pair>()->mSecond,
+                            variableValues->AsA<Pair>()->mSecond,
+                            baseFrame));
+            }
+                    
+            
             const ObjectPtr ExtendEnvironment(
                 const ObjectPtr& parameterNames, 
                 const ObjectPtr& parameterValues, 
                 const ObjectPtr& baseEnv)
             {
-                if (parameterNames == NULL && parameterValues == NULL) {
-                    return baseEnv;
-                }
-                BOOST_ASSERT(parameterNames != NULL /*, "Too many arguments"*/);
-                BOOST_ASSERT(parameterValues != NULL /*, "Too few arguments"*/);
-                
                 return
                     Pair::New(
-                        Pair::New(
-                            parameterNames->AsA<Pair>()->mFirst->AsA<Symbol>(),
-                            Pair::New(
-                                parameterValues->AsA<Pair>()->mFirst,
-                                NULL)),
-                        ExtendEnvironment(
-                            parameterNames->AsA<Pair>()->mSecond,
-                            parameterValues->AsA<Pair>()->mSecond,
-                            baseEnv));
+                        ExtendFrame(parameterNames, parameterValues, ObjectPtr()),
+                        baseEnv);
+            }
+            
+            const ObjectPtr DefineName(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsDefine(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            }
+            
+            const ObjectPtr DefineExpression(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsDefine(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            }
+            
+            void DefineVariable(const ObjectPtr& name, const ObjectPtr& value, const ObjectPtr& env)
+            {
+                env->AsA<Pair>()->mFirst =
+                        ExtendFrame(
+                            Pair::New(name, ObjectPtr()),
+                            Pair::New(value, ObjectPtr()),
+                            env->AsA<Pair>()->mFirst);
+            }
+            
+            const ObjectPtr EvalExpressions(const ObjectPtr& exps, const ObjectPtr& env)
+            {
+                ObjectPtr result = Eval(exps->AsA<Pair>()->mFirst, env);
+                if (exps->AsA<Pair>()->mSecond == NULL) {
+                    return result;
+                } else {
+                    return EvalExpressions(exps->AsA<Pair>()->mSecond, env);
+                }
             }
         }
         
         const std::wstring LAMBDA = L"lambda";
+        const std::wstring DEFINE = L"define";
         const std::wstring COMPOUND_PROCEDURE = L"compound-procedure";
         
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
         {
-            std::wcout << "Eval: " << (*(exp.get())) << "\n";
-            std::wcout << "  in Env: " << (*(env.get())) << "\n";
-            
             if (IsSelfEvaluating(exp)) {
                 return exp;
             } else if (IsVariable(exp)) {
-                return LookupVariableValue(exp, env);
+                return LookupVariableValueInEnvironment(exp, env);
             } else if (IsLambda(exp)) {
                 return
                     MakeProcedure(LambdaParameters(exp), LambdaBody(exp), env);
+            } else if (IsDefine(exp)) {
+                DefineVariable(
+                        DefineName(exp),
+                        Eval(DefineExpression(exp), env),
+                        env);
+                return ObjectPtr();
             } else if (IsApplication(exp)) {
                 return
                     Apply(
@@ -186,11 +245,8 @@ namespace sili {
         
         const ObjectPtr Apply(const ObjectPtr& procedure, const ObjectPtr& arguments)
         {
-            std::wcout << "Apply: " << (*(procedure.get())) << "\n";
-            std::wcout << "  with Args: " << (*(arguments.get())) << "\n";
-
             if (IsCompoundProcedure(procedure)) {
-                return Eval(
+                return EvalExpressions(
                         ProcedureBody(procedure),
                         ExtendEnvironment(
                             ProcedureParameters(procedure),
