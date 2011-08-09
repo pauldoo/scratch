@@ -78,12 +78,12 @@
             (value-or-default (t prefix) {})
             c)))
 (defn update-table [table words]
-    (if (>= (count words) prefix-length)
+    (if (> (count words) prefix-length)
         (let [[prefix remainder] (split-at prefix-length words)]
             (recur
                 (update-transition
                     prefix
-                    (if (empty? remainder) :end (first remainder))
+                    (first remainder)
                     table)
                 (rest words)))
         table))
@@ -91,7 +91,7 @@
     (let [words (split-sentence-to-words message)]
         (assoc state
             :table
-                (update-table (:table state) words)
+                (update-table (:table state) (concat [:begin] words [:end]))
             :starters
                 (if (>= (count words) prefix-length)
                     (conj (:starters state) (take prefix-length words))
