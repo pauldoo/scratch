@@ -11,6 +11,15 @@
 namespace sili {
     namespace Interpreter {
         namespace {
+            // TODO: refactor and remove duplication..
+            
+            const std::wstring LAMBDA = L"lambda";
+            const std::wstring DEFINE = L"define";
+            const std::wstring MACRO = L"macro";
+            const std::wstring COMPOUND_PROCEDURE = L"compound-procedure";
+            const std::wstring COMPOUND_MACRO = L"compound-macro"; // should be macro-procedure maybe ?
+            const std::wstring SET = L"set!";            
+            
             const bool IsSelfEvaluating(const ObjectPtr& exp)
             {
                 return exp->IsA<PrimitiveBase>();
@@ -36,6 +45,11 @@ namespace sili {
             const bool IsLambda(const ObjectPtr& exp)
             {
                 return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA);
+            }
+
+            const bool IsMacro(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, MACRO);
             }
 
             const bool IsDefine(const ObjectPtr& exp)
@@ -97,10 +111,26 @@ namespace sili {
                                 Pair::New(env,
                                     NULL))));
             }
+
+            const ObjectPtr MakeMacro(const ObjectPtr& parameters, const ObjectPtr& body, const ObjectPtr& env)
+            {
+                return
+                    Pair::New(Symbol::New(COMPOUND_MACRO),
+                        Pair::New(parameters,
+                            Pair::New(body,
+                                Pair::New(env,
+                                    NULL))));
+            }
             
             const ObjectPtr LambdaParameters(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambda(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            }
+
+            const ObjectPtr MacroParameters(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsMacro(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
@@ -109,6 +139,12 @@ namespace sili {
                 BOOST_ASSERT(IsLambda(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond;
             }
+
+            const ObjectPtr MacroBody(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsMacro(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond;
+            }            
             
             const ObjectPtr Operator(const ObjectPtr& exp)
             {
@@ -137,22 +173,27 @@ namespace sili {
             {
                 return IsPairWithFirstAsSymbolWithValue(exp, COMPOUND_PROCEDURE);
             }
+
+            const bool IsCompoundMacro(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, COMPOUND_MACRO);
+            }
             
             const ObjectPtr ProcedureParameters(const ObjectPtr& exp)
             {
-                BOOST_ASSERT(IsCompoundProcedure(exp));
+                BOOST_ASSERT(IsCompoundProcedure(exp) || IsCompoundMacro(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
             const ObjectPtr ProcedureBody(const ObjectPtr& exp)
             {
-                BOOST_ASSERT(IsCompoundProcedure(exp));
+                BOOST_ASSERT(IsCompoundProcedure(exp) || IsCompoundMacro(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
             const ObjectPtr ProcedureEnvironment(const ObjectPtr& exp)
             {
-                BOOST_ASSERT(IsCompoundProcedure(exp));
+                BOOST_ASSERT(IsCompoundProcedure(exp) || IsCompoundMacro(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
@@ -244,11 +285,6 @@ namespace sili {
             }
         }
         
-        const std::wstring LAMBDA = L"lambda";
-        const std::wstring DEFINE = L"define";
-        const std::wstring COMPOUND_PROCEDURE = L"compound-procedure";
-        const std::wstring SET = L"set!";
-        
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
         {
             if (IsSelfEvaluating(exp)) {
@@ -258,6 +294,9 @@ namespace sili {
             } else if (IsLambda(exp)) {
                 return
                     MakeProcedure(LambdaParameters(exp), LambdaBody(exp), env);
+            } else if (IsMacro(exp)) {
+                return
+                    MakeMacro(MacroParameters(exp), MacroBody(exp), env);
             } else if (IsDefine(exp)) {
                 DefineVariableInEnvironment(
                         DefineName(exp),
@@ -273,21 +312,32 @@ namespace sili {
                 return
                     Apply(
                         Eval(Operator(exp), env),
-                        ListOfValues(Operands(exp), env));
+                        Operands(exp),
+                        env);
             } else {
                 BOOST_ASSERT(false);
             }        
         }
         
-        const ObjectPtr Apply(const ObjectPtr& procedure, const ObjectPtr& arguments)
+        const ObjectPtr Apply(const ObjectPtr& procedure, const ObjectPtr& argumentExpressions, const ObjectPtr& environment)
         {
+                
             if (IsCompoundProcedure(procedure)) {
                 return EvalExpressions(
                         ProcedureBody(procedure),
                         ExtendEnvironment(
                             ProcedureParameters(procedure),
-                            arguments,
+                            ListOfValues(argumentExpressions, environment),
                             ProcedureEnvironment(procedure)));
+            } else if (IsCompoundMacro(procedure)) {
+                return Eval(
+                    Eval(
+                        ProcedureBody(procedure)->AsA<Pair>()->mFirst,
+                        ExtendEnvironment(
+                            ProcedureParameters(procedure),
+                            argumentExpressions,
+                            ProcedureEnvironment(procedure))),
+                    environment);
             } else {
                 BOOST_ASSERT(false /*, "Not a compound procedure"*/);
             }
