@@ -42,6 +42,11 @@ namespace sili {
             {
                 return IsPairWithFirstAsSymbolWithValue(exp, DEFINE);
             }
+
+            const bool IsSet(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, SET);
+            }
             
             const bool IsApplication(const ObjectPtr& exp)
             {
@@ -65,16 +70,22 @@ namespace sili {
                 }
             }
 
-            const ObjectPtr LookupVariableValueInEnvironment(const ObjectPtr& exp, const ObjectPtr& env)
+            const ObjectPtr LookupVariableEntryInEnvironment(const ObjectPtr& exp, const ObjectPtr& env)
             {
                 BOOST_ASSERT(env != NULL /*, "unbound variable"*/);
             
                 const ObjectPtr entry = LookupVariableEntryInFrame(exp, env->AsA<Pair>()->mFirst);
                 if (entry != NULL) {
-                    return entry->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+                    return entry;
                 } else {
-                    return LookupVariableValueInEnvironment(exp, env->AsA<Pair>()->mSecond);
+                    return LookupVariableEntryInEnvironment(exp, env->AsA<Pair>()->mSecond);
                 }
+            }
+
+            const ObjectPtr LookupVariableValueInEnvironment(const ObjectPtr& exp, const ObjectPtr& env)
+            {
+                const ObjectPtr entry = LookupVariableEntryInEnvironment(exp, env);
+                return entry->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
             const ObjectPtr MakeProcedure(const ObjectPtr& parameters, const ObjectPtr& body, const ObjectPtr& env)
@@ -194,7 +205,7 @@ namespace sili {
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
-            void DefineVariable(const ObjectPtr& name, const ObjectPtr& value, const ObjectPtr& env)
+            void DefineVariableInEnvironment(const ObjectPtr& name, const ObjectPtr& value, const ObjectPtr& env)
             {
                 env->AsA<Pair>()->mFirst =
                         ExtendFrame(
@@ -212,11 +223,31 @@ namespace sili {
                     return EvalExpressions(exps->AsA<Pair>()->mSecond, env);
                 }
             }
+            
+            const ObjectPtr SetName(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsSet(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            }     
+            
+            const ObjectPtr SetExpression(const ObjectPtr& exp)
+            {
+                BOOST_ASSERT(IsSet(exp));
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
+            }
+            
+            const ObjectPtr SetVariableInEnvironment(const ObjectPtr& name, const ObjectPtr& value, const ObjectPtr& env)
+            {
+                const ObjectPtr entry = LookupVariableEntryInEnvironment(name, env);
+                entry->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst = value;
+                return value;
+            }
         }
         
         const std::wstring LAMBDA = L"lambda";
         const std::wstring DEFINE = L"define";
         const std::wstring COMPOUND_PROCEDURE = L"compound-procedure";
+        const std::wstring SET = L"set!";
         
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
         {
@@ -228,11 +259,16 @@ namespace sili {
                 return
                     MakeProcedure(LambdaParameters(exp), LambdaBody(exp), env);
             } else if (IsDefine(exp)) {
-                DefineVariable(
+                DefineVariableInEnvironment(
                         DefineName(exp),
                         Eval(DefineExpression(exp), env),
                         env);
                 return ObjectPtr();
+            } else if (IsSet(exp)) {
+                return SetVariableInEnvironment(
+                        SetName(exp),
+                        Eval(SetExpression(exp), env),
+                        env);
             } else if (IsApplication(exp)) {
                 return
                     Apply(
