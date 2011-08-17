@@ -17,6 +17,7 @@ namespace sili {
             const std::wstring CONS = L"cons";
             const std::wstring CAR = L"car";
             const std::wstring CDR = L"cdr";
+            const std::wstring IF = L"if";
             const std::wstring LAMBDA = L"lambda";
             const std::wstring DEFINE = L"define";
             const std::wstring MACRO = L"macro";
@@ -55,6 +56,11 @@ namespace sili {
                 return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA);
             }
 
+            const bool IsIf(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, IF);
+            }
+            
             const bool IsNil(const ObjectPtr& exp)
             {
                 return IsSymbolWithValue(exp, NIL);
@@ -342,6 +348,13 @@ namespace sili {
                 return Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env)->AsA<Pair>()->mFirst;
             } else if (IsCdr(exp)) {
                 return Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env)->AsA<Pair>()->mSecond;
+            } else if (IsIf(exp)) {
+                const ObjectPtr testValue = Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env);
+                if (testValue != NULL) {
+                    return Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env);
+                } else {
+                    return Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env);
+                }
             } else if (IsApplication(exp)) {
                 return
                     Apply(
