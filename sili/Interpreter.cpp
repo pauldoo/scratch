@@ -13,7 +13,7 @@ namespace sili {
         namespace {
             // TODO: refactor and remove duplication..
             
-            const std::wstring NIL = L"nil";
+            const std::wstring QUOTE = L"quote";
             const std::wstring CONS = L"cons";
             const std::wstring CAR = L"car";
             const std::wstring CDR = L"cdr";
@@ -61,9 +61,9 @@ namespace sili {
                 return IsPairWithFirstAsSymbolWithValue(exp, IF);
             }
             
-            const bool IsNil(const ObjectPtr& exp)
+            const bool IsQuote(const ObjectPtr& exp)
             {
-                return IsSymbolWithValue(exp, NIL);
+                return IsPairWithFirstAsSymbolWithValue(exp, QUOTE);
             }
             const bool IsCons(const ObjectPtr& exp)
             {
@@ -317,8 +317,8 @@ namespace sili {
         
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
         {
-            if (IsNil(exp)) {
-                return ObjectPtr();
+            if (IsQuote(exp)) {
+                return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             } else if (IsSelfEvaluating(exp)) {
                 return exp;
             } else if (IsVariable(exp)) {
