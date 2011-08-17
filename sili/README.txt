@@ -7,7 +7,6 @@ TODO:
 * Parse string primitives
 * Create sensible nil
 * Mutual tail recursion
-* List operations
 * Symbol generation for sane macros
 * Sensible demo script
 

@@ -13,6 +13,10 @@ namespace sili {
         namespace {
             // TODO: refactor and remove duplication..
             
+            const std::wstring NIL = L"nil";
+            const std::wstring CONS = L"cons";
+            const std::wstring CAR = L"car";
+            const std::wstring CDR = L"cdr";
             const std::wstring LAMBDA = L"lambda";
             const std::wstring DEFINE = L"define";
             const std::wstring MACRO = L"macro";
@@ -30,16 +34,20 @@ namespace sili {
                 return exp->IsA<Symbol>();
             }
             
+            const bool IsSymbolWithValue(const ObjectPtr& exp, const std::wstring& symbolName)
+            {
+                const boost::intrusive_ptr<Symbol> symbol00 = exp->AsA00<Symbol>();
+                return
+                        symbol00 != NULL &&
+                        symbol00->mName == symbolName;
+            }
+            
             const bool IsPairWithFirstAsSymbolWithValue(const ObjectPtr& exp, const std::wstring& symbolName)
             {
                 const boost::intrusive_ptr<Pair> pair00 = exp->AsA00<Pair>();
-                if (pair00 != NULL) {
-                    const boost::intrusive_ptr<Symbol> symbol00 = pair00->mFirst->AsA00<Symbol>();
-                    if (symbol00 != NULL) {
-                        return symbol00->mName == symbolName;
-                    }
-                }
-                return false;
+                return
+                        pair00 != NULL &&
+                        IsSymbolWithValue(pair00->mFirst, symbolName);
             }
             
             const bool IsLambda(const ObjectPtr& exp)
@@ -47,6 +55,22 @@ namespace sili {
                 return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA);
             }
 
+            const bool IsNil(const ObjectPtr& exp)
+            {
+                return IsSymbolWithValue(exp, NIL);
+            }
+            const bool IsCons(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, CONS);
+            }
+            const bool IsCar(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, CAR);
+            }
+            const bool IsCdr(const ObjectPtr& exp)
+            {
+                return IsPairWithFirstAsSymbolWithValue(exp, CDR);
+            }
             const bool IsMacro(const ObjectPtr& exp)
             {
                 return IsPairWithFirstAsSymbolWithValue(exp, MACRO);
@@ -287,7 +311,9 @@ namespace sili {
         
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
         {
-            if (IsSelfEvaluating(exp)) {
+            if (IsNil(exp)) {
+                return ObjectPtr();
+            } else if (IsSelfEvaluating(exp)) {
                 return exp;
             } else if (IsVariable(exp)) {
                 return LookupVariableValueInEnvironment(exp, env);
@@ -308,6 +334,14 @@ namespace sili {
                         SetName(exp),
                         Eval(SetExpression(exp), env),
                         env);
+            } else if (IsCons(exp)) {
+                return Pair::New(
+                        Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env),
+                        Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env));
+            } else if (IsCar(exp)) {
+                return Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env)->AsA<Pair>()->mFirst;
+            } else if (IsCdr(exp)) {
+                return Eval(exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst, env)->AsA<Pair>()->mSecond;
             } else if (IsApplication(exp)) {
                 return
                     Apply(
