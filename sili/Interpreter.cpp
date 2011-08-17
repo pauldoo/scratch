@@ -16,8 +16,8 @@ namespace sili {
             const std::wstring LAMBDA = L"lambda";
             const std::wstring DEFINE = L"define";
             const std::wstring MACRO = L"macro";
-            const std::wstring COMPOUND_PROCEDURE = L"compound-procedure";
-            const std::wstring COMPOUND_MACRO = L"compound-macro"; // should be macro-procedure maybe ?
+            const std::wstring LAMBDA_PROCEDURE = L"lambda-procedure";
+            const std::wstring MACRO_PROCEDURE = L"macro-procedure";
             const std::wstring SET = L"set!";            
             
             const bool IsSelfEvaluating(const ObjectPtr& exp)
@@ -105,7 +105,7 @@ namespace sili {
             const ObjectPtr MakeProcedure(const ObjectPtr& parameters, const ObjectPtr& body, const ObjectPtr& env)
             {
                 return
-                    Pair::New(Symbol::New(COMPOUND_PROCEDURE),
+                    Pair::New(Symbol::New(LAMBDA_PROCEDURE),
                         Pair::New(parameters,
                             Pair::New(body,
                                 Pair::New(env,
@@ -115,7 +115,7 @@ namespace sili {
             const ObjectPtr MakeMacro(const ObjectPtr& parameters, const ObjectPtr& body, const ObjectPtr& env)
             {
                 return
-                    Pair::New(Symbol::New(COMPOUND_MACRO),
+                    Pair::New(Symbol::New(MACRO_PROCEDURE),
                         Pair::New(parameters,
                             Pair::New(body,
                                 Pair::New(env,
@@ -169,31 +169,31 @@ namespace sili {
                 }
             }
             
-            const bool IsCompoundProcedure(const ObjectPtr& exp)
+            const bool IsLambdaProcedure(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, COMPOUND_PROCEDURE);
+                return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA_PROCEDURE);
             }
 
-            const bool IsCompoundMacro(const ObjectPtr& exp)
+            const bool IsMacroProcedure(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, COMPOUND_MACRO);
+                return IsPairWithFirstAsSymbolWithValue(exp, MACRO_PROCEDURE);
             }
             
             const ObjectPtr ProcedureParameters(const ObjectPtr& exp)
             {
-                BOOST_ASSERT(IsCompoundProcedure(exp) || IsCompoundMacro(exp));
+                BOOST_ASSERT(IsLambdaProcedure(exp) || IsMacroProcedure(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
             const ObjectPtr ProcedureBody(const ObjectPtr& exp)
             {
-                BOOST_ASSERT(IsCompoundProcedure(exp) || IsCompoundMacro(exp));
+                BOOST_ASSERT(IsLambdaProcedure(exp) || IsMacroProcedure(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
             const ObjectPtr ProcedureEnvironment(const ObjectPtr& exp)
             {
-                BOOST_ASSERT(IsCompoundProcedure(exp) || IsCompoundMacro(exp));
+                BOOST_ASSERT(IsLambdaProcedure(exp) || IsMacroProcedure(exp));
                 return exp->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mSecond->AsA<Pair>()->mFirst;
             }
             
@@ -321,15 +321,14 @@ namespace sili {
         
         const ObjectPtr Apply(const ObjectPtr& procedure, const ObjectPtr& argumentExpressions, const ObjectPtr& environment)
         {
-                
-            if (IsCompoundProcedure(procedure)) {
+            if (IsLambdaProcedure(procedure)) {
                 return EvalExpressions(
                         ProcedureBody(procedure),
                         ExtendEnvironment(
                             ProcedureParameters(procedure),
                             ListOfValues(argumentExpressions, environment),
                             ProcedureEnvironment(procedure)));
-            } else if (IsCompoundMacro(procedure)) {
+            } else if (IsMacroProcedure(procedure)) {
                 return Eval(
                     Eval(
                         ProcedureBody(procedure)->AsA<Pair>()->mFirst,
