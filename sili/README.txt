@@ -30,3 +30,7 @@ Using a macro to do nothing:
     v
     // v is still 20
 
+Using a macro to define 'let':
+    (define nil (quote ()))
+    (define let (macro (a b c) (cons (cons (quote lambda) (cons (cons a nil) (cons c nil))) (cons b nil))))
+    (let a 10 (cons a (cons a nil)))
