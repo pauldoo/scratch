@@ -9,6 +9,7 @@ TODO:
 * Mutual tail recursion
 * Symbol generation for sane macros
 * Sensible demo script
+* Dynamic scope
 
 NOTES:
 How to make references using 'set!':
