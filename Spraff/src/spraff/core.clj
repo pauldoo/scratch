@@ -103,6 +103,72 @@
     (dosync (ref-set state-ref
         (update-state message @state-ref))))
 
+; BURRITO!
+
+(def styles [
+    "burrito"
+    "fajita burrito"
+    "burrito bowl"
+    "quesadilla"
+    "soft tacos"
+])
+
+(def fillings [
+    "steak"
+    "red tractor chicken"
+    "carnitas"
+    "haggis"
+    "vegetarian"
+    "basic"
+])
+
+(def salsas [
+    "pico de gallo"
+    "verde"
+    "black"
+    "roastin' red"
+    "extra hot"
+])
+
+(def extras [
+    "guacamole"
+    "sour cream"
+    "cheese"
+])
+
+(def sides [
+    "a single soft taco"
+    "tortilla chips"
+    "a guacamole pot"
+    "a salsa pot"
+    "a small tortilla"
+    "a bean pot"
+    "a sour cream pot"
+    "a jalapeno pot"
+])
+
+(defn rand-bool [] (= (rand-int 2) 1))
+
+(defn single [coll] (rand-nth coll))
+(defn multiple [coll] (filter (fn [_] (rand-bool)) coll))
+(defn maybe-single [coll s] (let [c (rand-nth (cons nil coll))]
+    (if (nil? c)
+        []
+        [(str c s)])))
+(defn inject-and [coll] (concat (take (dec (count coll)) coll) [(str "and " (last coll))]))
+
+(defn generate-burrito [] (str
+    (single fillings) " "
+    (single styles) " with "
+    (join ", " (inject-and (concat
+        [(str (single salsas) " salsa")]
+        (multiple extras)
+        (maybe-single sides " on the side"))))
+    ", please!"
+))
+
+; BURRITO!
+
 (defn on-message [{:keys [nick channel message irc]} state-ref]
     (log-sentence! message)
     (update-state! message state-ref)
@@ -111,7 +177,11 @@
             (join " " (generate-sentence
                 @state-ref
                 (let [keywords (set (filter #(not (.contains % (:name @irc))) (split-sentence-to-words message)))]
-                    (if (<= (count keywords) 3) keywords #{})))))))
+                    (if (<= (count keywords) 3) keywords #{}))))))
+    (if (.startsWith message "!burrito")
+        (send-message irc channel
+            (generate-burrito)))
+)
 
 (defn -main
     [& args]
