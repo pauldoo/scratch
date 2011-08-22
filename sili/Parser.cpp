@@ -101,7 +101,7 @@ namespace sili {
             }
         }
         
-        const ObjectPtr ParseFromStream(std::wistream& in)
+        const ObjectPtr ParseFromStream(std::wistream& in, std::wostream& error)
         {
             std::wstring str;
             std::getline(in, str);
@@ -110,12 +110,12 @@ namespace sili {
             ObjectPtr result = ParseFromString<std::wstring::const_iterator>(begin, str.end());
             if (begin != str.end()) {
                 
-                std::wcout << "Warning didn't consume: \"";
+                error << "Warning didn't consume: \"";
                 std::copy<std::wstring::const_iterator>(
                         begin, 
                         str.end(), 
-                        std::ostream_iterator<wchar_t, wchar_t>(std::wcout));
-                std::wcout << "\"\n";
+                        std::ostream_iterator<wchar_t, wchar_t>(error));
+                error << "\"\n";
             }
             
             return result;

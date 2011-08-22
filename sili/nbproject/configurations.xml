@@ -13,6 +13,7 @@
       <itemPath>Parser.h</itemPath>
       <itemPath>Primitive.h</itemPath>
       <itemPath>PrimitiveImp.h</itemPath>
+      <itemPath>Repl.h</itemPath>
       <itemPath>Symbol.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
@@ -28,6 +29,7 @@
       <itemPath>Pair.cpp</itemPath>
       <itemPath>Parser.cpp</itemPath>
       <itemPath>Primitive.cpp</itemPath>
+      <itemPath>Repl.cpp</itemPath>
       <itemPath>Symbol.cpp</itemPath>
       <itemPath>main.cpp</itemPath>
     </logicalFolder>

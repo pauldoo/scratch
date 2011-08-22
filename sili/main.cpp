@@ -1,10 +1,9 @@
 #include "Heap.h"
-#include "Interpreter.h"
-#include "ObjectFwd.h"
 #include "Pair.h"
-#include "Parser.h"
+#include "Repl.h"
 
 #include <cstdlib>
+#include <fstream>
 
 using namespace sili;
 
@@ -13,23 +12,12 @@ int main(int argc, char** argv) {
         {
             const ObjectPtr environment = Pair::New(ObjectPtr(), ObjectPtr());
 
-            while (true) {
-                sili::Heap::Instance()->Sweep();
-                std::wcout << L">: ";
-                const ObjectPtr expression = Parser::ParseFromStream(std::wcin);
-                std::wcout << *(expression.get()) << "\n";
-                if (expression.get() == NULL) {
-                    break;
-                } else {
-                    ObjectPtr result;
-                    try {
-                        result = Interpreter::Eval(expression, environment);
-                    } catch (const std::exception& ex) {
-                        std::wcerr << typeid(ex).name() << L": " << ex.what() << L"\n";
-                    }                    
-                    std::wcout << "<: " << *(result.get()) << "\n";
-                }
+            {
+                std::wifstream boot("boot.sili");
+                Repl::Repl(boot, std::wcout, std::wcerr, environment);
             }
+
+            Repl::Repl(std::wcin, std::wcout, std::wcerr, environment);
         }
 
         sili::Heap::Shutdown();

@@ -1,0 +1,3 @@
+(define nil (quote ()))
+(define let (macro (a b c) (cons (cons (quote lambda) (cons (cons a nil) (cons c nil))) (cons b nil))))
+()

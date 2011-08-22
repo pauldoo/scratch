@@ -6,6 +6,6 @@
 
 namespace sili {
     namespace Parser {
-        const ObjectPtr ParseFromStream(std::wistream&);
+        const ObjectPtr ParseFromStream(std::wistream& in, std::wostream& error);
     }
 }

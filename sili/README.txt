@@ -4,12 +4,11 @@ Written in C++ to prevent accidental cheating (inheriting features from host lan
 
 TODO:
 * Integer operations
-* Parse string primitives
-* Create sensible nil
+* String/char primitives
 * Mutual tail recursion
 * Symbol generation for sane macros
-* Sensible demo script
 * Dynamic scope
+* Decent parser (comments, line breaks, etc)
 
 NOTES:
 How to make references using 'set!':
