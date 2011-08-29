@@ -54,7 +54,7 @@ public final class SpottyBlah
             //final double angle = (Constants.GOLDEN_ANGLE - 0.001) * i;
             //final double angle = Math.E * i;
 
-            final double d = Math.random() * 20.0;
+            final double d = frac(i * Constants.GOLDEN_RATIO) * 20.0;
             double height = 0.0;
             for (Circle c: spots) {
 
@@ -76,7 +76,7 @@ public final class SpottyBlah
                 graphics.fill(circle);
             }
             //System.out.println(c);
-            if (height > 1500) {
+            if (height > 3000) {
                 break;
             }
         }

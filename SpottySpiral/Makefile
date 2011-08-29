@@ -1,3 +1,3 @@
-image.png: SpottySpiral.java
-	javac -g -Xlint:all SpottySpiral.java
-	java -server SpottySpiral
+image.png: SpottyBlah.java
+	javac -g -Xlint:all SpottyBlah.java
+	java -server SpottyBlah
