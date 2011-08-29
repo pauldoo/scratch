@@ -9,18 +9,18 @@ namespace sili {
     class Pair : public Object
     {
     public:
-        static const boost::intrusive_ptr<Pair> New(const ObjectPtr& first = NULL, const ObjectPtr& second = NULL);
+        static const boost::intrusive_ptr<Pair> New(const ObjectPtr& head = NULL, const ObjectPtr& second = NULL);
         
         const std::vector<ObjectPtr> References() const;
         void NullAllReferences();
         void WriteAsString(std::wostream&) const;
 
-        ObjectPtr mFirst;
+        ObjectPtr mHead;
         // TODO: Change type of mSecond to boost::intrusive_ptr<Pair>, and s/Pair/Cons/.
         PairPtr mSecond;
 
     private:
-        Pair(const ObjectPtr& first, const PairPtr& second);
+        Pair(const ObjectPtr& head, const PairPtr& second);
         ~Pair();
     };
 }
