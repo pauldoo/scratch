@@ -6,13 +6,17 @@ namespace sili {
     template<typename T>
     const boost::intrusive_ptr<T> Object::AsA()
     {
-        return &dynamic_cast<T&>(*this);
+        const boost::intrusive_ptr<T> result = AsA00<T>();
+        BOOST_ASSERT(result != NULL);
+        return result;
     }
 
     template<typename T>
     const boost::intrusive_ptr<T> Object::AsA() const
     {
-        return &dynamic_cast<T&>(*this);
+        const boost::intrusive_ptr<T> result = AsA00<T>();
+        BOOST_ASSERT(result != NULL);
+        return result;
     }
     
     template<typename T>
@@ -30,12 +34,12 @@ namespace sili {
     template<typename T>
     const bool Object::IsA()
     {
-        return dynamic_cast<T*>(this) != NULL;
+        return AsA00<T>() != NULL;
     }
     
     template<typename T>
     const bool Object::IsA() const
     {
-        return dynamic_cast<T*>(this) != NULL;
+        return AsA00<T>() != NULL;
     }
 }

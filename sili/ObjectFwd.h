@@ -7,7 +7,7 @@
 namespace sili {
     class Object;
 
-    typedef boost::intrusive_ptr<sili::Object> ObjectPtr;
+    typedef boost::intrusive_ptr<Object> ObjectPtr;
 }
 
 void intrusive_ptr_add_ref(const sili::Object* const);

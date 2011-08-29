@@ -9,10 +9,11 @@ namespace sili {
         const ObjectPtr& first,
         const ObjectPtr& second)
     {
-        return new Pair(first, second);
+        BOOST_ASSERT(second == NULL || second->IsA<Pair>());
+        return new Pair(first, second.get()->AsA00<Pair>());
     }
     
-    Pair::Pair(const ObjectPtr& first, const ObjectPtr& second) :
+    Pair::Pair(const ObjectPtr& first, const PairPtr& second) :
         mFirst(first),
         mSecond(second)
     {
@@ -43,7 +44,7 @@ namespace sili {
                 out << (*(pair->mFirst.get()));
                 if (pair->mSecond.get() != NULL) {
                     out << L" ";
-                    WriteInner(out, pair->mSecond->AsA<Pair>());
+                    WriteInner(out, pair->mSecond);
                 }
             }
         }

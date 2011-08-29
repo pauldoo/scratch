@@ -11,17 +11,23 @@ namespace sili {
         virtual const std::vector<ObjectPtr> References() const = 0;
         virtual void NullAllReferences() = 0;
         
+        /// Returns non-null results of AsA00(), raises an error otherwise.
         template<typename T>
         const boost::intrusive_ptr<T> AsA();
+        /// Returns non-null results of AsA00(), raises an error otherwise.
         template<typename T>
         const boost::intrusive_ptr<T> AsA() const;
 
+        /// Cast to another type, returning null if object is null or the wrong type.
         template<typename T>
         const boost::intrusive_ptr<T> AsA00();
+        /// Cast to another type, returning null if object is null or the wrong type.
         template<typename T>
         const boost::intrusive_ptr<T> AsA00() const;
         
+        /// True if AsA00() would return non-null.
         template<typename T> const bool IsA();
+        /// True if AsA00() would return non-null.
         template<typename T> const bool IsA() const;
         
         
