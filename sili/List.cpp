@@ -38,13 +38,13 @@ namespace sili {
     }
     
     namespace {
-        void WriteInner(std::wostream& out, const boost::intrusive_ptr<List const>& pair)
+        void WriteInner(std::wostream& out, const boost::intrusive_ptr<List const>& list)
         {
-            if (pair.get() != NULL) {
-                out << (*(pair->mHead.get()));
-                if (pair->mTail.get() != NULL) {
+            if (list.get() != NULL) {
+                out << (*(list->mHead.get()));
+                if (list->mTail.get() != NULL) {
                     out << L" ";
-                    WriteInner(out, pair->mTail);
+                    WriteInner(out, list->mTail);
                 }
             }
         }

@@ -45,10 +45,10 @@ namespace sili {
             
             const bool IsListWithHeadSymbolValue(const ObjectPtr& exp, const std::wstring& symbolName)
             {
-                const boost::intrusive_ptr<List> pair00 = exp->AsA00<List>();
+                const boost::intrusive_ptr<List> list00 = exp->AsA00<List>();
                 return
-                        pair00 != NULL &&
-                        IsSymbolWithValue(pair00->mHead, symbolName);
+                        list00 != NULL &&
+                        IsSymbolWithValue(list00->mHead, symbolName);
             }
             
             const bool IsLambda(const ObjectPtr& exp)
