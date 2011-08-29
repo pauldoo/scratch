@@ -7,15 +7,15 @@
 namespace sili {
     const boost::intrusive_ptr<Pair> Pair::New(
         const ObjectPtr& head,
-        const ObjectPtr& second)
+        const ObjectPtr& tail)
     {
-        BOOST_ASSERT(second == NULL || second->IsA<Pair>());
-        return new Pair(head, second.get()->AsA00<Pair>());
+        BOOST_ASSERT(tail == NULL || tail->IsA<Pair>());
+        return new Pair(head, tail.get()->AsA00<Pair>());
     }
     
-    Pair::Pair(const ObjectPtr& head, const PairPtr& second) :
+    Pair::Pair(const ObjectPtr& head, const PairPtr& tail) :
         mHead(head),
-        mSecond(second)
+        mTail(tail)
     {
     }
     
@@ -27,14 +27,14 @@ namespace sili {
     {
         std::vector<ObjectPtr> result;
         result.push_back(mHead);
-        result.push_back(mSecond);
+        result.push_back(mTail);
         return result;
     }
     
     void Pair::NullAllReferences()
     {
         mHead = NULL;
-        mSecond = NULL;
+        mTail = NULL;
     }
     
     namespace {
@@ -42,9 +42,9 @@ namespace sili {
         {
             if (pair.get() != NULL) {
                 out << (*(pair->mHead.get()));
-                if (pair->mSecond.get() != NULL) {
+                if (pair->mTail.get() != NULL) {
                     out << L" ";
-                    WriteInner(out, pair->mSecond);
+                    WriteInner(out, pair->mTail);
                 }
             }
         }

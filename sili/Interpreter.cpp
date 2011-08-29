@@ -109,7 +109,7 @@ namespace sili {
                     if (nameInEnvironment == nameToResolve) {
                         return entry;
                     } else {
-                        return LookupVariableEntryInFrame(exp, frame->AsA<Pair>()->mSecond);
+                        return LookupVariableEntryInFrame(exp, frame->AsA<Pair>()->mTail);
                     }
                 }
             }
@@ -122,14 +122,14 @@ namespace sili {
                 if (entry != NULL) {
                     return entry;
                 } else {
-                    return LookupVariableEntryInEnvironment(exp, env->AsA<Pair>()->mSecond);
+                    return LookupVariableEntryInEnvironment(exp, env->AsA<Pair>()->mTail);
                 }
             }
 
             const ObjectPtr LookupVariableValueInEnvironment(const ObjectPtr& exp, const ObjectPtr& env)
             {
                 const ObjectPtr entry = LookupVariableEntryInEnvironment(exp, env);
-                return entry->AsA<Pair>()->mSecond->mHead;
+                return entry->AsA<Pair>()->mTail->mHead;
             }
             
             const ObjectPtr MakeProcedure(const ObjectPtr& parameters, const ObjectPtr& body, const ObjectPtr& env)
@@ -155,25 +155,25 @@ namespace sili {
             const ObjectPtr LambdaParameters(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambda(exp));
-                return exp->AsA<Pair>()->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mHead;
             }
 
             const ObjectPtr MacroParameters(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsMacro(exp));
-                return exp->AsA<Pair>()->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mHead;
             }
             
             const ObjectPtr LambdaBody(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambda(exp));
-                return exp->AsA<Pair>()->mSecond->mSecond;
+                return exp->AsA<Pair>()->mTail->mTail;
             }
 
             const ObjectPtr MacroBody(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsMacro(exp));
-                return exp->AsA<Pair>()->mSecond->mSecond;
+                return exp->AsA<Pair>()->mTail->mTail;
             }            
             
             const ObjectPtr Operator(const ObjectPtr& exp)
@@ -185,7 +185,7 @@ namespace sili {
             const ObjectPtr Operands(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsApplication(exp));
-                return exp->AsA<Pair>()->mSecond;
+                return exp->AsA<Pair>()->mTail;
             }
             
             const ObjectPtr ListOfValues(const ObjectPtr& exp, const ObjectPtr& env)
@@ -195,7 +195,7 @@ namespace sili {
                 } else {
                     return Pair::New(
                             Eval(exp->AsA<Pair>()->mHead, env),
-                            ListOfValues(exp->AsA<Pair>()->mSecond, env));
+                            ListOfValues(exp->AsA<Pair>()->mTail, env));
                 }
             }
             
@@ -212,19 +212,19 @@ namespace sili {
             const ObjectPtr ProcedureParameters(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambdaProcedure(exp) || IsMacroProcedure(exp));
-                return exp->AsA<Pair>()->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mHead;
             }
             
             const ObjectPtr ProcedureBody(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambdaProcedure(exp) || IsMacroProcedure(exp));
-                return exp->AsA<Pair>()->mSecond->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mTail->mHead;
             }
             
             const ObjectPtr ProcedureEnvironment(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsLambdaProcedure(exp) || IsMacroProcedure(exp));
-                return exp->AsA<Pair>()->mSecond->mSecond->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mTail->mTail->mHead;
             }
             
             const ObjectPtr ExtendFrame(
@@ -247,8 +247,8 @@ namespace sili {
                                 variableValues->AsA<Pair>()->mHead,
                                 NULL)),
                         ExtendFrame(
-                            variableNames->AsA<Pair>()->mSecond,
-                            variableValues->AsA<Pair>()->mSecond,
+                            variableNames->AsA<Pair>()->mTail,
+                            variableValues->AsA<Pair>()->mTail,
                             baseFrame));
             }
                     
@@ -267,13 +267,13 @@ namespace sili {
             const ObjectPtr DefineName(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsDefine(exp));
-                return exp->AsA<Pair>()->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mHead;
             }
             
             const ObjectPtr DefineExpression(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsDefine(exp));
-                return exp->AsA<Pair>()->mSecond->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mTail->mHead;
             }
             
             void DefineVariableInEnvironment(const ObjectPtr& name, const ObjectPtr& value, const ObjectPtr& env)
@@ -288,29 +288,29 @@ namespace sili {
             const ObjectPtr EvalExpressions(const ObjectPtr& exps, const ObjectPtr& env)
             {
                 ObjectPtr result = Eval(exps->AsA<Pair>()->mHead, env);
-                if (exps->AsA<Pair>()->mSecond == NULL) {
+                if (exps->AsA<Pair>()->mTail == NULL) {
                     return result;
                 } else {
-                    return EvalExpressions(exps->AsA<Pair>()->mSecond, env);
+                    return EvalExpressions(exps->AsA<Pair>()->mTail, env);
                 }
             }
             
             const ObjectPtr SetName(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsSet(exp));
-                return exp->AsA<Pair>()->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mHead;
             }     
             
             const ObjectPtr SetExpression(const ObjectPtr& exp)
             {
                 BOOST_ASSERT(IsSet(exp));
-                return exp->AsA<Pair>()->mSecond->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mTail->mHead;
             }
             
             const ObjectPtr SetVariableInEnvironment(const ObjectPtr& name, const ObjectPtr& value, const ObjectPtr& env)
             {
                 const ObjectPtr entry = LookupVariableEntryInEnvironment(name, env);
-                entry->AsA<Pair>()->mSecond->mHead = value;
+                entry->AsA<Pair>()->mTail->mHead = value;
                 return value;
             }
         }
@@ -318,7 +318,7 @@ namespace sili {
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
         {
             if (IsQuote(exp)) {
-                return exp->AsA<Pair>()->mSecond->mHead;
+                return exp->AsA<Pair>()->mTail->mHead;
             } else if (IsSelfEvaluating(exp)) {
                 return exp;
             } else if (IsVariable(exp)) {
@@ -342,18 +342,18 @@ namespace sili {
                         env);
             } else if (IsCons(exp)) {
                 return Pair::New(
-                        Eval(exp->AsA<Pair>()->mSecond->mHead, env),
-                        Eval(exp->AsA<Pair>()->mSecond->mSecond->mHead, env));
+                        Eval(exp->AsA<Pair>()->mTail->mHead, env),
+                        Eval(exp->AsA<Pair>()->mTail->mTail->mHead, env));
             } else if (IsCar(exp)) {
-                return Eval(exp->AsA<Pair>()->mSecond->mHead, env)->AsA<Pair>()->mHead;
+                return Eval(exp->AsA<Pair>()->mTail->mHead, env)->AsA<Pair>()->mHead;
             } else if (IsCdr(exp)) {
-                return Eval(exp->AsA<Pair>()->mSecond->mHead, env)->AsA<Pair>()->mSecond;
+                return Eval(exp->AsA<Pair>()->mTail->mHead, env)->AsA<Pair>()->mTail;
             } else if (IsIf(exp)) {
-                const ObjectPtr testValue = Eval(exp->AsA<Pair>()->mSecond->mHead, env);
+                const ObjectPtr testValue = Eval(exp->AsA<Pair>()->mTail->mHead, env);
                 if (testValue != NULL) {
-                    return Eval(exp->AsA<Pair>()->mSecond->mSecond->mHead, env);
+                    return Eval(exp->AsA<Pair>()->mTail->mTail->mHead, env);
                 } else {
-                    return Eval(exp->AsA<Pair>()->mSecond->mSecond->mSecond->mHead, env);
+                    return Eval(exp->AsA<Pair>()->mTail->mTail->mTail->mHead, env);
                 }
             } else if (IsApplication(exp)) {
                 return
