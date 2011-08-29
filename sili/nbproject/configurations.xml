@@ -6,10 +6,10 @@
                    projectFiles="true">
       <itemPath>Heap.h</itemPath>
       <itemPath>Interpreter.h</itemPath>
+      <itemPath>List.h</itemPath>
       <itemPath>Object.h</itemPath>
       <itemPath>ObjectFwd.h</itemPath>
       <itemPath>ObjectImp.h</itemPath>
-      <itemPath>Pair.h</itemPath>
       <itemPath>Parser.h</itemPath>
       <itemPath>Primitive.h</itemPath>
       <itemPath>PrimitiveImp.h</itemPath>
@@ -25,8 +25,8 @@
                    projectFiles="true">
       <itemPath>Heap.cpp</itemPath>
       <itemPath>Interpreter.cpp</itemPath>
+      <itemPath>List.cpp</itemPath>
       <itemPath>Object.cpp</itemPath>
-      <itemPath>Pair.cpp</itemPath>
       <itemPath>Parser.cpp</itemPath>
       <itemPath>Primitive.cpp</itemPath>
       <itemPath>Repl.cpp</itemPath>
