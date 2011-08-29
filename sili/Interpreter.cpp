@@ -43,7 +43,7 @@ namespace sili {
                         symbol00->mName == symbolName;
             }
             
-            const bool IsPairWithFirstAsSymbolWithValue(const ObjectPtr& exp, const std::wstring& symbolName)
+            const bool IsListWithHeadSymbolValue(const ObjectPtr& exp, const std::wstring& symbolName)
             {
                 const boost::intrusive_ptr<List> pair00 = exp->AsA00<List>();
                 return
@@ -53,43 +53,43 @@ namespace sili {
             
             const bool IsLambda(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA);
+                return IsListWithHeadSymbolValue(exp, LAMBDA);
             }
 
             const bool IsIf(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, IF);
+                return IsListWithHeadSymbolValue(exp, IF);
             }
             
             const bool IsQuote(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, QUOTE);
+                return IsListWithHeadSymbolValue(exp, QUOTE);
             }
             const bool IsCons(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, CONS);
+                return IsListWithHeadSymbolValue(exp, CONS);
             }
             const bool IsCar(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, CAR);
+                return IsListWithHeadSymbolValue(exp, CAR);
             }
             const bool IsCdr(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, CDR);
+                return IsListWithHeadSymbolValue(exp, CDR);
             }
             const bool IsMacro(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, MACRO);
+                return IsListWithHeadSymbolValue(exp, MACRO);
             }
 
             const bool IsDefine(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, DEFINE);
+                return IsListWithHeadSymbolValue(exp, DEFINE);
             }
 
             const bool IsSet(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, SET);
+                return IsListWithHeadSymbolValue(exp, SET);
             }
             
             const bool IsApplication(const ObjectPtr& exp)
@@ -201,12 +201,12 @@ namespace sili {
             
             const bool IsLambdaProcedure(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, LAMBDA_PROCEDURE);
+                return IsListWithHeadSymbolValue(exp, LAMBDA_PROCEDURE);
             }
 
             const bool IsMacroProcedure(const ObjectPtr& exp)
             {
-                return IsPairWithFirstAsSymbolWithValue(exp, MACRO_PROCEDURE);
+                return IsListWithHeadSymbolValue(exp, MACRO_PROCEDURE);
             }
             
             const ObjectPtr ProcedureParameters(const ObjectPtr& exp)
