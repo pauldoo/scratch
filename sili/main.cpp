@@ -10,7 +10,7 @@ using namespace sili;
 int main(int argc, char** argv) {
     try {
         {
-            const ObjectPtr environment = Pair::New(ObjectPtr(), ObjectPtr());
+            const ObjectPtr environment = List::New(ObjectPtr(), ObjectPtr());
 
             {
                 std::wifstream boot("boot.sili");

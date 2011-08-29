@@ -42,7 +42,7 @@ namespace sili {
                 if (begin == end) {
                     return NULL;
                 } else {
-                    return Pair::New(*begin, ToSexpList(begin + 1, end));
+                    return List::New(*begin, ToSexpList(begin + 1, end));
                 }
             }
            

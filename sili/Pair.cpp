@@ -5,25 +5,25 @@
 #include <iostream>
 
 namespace sili {
-    const boost::intrusive_ptr<Pair> Pair::New(
+    const boost::intrusive_ptr<List> List::New(
         const ObjectPtr& head,
         const ObjectPtr& tail)
     {
-        BOOST_ASSERT(tail == NULL || tail->IsA<Pair>());
-        return new Pair(head, tail.get()->AsA00<Pair>());
+        BOOST_ASSERT(tail == NULL || tail->IsA<List>());
+        return new List(head, tail.get()->AsA00<List>());
     }
     
-    Pair::Pair(const ObjectPtr& head, const PairPtr& tail) :
+    List::List(const ObjectPtr& head, const ListPtr& tail) :
         mHead(head),
         mTail(tail)
     {
     }
     
-    Pair::~Pair()
+    List::~List()
     {
     }
     
-    const std::vector<ObjectPtr> Pair::References() const
+    const std::vector<ObjectPtr> List::References() const
     {
         std::vector<ObjectPtr> result;
         result.push_back(mHead);
@@ -31,14 +31,14 @@ namespace sili {
         return result;
     }
     
-    void Pair::NullAllReferences()
+    void List::NullAllReferences()
     {
         mHead = NULL;
         mTail = NULL;
     }
     
     namespace {
-        void WriteInner(std::wostream& out, const boost::intrusive_ptr<Pair const>& pair)
+        void WriteInner(std::wostream& out, const boost::intrusive_ptr<List const>& pair)
         {
             if (pair.get() != NULL) {
                 out << (*(pair->mHead.get()));
@@ -50,7 +50,7 @@ namespace sili {
         }
     }
     
-    void Pair::WriteAsString(std::wostream& out) const
+    void List::WriteAsString(std::wostream& out) const
     {
         out << L"(";
         WriteInner(out, this);
