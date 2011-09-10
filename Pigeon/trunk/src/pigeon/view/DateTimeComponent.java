@@ -17,13 +17,12 @@
 
 package pigeon.view;
 
-import java.awt.Toolkit;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import javax.swing.JFormattedTextField;
 import javax.swing.text.DateFormatter;
+import javax.swing.text.DefaultFormatter;
 import javax.swing.text.DefaultFormatterFactory;
 import pigeon.model.Constants;
 
@@ -69,10 +68,24 @@ public final class DateTimeComponent extends javax.swing.JPanel
         return getMode().getFormat().toPattern();
     }
 
+    private static final class CustomLenientDateFormatter extends DateFormatter
+    {
+        private static final long serialVersionUID = 5671072382131624190L;
+        
+        public CustomLenientDateFormatter(DateFormat df) {
+            super(df);
+        }
+
+        @Override
+        public Object stringToValue(String string) throws ParseException {
+            return super.stringToValue(string.trim().replace('-', ':'));
+        }
+    }
+    
     public void setMode(DateTimeDisplayMode mode)
     {
         this.mode = mode;
-        DateFormatter dateFormatter = new DateFormatter(mode.getFormat());
+        DateFormatter dateFormatter = new CustomLenientDateFormatter(mode.getFormat());
         dateFormatter.setOverwriteMode(true);
         textField.setFormatterFactory(new DefaultFormatterFactory(dateFormatter));
         textField.setColumns(mode.getDisplayColumns() + 1);

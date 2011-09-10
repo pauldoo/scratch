@@ -325,6 +325,9 @@ public final class ExtendedTest extends TestCase
         }
 
         assertTrue("Regression failure: '" + name + "'", Arrays.equals(okData, tmpData));
+        if (UPDATE_OK_FILES == false) {
+            tmpFile.delete();
+        }
     }
 
     public void testSerialization() throws IOException, ClassNotFoundException
