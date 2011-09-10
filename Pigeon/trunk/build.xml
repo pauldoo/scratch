@@ -88,8 +88,8 @@
     </target>
 
     <target name="BuildID" description="Print svnversion as build id">
-        <exec executable="svnversion" spawn="false" output="${build.classes.dir}/BuildID.txt">
-            <arg line="."/>
+        <exec executable="git" spawn="false" output="${build.classes.dir}/BuildID.txt">
+            <arg line="describe --always"/>
         </exec>
     </target>
 
