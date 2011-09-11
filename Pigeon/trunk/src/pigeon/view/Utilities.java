@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2005, 2006, 2007  Paul Richards.
+    Copyright (C) 2005, 2006, 2007, 2011  Paul Richards.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -352,5 +352,28 @@ public final class Utilities {
         format.setMaximumFractionDigits(2);
         format.setMinimumFractionDigits(2);
         return format;
+    }
+    
+    public interface Func1<O, I> {
+        public O call(I arg);
+    }
+    
+    public static <I, O> List<O> map(List<I> coll, Func1<O, I> func) {
+        List<O> result = new ArrayList<O>();
+        for (I v: coll) {
+            result.add(func.call(v));
+        }
+        return Collections.unmodifiableList(result);
+    }
+    
+    public static <T extends Comparable<? super T>> T median00(Collection<T> coll) {
+        if (coll.isEmpty()) {
+            return null;
+        } else {
+            List<T> copy = new ArrayList<T>(coll);
+            Collections.sort(copy);
+            int index = (copy.size()-1) / 2;
+            return copy.get(index);
+        }
     }
 }

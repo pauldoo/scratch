@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2005, 2006, 2007, 2008  Paul Richards.
+    Copyright (C) 2005, 2006, 2007, 2008, 2011  Paul Richards.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ package pigeon.view;
 
 import java.awt.Component;
 import java.util.Collection;
+import java.util.Date;
 import javax.swing.JOptionPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.TitledBorder;
@@ -150,7 +151,7 @@ final class RaceEditor extends javax.swing.JPanel {
         try {
             int index = clocksTable.getSelectedRow();
             Clock clock = race.getClocks().get(index);            
-            race = race.repReplaceClock(clock, editResultsForClock(ClockSummary.editClock(this, clock, members, false)));
+            race = race.repReplaceClock(clock, editResultsForClock(ClockSummary.editClock(this, clock, members)));
         } catch (UserCancelledException e) {
         } catch (ValidationException e) {
             e.displayErrorDialog(this);
@@ -162,10 +163,59 @@ final class RaceEditor extends javax.swing.JPanel {
     {
         return ClockEditor.editClockResults(this, clock, race.getDaysCovered(), season, configuration);
     }
+    
+    private Date medianClockDate00(Utilities.Func1<Date, Clock> func)
+    {
+        return Utilities.median00(Utilities.map(race.getClocks(), func));
+    }
+    
+    private Date medianMasterSet00()
+    {
+        return medianClockDate00(new Utilities.Func1<Date, Clock>() {
+            @Override
+            public Date call(Clock arg) {
+                return arg.getTimeOnMasterWhenSet();
+            }
+      });
+    }
+    private Date medianMasterOpen00()
+    {
+        return medianClockDate00(new Utilities.Func1<Date, Clock>() {
+            @Override
+            public Date call(Clock arg) {
+                return arg.getTimeOnMasterWhenOpened();
+            }
+      });
+    }
+    private Date medianMemberSet00()
+    {
+        return medianClockDate00(new Utilities.Func1<Date, Clock>() {
+            @Override
+            public Date call(Clock arg) {
+                return arg.getTimeOnMemberWhenSet();
+            }
+      });
+    }
+    private Date medianMemberOpen00()
+    {
+        return medianClockDate00(new Utilities.Func1<Date, Clock>() {
+            @Override
+            public Date call(Clock arg) {
+                return arg.getTimeOnMemberWhenOpened();
+            }
+      });
+    }
 
     private void addClockButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addClockButtonActionPerformed
         try {
-            race = race.repAddClock(editResultsForClock(ClockSummary.createClock(this, members)));
+            race = race.repAddClock(editResultsForClock(ClockSummary.createClock(
+                    this,
+                    members,
+                    medianMasterSet00(),
+                    medianMasterOpen00(),
+                    medianMemberSet00(),
+                    medianMemberOpen00()
+                )));
         } catch (UserCancelledException ex) {
         } catch (ValidationException e) {
             e.displayErrorDialog(this);

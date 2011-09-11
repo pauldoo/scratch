@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2005, 2006, 2007, 2008  Paul Richards.
+    Copyright (C) 2005, 2006, 2007, 2008, 2011  Paul Richards.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,11 +37,9 @@ final class ClockSummary extends javax.swing.JPanel {
     private static final long serialVersionUID = 2610008291157171060L;
 
     private Clock clock;
-    private Collection<Member> members;
 
-    public ClockSummary(Clock clock, Collection<Member> members, boolean editable) {
+    private ClockSummary(Clock clock, Collection<Member> members, boolean editable) {
         this.clock = clock;
-        this.members = members;
         initComponents();
         setDate.setMode(DateTimeDisplayMode.DATE);
         masterSet.setMode(DateTimeDisplayMode.HOURS_MINUTES_SECONDS);
@@ -50,7 +48,7 @@ final class ClockSummary extends javax.swing.JPanel {
         masterOpen.setMode(DateTimeDisplayMode.HOURS_MINUTES_SECONDS);
         memberOpen.setMode(DateTimeDisplayMode.HOURS_MINUTES_SECONDS);
         
-        addComboOptions();
+        addComboOptions(members);
 
         if (clock.getMember() != null) {
             memberCombo.setSelectedItem(clock.getMember());
@@ -247,7 +245,7 @@ final class ClockSummary extends javax.swing.JPanel {
     private pigeon.view.DateTimeComponent setDate;
     // End of variables declaration//GEN-END:variables
 
-    private void addComboOptions()
+    private void addComboOptions(Collection<Member> members)
     {
         for (Member m: members) {
             memberCombo.addItem( m );
@@ -301,7 +299,7 @@ final class ClockSummary extends javax.swing.JPanel {
         }
     }
 
-    public static Clock editClock(Component parent, Clock clock, Collection<Member> members, boolean newClock) throws UserCancelledException {
+    private static Clock editClock(Component parent, Clock clock, Collection<Member> members, boolean newClock) throws UserCancelledException {
         ClockSummary panel = new ClockSummary(clock, members, true);
         while (true) {
             Object[] options = { (newClock ? "Add" : "Ok"), "Cancel" };
@@ -323,8 +321,32 @@ final class ClockSummary extends javax.swing.JPanel {
         return panel.clock;
     }
 
-    public static Clock createClock(Component parent, Collection<Member> members) throws UserCancelledException
+    public static Clock editClock(Component parent, Clock clock, Collection<Member> members) throws UserCancelledException {
+        return editClock(parent, clock, members, false);
+    }
+
+    public static Clock createClock(
+            Component parent,
+            Collection<Member> members,
+            Date masterSet00,
+            Date masterOpen00,
+            Date memberSet00,
+            Date memberOpen00
+        ) throws UserCancelledException
     {
-        return editClock(parent, Clock.createEmpty(), members, true);
+        Clock initialClock = Clock.createEmpty();
+        if (masterSet00 != null) {
+            initialClock = initialClock.repSetTimeOnMasterWhenSet(masterSet00);
+        }
+        if (masterOpen00 != null) {
+            initialClock = initialClock.repSetTimeOnMasterWhenOpened(masterOpen00);
+        }
+        if (memberSet00 != null) {
+            initialClock = initialClock.repSetTimeOnMemberWhenSet(memberSet00);
+        }
+        if (memberOpen00 != null) {
+            initialClock = initialClock.repSetTimeOnMemberWhenOpened(memberOpen00);
+        }
+        return editClock(parent, initialClock, members, true);
     }
 }
