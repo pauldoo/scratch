@@ -37,16 +37,16 @@
         :pre [v]
         :post [% (= v %)]
     }
-
-    (locking (:lock c)
-        (if-let [result
-            (if-let [wr (.get (:whm c) v)]
-                (if-let [ret (.get wr)]
-                    ret))]
-            result
-            (do
-                (.put (:whm c) v (new java.lang.ref.WeakReference v))
-                (canonical-get c v) ))))
+    (let [^java.util.WeakHashMap whm (:whm c)]
+        (locking (:lock c)
+            (if-let [result
+                (if-let [^java.lang.ref.WeakReference wr (.get whm v)]
+                    (if-let [ret (.get wr)]
+                        ret))]
+                result
+                (do
+                    (.put whm v (new java.lang.ref.WeakReference v))
+                    (canonical-get c v) )))))
 
 (def canon (let [c (make-canonicalizer)]
     (fn [v] (canonical-get c v))))
@@ -251,8 +251,8 @@
                     }
                 })
                 :channels [channel])
-            (with-open [in (reader corpus-file)]
-                (dorun (map #(update-state! % state-ref) (line-seq in))))))))
+            (time (with-open [in (reader corpus-file)]
+                (dorun (map #(update-state! % state-ref) (line-seq in)))))))))
 
 
 
