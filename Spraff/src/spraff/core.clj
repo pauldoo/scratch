@@ -22,11 +22,36 @@
 (def retries 3)
 
 (def empty-state {
-    :table {}
-    :starter []
+    :forwardtable {}
+    :backwardtable {}
+    :n-grams []
 })
 
-(defn split-sentence-to-words [sentence] (map #(.intern %) (re-seq word-pattern sentence)))
+
+(defn make-canonicalizer [] {
+    :whm (new java.util.WeakHashMap)
+    :lock (new java.lang.Object)})
+
+(defn canonical-get [c v]
+    {
+        :pre [v]
+        :post [% (= v %)]
+    }
+
+    (locking (:lock c)
+        (if-let [result
+            (if-let [wr (.get (:whm c) v)]
+                (if-let [ret (.get wr)]
+                    ret))]
+            result
+            (do
+                (.put (:whm c) v (new java.lang.ref.WeakReference v))
+                (canonical-get c v) ))))
+
+(def canon (let [c (make-canonicalizer)]
+    (fn [v] (canonical-get c v))))
+
+(defn split-sentence-to-words [sentence] (map canon (re-seq word-pattern sentence)))
 
 (defn select [c i]
     (let [[word weight] (first c)]
@@ -45,25 +70,33 @@
             (cons [word had-choice] (further-stream-of-shite (concat (rest prefix) [word]) t)))))
 (defn stream-of-shite [prefix t]
     (concat (map vector prefix (repeat false)) (further-stream-of-shite prefix t)))
+
+(defn sentence-from-seed [seed backward forward]
+    (concat
+        (drop-last prefix-length
+            (reverse (take 500 (stream-of-shite (reverse seed) backward))))
+        (take 500 (stream-of-shite seed forward))))
+
 (defn generate-sentence [state keywords]
-    (let [{:keys [table starters]} state]
-        (if (empty? keywords)
-            (drop-last (map first
-                (apply max-key #(count (filter true? (map second %)))
-                    (take retries (repeatedly #(take 1000 (stream-of-shite
-                        (nth starters (rand-int (count starters)))
-                        table)))))))
-            (let [filtered-starters
-                    (filter
-                        (fn [s] (not (empty? (filter
-                            (fn [k] (not (empty? (filter #(.contains % k) s))))
-                            keywords))))
-                        starters)]
-                (if (empty? filtered-starters)
-                    (generate-sentence state [])
-                    (generate-sentence
-                        (assoc state :starters filtered-starters)
-                        []))))))
+    (println "keywords: " keywords "\n")
+    (if (empty? keywords)
+        (remove keyword? (map first
+            (apply max-key #(count (filter true? (map second %)))
+                (take retries (repeatedly #(sentence-from-seed
+                    (rand-nth (:n-grams state))
+                    (:backwardtable state)
+                    (:forwardtable state)))))))
+        (let [filtered-grams
+                (remove
+                    (fn [s] (empty? (remove
+                        (fn [k] (empty? (filter #(.contains % k) (remove keyword? s))))
+                        keywords)))
+                    (:n-grams state))]
+            (if (empty? filtered-grams)
+                (generate-sentence state [])
+                (generate-sentence
+                    (assoc state :n-grams filtered-grams)
+                    [])))))
 
 (defn value-or-default [value default]
     (if (nil? value) default value))
@@ -82,20 +115,28 @@
         (let [[prefix remainder] (split-at prefix-length words)]
             (recur
                 (update-transition
-                    prefix
+                    (canon (vec prefix))
                     (first remainder)
                     table)
                 (rest words)))
         table))
+(defn update-ngrams [ngrams words]
+    (if (>= (count words) prefix-length)
+        (let [[prefix remainder] (split-at prefix-length words)]
+            (recur
+                (conj ngrams (canon (vec prefix)))
+                (rest words)))
+        ngrams))
+
 (defn update-state [message state]
-    (let [words (split-sentence-to-words message)]
+    (let [words (concat [:begin] (split-sentence-to-words message) [:end])]
         (assoc state
-            :table
-                (update-table (:table state) (concat [:begin] words [:end]))
-            :starters
-                (if (>= (count words) prefix-length)
-                    (conj (:starters state) (take prefix-length words))
-                    (:starters state)))))
+            :forwardtable
+                (update-table (:forwardtable state) words)
+            :backwardtable
+                (update-table (:backwardtable state) (reverse words))
+            :n-grams
+                (update-ngrams (:n-grams state) words))))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))))
@@ -176,7 +217,7 @@
         (send-message irc channel
             (join " " (generate-sentence
                 @state-ref
-                (let [keywords (set (filter #(not (.contains % (:name @irc))) (split-sentence-to-words message)))]
+                (let [keywords (set (remove #(.contains % (:name @irc)) (split-sentence-to-words message)))]
                     (if (<= (count keywords) 3) keywords #{}))))))
     (if (.startsWith message "!burrito")
         (send-message irc channel
