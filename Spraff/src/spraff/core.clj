@@ -24,7 +24,7 @@
 (def empty-state {
     :forwardtable {}
     :backwardtable {}
-    :n-grams []
+    :n-grams (sorted-set)
 })
 
 
@@ -77,8 +77,13 @@
             (reverse (take 500 (stream-of-shite (reverse seed) backward))))
         (take 500 (stream-of-shite seed forward))))
 
+(defn extend-vec [v e n] (vec (concat v (take (- n (count v)) (repeat e)))))
+(defn append-null [s] (join (concat (seq s) [(char 0)])))
+
 (defn generate-sentence [state keywords]
-    (println "keywords: " keywords "\n")
+    {
+        :pre [(or (empty? keywords) (sorted? (:n-grams state)))]
+    }
     (if (empty? keywords)
         (remove keyword? (map first
             (apply max-key #(count (filter true? (map second %)))
@@ -87,11 +92,13 @@
                     (:backwardtable state)
                     (:forwardtable state)))))))
         (let [filtered-grams
-                (remove
-                    (fn [s] (empty? (remove
-                        (fn [k] (empty? (filter #(.contains % k) (remove keyword? s))))
-                        keywords)))
-                    (:n-grams state))]
+                (apply concat
+                    (map
+                        (fn [k]
+                            (subseq (:n-grams state)
+                                >= (extend-vec [k] "" prefix-length)
+                                < (extend-vec [(append-null k)] "" prefix-length)))
+                        keywords))]
             (if (empty? filtered-grams)
                 (generate-sentence state [])
                 (generate-sentence
@@ -136,7 +143,7 @@
             :backwardtable
                 (update-table (:backwardtable state) (reverse words))
             :n-grams
-                (update-ngrams (:n-grams state) words))))
+                (update-ngrams (:n-grams state) (remove keyword? words)))))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))))
@@ -215,10 +222,9 @@
     (update-state! message state-ref)
     (if (and (not (= nick (:name @irc))) (.contains message (:name @irc)))
         (send-message irc channel
-            (join " " (generate-sentence
+            (join (take 450 (join " " (generate-sentence
                 @state-ref
-                (let [keywords (set (remove #(.contains % (:name @irc)) (split-sentence-to-words message)))]
-                    (if (<= (count keywords) 3) keywords #{}))))))
+                (set (remove #(.contains % (:name @irc)) (split-sentence-to-words message)))))))))
     (if (.startsWith message "!burrito")
         (send-message irc channel
             (generate-burrito)))
