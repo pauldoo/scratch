@@ -6,6 +6,7 @@
 #include "Primitive.h"
 #include "Symbol.h"
 
+#include <sstream>
 #include <string>
 
 namespace sili {
@@ -13,17 +14,23 @@ namespace sili {
         namespace {
             // TODO: refactor and remove duplication..
             
+            // Special forms
             const std::wstring QUOTE = L"quote";
-            const std::wstring CONS = L"cons";
-            const std::wstring CAR = L"car";
-            const std::wstring CDR = L"cdr";
             const std::wstring IF = L"if";
             const std::wstring LAMBDA = L"lambda";
             const std::wstring DEFINE = L"define";
             const std::wstring MACRO = L"macro";
             const std::wstring LAMBDA_PROCEDURE = L"lambda-procedure";
             const std::wstring MACRO_PROCEDURE = L"macro-procedure";
-            const std::wstring SET = L"set!";            
+            const std::wstring SET = L"set!";    
+            // Bult in procedures
+            const std::wstring CONS = L"cons";
+            const std::wstring CAR = L"car";
+            const std::wstring CDR = L"cdr";
+            const std::wstring INSTANCE_ID = L"instance-id";
+            const std::wstring TYPE_OF = L"type-of";
+            const std::wstring EQUAL_NUMBER = L"equal-number";
+            const std::wstring EQUAL_SYMBOL = L"equal-symbol";
             
             const bool IsSelfEvaluating(const ObjectPtr& exp)
             {
@@ -56,6 +63,26 @@ namespace sili {
                 return IsListWithHeadSymbolValue(exp, LAMBDA);
             }
 
+            const bool IsTypeOf(const ObjectPtr& exp)
+            {
+                return IsListWithHeadSymbolValue(exp, TYPE_OF);
+            }
+
+            const bool IsInstanceId(const ObjectPtr& exp)
+            {
+                return IsListWithHeadSymbolValue(exp, INSTANCE_ID);
+            }
+            
+            const bool IsEqualNumber(const ObjectPtr& exp)
+            {
+                return IsListWithHeadSymbolValue(exp, EQUAL_NUMBER);
+            }
+            
+            const bool IsEqualSymbol(const ObjectPtr& exp)
+            {
+                return IsListWithHeadSymbolValue(exp, EQUAL_SYMBOL);
+            }
+            
             const bool IsIf(const ObjectPtr& exp)
             {
                 return IsListWithHeadSymbolValue(exp, IF);
@@ -313,6 +340,14 @@ namespace sili {
                 entry->AsA<List>()->mTail->mHead = value;
                 return value;
             }
+            
+            template<typename T>
+            const std::wstring ToString(const T& v)
+            {
+                std::wostringstream buf;
+                buf << v;
+                return buf.str();
+            }
         }
         
         const ObjectPtr Eval(const ObjectPtr& exp, const ObjectPtr& env)
@@ -354,6 +389,28 @@ namespace sili {
                     return Eval(exp->AsA<List>()->mTail->mTail->mHead, env);
                 } else {
                     return Eval(exp->AsA<List>()->mTail->mTail->mTail->mHead, env);
+                }
+            } else if (IsInstanceId(exp)) {
+                const ObjectPtr testValue = Eval(exp->AsA<List>()->mTail->mHead, env);
+                return Primitive<double>::New(testValue->mInstanceNumber);
+            } else if (IsTypeOf(exp)) {
+                const ObjectPtr testValue = Eval(exp->AsA<List>()->mTail->mHead, env);
+                return Symbol::New(ToString(typeid(*(testValue.get())).name()));
+            } else if (IsEqualSymbol(exp)) {
+                const ObjectPtr testValue1 = Eval(exp->AsA<List>()->mTail->mHead, env);
+                const ObjectPtr testValue2 = Eval(exp->AsA<List>()->mTail->mTail->mHead, env);
+                if (testValue1->AsA<Symbol>()->mName == testValue2->AsA<Symbol>()->mName) {
+                    return testValue1;
+                } else {
+                    return NULL;
+                }
+            } else if (IsEqualNumber(exp)) {
+                const ObjectPtr testValue1 = Eval(exp->AsA<List>()->mTail->mHead, env);
+                const ObjectPtr testValue2 = Eval(exp->AsA<List>()->mTail->mTail->mHead, env);
+                if (testValue1->AsA<Primitive<double> >()->mValue == testValue2->AsA<Primitive<double> >()->mValue) {
+                    return testValue1;
+                } else {
+                    return NULL;
                 }
             } else if (IsApplication(exp)) {
                 return

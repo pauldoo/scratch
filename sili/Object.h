@@ -33,12 +33,15 @@ namespace sili {
         
         virtual void WriteAsString(std::wostream&) const = 0;
         
+        // Would be nice to just use the object address, but that won't fit into 'double' on 64-bit. :/
+        const int mInstanceNumber;
         
     protected:
         Object();
         virtual ~Object() = 0;
         
     private:
+        static int sInstanceCounter;
         mutable int mReferenceCount;
         
         void IncrementCount() const;

@@ -5,7 +5,11 @@
 #include <iostream>
 
 namespace sili {
-    Object::Object() : mReferenceCount(0)
+    int Object::sInstanceCounter = 0;
+    
+    Object::Object() :
+        mInstanceNumber(sInstanceCounter++),
+        mReferenceCount(0)
     {
         Heap::Instance()->NotifyCreated(this);
     }
