@@ -1,11 +1,9 @@
 #pragma once
 
+#include "ListFwd.h"
 #include "Object.h"
 
 namespace sili {
-    class List;
-    typedef boost::intrusive_ptr<List> ListPtr;    
-    
     class List : public Object
     {
     public:

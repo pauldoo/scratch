@@ -4,6 +4,7 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
+      <itemPath>BuiltinProcedures.h</itemPath>
       <itemPath>Heap.h</itemPath>
       <itemPath>Interpreter.h</itemPath>
       <itemPath>List.h</itemPath>
@@ -23,6 +24,7 @@
     <logicalFolder name="SourceFiles"
                    displayName="Source Files"
                    projectFiles="true">
+      <itemPath>BuiltinProcedures.cpp</itemPath>
       <itemPath>Heap.cpp</itemPath>
       <itemPath>Interpreter.cpp</itemPath>
       <itemPath>List.cpp</itemPath>

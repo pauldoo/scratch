@@ -8,7 +8,6 @@ TODO:
 * Symbol generation for sane macros
 * Dynamic scope
 * Decent parser (comments, line breaks, etc)
-* Split "special forms" from "builtin procedures"
 
 NOTES:
 How to make references using 'set!':
