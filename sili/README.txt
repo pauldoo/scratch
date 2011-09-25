@@ -4,7 +4,7 @@ Written in C++ to prevent accidental cheating (inheriting features from host lan
 
 TODO:
 * Integer operations
-* Mutual tail recursion
+* Some form of efficient looping (tail recursion, loop, etc)
 * Symbol generation for sane macros
 * Dynamic scope
 * Decent parser (comments, line breaks, etc)
