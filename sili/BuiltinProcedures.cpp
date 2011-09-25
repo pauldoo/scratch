@@ -4,6 +4,7 @@
 #include "Object.h"
 #include "ObjectImp.h"
 #include "Primitive.h"
+#include "PrimitiveImp.h"
 #include "Symbol.h"
 
 #include <sstream>
@@ -19,6 +20,8 @@ namespace sili {
             const std::wstring TYPE_OF = L"type-of";
             const std::wstring EQUAL_NUMBER = L"equal-number";
             const std::wstring EQUAL_SYMBOL = L"equal-symbol";            
+            const std::wstring ADD = L"add";
+            const std::wstring NEGATE = L"negate";
             
             template<typename T>
             const std::wstring ToString(const T& v)
@@ -43,6 +46,8 @@ namespace sili {
                 return Primitive<double>::New(arg0->mInstanceNumber);
             } else if (builtinName == TYPE_OF) {
                  return Symbol::New(ToString(typeid(*(arg0.get())).name()));
+            } else if (builtinName == NEGATE) {
+                return Primitive<double>::New(- (arg0->AsA<Primitive<double> >()->mValue));
             } else {
                 const ObjectPtr arg1 = argumentValues->mTail->mHead;
                 
@@ -62,6 +67,10 @@ namespace sili {
                     } else {
                         return NULL;
                     }
+                } else if (builtinName == ADD) {
+                    return Primitive<double>::New(
+                            arg0->AsA<Primitive<double> >()->mValue +
+                            arg1->AsA<Primitive<double> >()->mValue);
                 } else {
                     BOOST_ASSERT(false);
                 }

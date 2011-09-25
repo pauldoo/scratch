@@ -22,7 +22,8 @@ namespace sili {
             const std::wstring MACRO_PROCEDURE = L"macro-procedure";
             const std::wstring BUILTIN_PROCEDURE = L"builtin-procedure";
             const std::wstring SET = L"set!";    
-
+            const std::wstring LOOP = L"loop";
+            const std::wstring DO = L"do";
             
             const bool IsSelfEvaluating(const ObjectPtr& exp)
             {
@@ -58,6 +59,16 @@ namespace sili {
             const bool IsIf(const ObjectPtr& exp)
             {
                 return IsListWithHeadSymbolValue(exp, IF);
+            }
+
+            const bool IsLoop(const ObjectPtr& exp)
+            {
+                return IsListWithHeadSymbolValue(exp, LOOP);
+            }
+
+            const bool IsDo(const ObjectPtr& exp)
+            {
+                return IsListWithHeadSymbolValue(exp, DO);
             }
             
             const bool IsQuote(const ObjectPtr& exp)
@@ -339,6 +350,16 @@ namespace sili {
                 } else {
                     return Eval(exp->AsA<List>()->mTail->mTail->mTail->mHead, env);
                 }
+            } else if (IsLoop(exp)) {
+                const SymbolPtr tag = Eval(exp->AsA<List>()->mTail->mHead, env)->AsA<Symbol>();
+                ObjectPtr result;
+                do {
+                    result = Eval(exp->AsA<List>()->mTail->mTail->mHead, env);
+                } while (result->IsA<Symbol>() && result->AsA<Symbol>()->mName == tag->mName);
+                return result;
+            } else if (IsDo(exp)) {
+                Eval(exp->AsA<List>()->mTail->mHead, env);
+                return Eval(exp->AsA<List>()->mTail->mTail->mHead, env);
             } else if (IsApplication(exp)) {
                 return
                     Apply(

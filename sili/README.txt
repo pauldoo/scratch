@@ -3,8 +3,6 @@ SILI -- SICP Inspired Lisp Interpreter.
 Written in C++ to prevent accidental cheating (inheriting features from host language like closures or garbace collection).
 
 TODO:
-* Integer operations
-* Some form of efficient looping (tail recursion, loop, etc)
 * Symbol generation for sane macros
 * Dynamic scope
 * Decent parser (comments, line breaks, etc)

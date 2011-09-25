@@ -5,6 +5,9 @@
 #include <string>
 
 namespace sili {
+    class Symbol;
+    typedef boost::intrusive_ptr<Symbol> SymbolPtr;       
+    
     class Symbol : public Object
     {
     public:
