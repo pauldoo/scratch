@@ -88,7 +88,7 @@
         (remove keyword? (map first
             (apply max-key #(count (filter true? (map second %)))
                 (take retries (repeatedly #(sentence-from-seed
-                    (rand-nth (:n-grams state))
+                    (rand-nth (seq (:n-grams state)))
                     (:backwardtable state)
                     (:forwardtable state)))))))
         (let [filtered-grams
@@ -228,6 +228,15 @@
     (if (.startsWith message "!burrito")
         (send-message irc channel
             (generate-burrito)))
+    (if (.startsWith message "!memory")
+        (send-message irc channel
+            (let [
+                r (Runtime/getRuntime)
+                free (.freeMemory r)
+                total (.totalMemory r)
+                to-mb (fn [b] (Math/round (double (/ b (* 1024 1024)))))
+                ]
+                (str "Total: " (to-mb total) " MiB" " - " "Free: " (to-mb free) " MiB"))))
 )
 
 (defn -main
