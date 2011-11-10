@@ -2,49 +2,51 @@
 
 # Seven languages in seven weeks, Io, day3, Q3
 
-OperatorTable addAssignOperator(":", "atPutNumber")
-curlyBrackets := method(
-    "PING" println
-    call message arguments println
-    r := Map clone
-    call message arguments foreach(arg,
-        r doMessage(arg))
-    r)
 
 Map atPutNumber := method(
-    "PONG" println
     self atPut(
         call evalArgAt(0) asMutable removePrefix("\"") removeSuffix("\""),
-        call evalArgAt(1)))
+        call evalArgAt(1))
+)
 
-{ "a" : "b" } println
-
+OperatorTable addAssignOperator(":", "atPutNumber")
+curlyBrackets := method(
+    r := Map clone
+    call message arguments foreach(arg, r doMessage(arg))
+    r
+)
 
 Builder := Object clone
 
 Builder forward := method(
     children := call message arguments clone
+
+    result := ""
+
     attributes := Map clone
-    if (children at(0) type == "Map",
-        attributes = children removeFirst)
-    attributes println
-    write ("  " repeated(depth))
-    writeln("<", call message name, ">")
+    t := doMessage(children at(0))
+    if (t type == "Map",
+        attributes = t
+        children removeFirst)
+
+    result := result .. ("  " repeated(depth)) .. "<" .. (call message name)
+    attributes keys foreach(k,
+        result := result .. " " .. k .. "=" .. "'" .. (attributes at(k)) .. "'")
+    result := result .. ">\n"
+
     depth = depth + 1
     children foreach(
         arg,
-        content := self doMessage(arg);
-        if (content type == "Sequence",
-            write ("  " repeated(depth))
-            writeln(content)))
+        content := self doMessage(arg)
+        result := result .. content .. "\n"
+    )
     depth = depth - 1
-    write ("  " repeated(depth))
-    writeln("</", call message name, ">"))
-    
+
+    result := result .. ("  " repeated(depth)) .. "</" .. (call message name) .. ">"
+    )
+
 Builder depth := 0
-    
-Builder ul(
-    li("Io"),
-    li("Lua"),
-    li("JavaScript"))
+
+doRelativeFile("builder.txt") println
+
 

@@ -1,0 +1,5 @@
+Builder ul(
+    li({"a":"b", "c":"d"}, "Io"),
+    li("Lua"),
+    li("JavaScript"))
+
