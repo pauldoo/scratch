@@ -1,13 +1,6 @@
 <!doctype html>
 <html>
     <head>
-        <style>
-            #my-canvas {
-                border: 1px solid #000000;
-            }
-        </style>
-    </head>
-    <body>
         <!-- DEBUG -->
         <!--
         <script type="text/javascript" src="out/goog/base.js"></script>
@@ -19,6 +12,14 @@
 
         <!-- RELEASE -->
         <script type="text/javascript" src="hello.js"></script>
+
+        <style>
+            #my-canvas {
+                border: 1px solid #000000;
+            }
+        </style>
+    </head>
+    <body onload="hello.test();">
 
         <canvas id="my-canvas" width="300px" height="300px"></canvas>
 

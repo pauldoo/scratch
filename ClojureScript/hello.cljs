@@ -20,3 +20,5 @@
             (. ctx (restore))
             )))
 
+(defn ^:export test [] (foobar))
+
