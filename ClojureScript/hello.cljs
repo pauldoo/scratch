@@ -1,10 +1,11 @@
 ; :mode=clojure:
 
 (ns hello
-    (:use [
-        goog.dom :only [getElement appendChild createDom]
-        goog.events :only [listen EventType]
-        ]))
+    (:use
+        [goog.dom :only [appendChild createDom]]
+        [goog.events :only [listen]]
+        [goog.events.EventType :only [CLICK]]
+        ))
 
 (def pos (atom 0))
 
@@ -21,7 +22,7 @@
             )))
 
 (defn ^:export main []
-    (let [body (goog.dom/getElement "my-body")
+    (let [body document.body ;(goog.dom/getElement "my-body")
         f (partial goog.dom/appendChild body)] (do
         (f
             (goog.dom/createDom "h1" {} "Hello!"))
@@ -32,9 +33,9 @@
                 "height" 600
                 "style" "border: 1px solid #000000"
                 }) ""))
-        (f
-            (let [button (goog.dom/createDom "button" {} "Click!")] (do
-                ;(goog.events.listen button goog.events.EventType/CLICK foobar)
-                button)))
+        (let [button (goog.dom/createDom "button" {} "Click!")] (do
+            (goog.events/listen button goog.events.EventType/CLICK foobar)
+            (f button)
+            button))
 )))
 
