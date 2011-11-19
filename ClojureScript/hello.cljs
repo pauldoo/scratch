@@ -9,7 +9,11 @@
 
 (def pos (atom 0))
 
-(defn foobar [canvas y]
+(defn print-to-log [v]
+    (.log js/console v))
+
+(defn foobar [canvas y event] (do
+    (print-to-log event)
     (let [ctx (.getContext canvas "2d")
         x (swap! pos inc)]
         (do
@@ -18,13 +22,13 @@
             (set! (.fillStyle ctx) "red")
             (.fillRect ctx x y 100 50)
             (. ctx (restore))
-            )))
+            ))))
 
 (defn ^:export main []
     (let [
         canvas (goog.dom/createDom "canvas" (.strobj {
-            "width" 600
-            "height" 600
+            "width" 400
+            "height" 300
             "style" "border: 1px solid #000000"
             }) "")
         button (goog.dom/createDom "button" {} "Click!")]
