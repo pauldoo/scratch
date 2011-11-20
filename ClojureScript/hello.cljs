@@ -8,12 +8,19 @@
         ))
 
 (def pos (atom 0))
+(def keys-pressed (atom (set)))
 
 (defn print-to-log [v]
     (.log js/console v))
 
-(defn foobar [canvas y event] (do
-    (print-to-log event)
+(defn foobar [t canvas y event] (do
+    (cond
+        (= t :up)
+            (swap! keys-pressed disj (.keyCode event))
+        (= t :down)
+            (swap! keys-pressed conj (.keyCode event))
+        :else
+            nil)
     (let [ctx (.getContext canvas "2d")
         x (swap! pos inc)]
         (do
@@ -33,9 +40,9 @@
             }) "")
         button (goog.dom/createDom "button" {} "Click!")]
         (do
-            (goog.events/listen button goog.events.EventType/CLICK (partial foobar canvas 100))
-            (goog.events/listen document.body goog.events.EventType/KEYDOWN (partial foobar canvas 50) true)
-            (goog.events/listen document.body goog.events.EventType/KEYUP (partial foobar canvas 150) true)
+            (goog.events/listen button goog.events.EventType/CLICK (partial foobar :click canvas 100))
+            (goog.events/listen document.body goog.events.EventType/KEYDOWN (partial foobar :down canvas 50) true)
+            (goog.events/listen document.body goog.events.EventType/KEYUP (partial foobar :up canvas 150) true)
             (dorun (map (partial goog.dom/appendChild document.body)
                 [(goog.dom/createDom "h1" {} "Hello!") canvas button])))))
 
