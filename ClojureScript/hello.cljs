@@ -10,23 +10,23 @@
         ))
 
 (def my-code-url "https://github.com/pauldoo/scratch/blob/master/ClojureScript/hello.cljs")
-(def tick-step (/ 1 100))
+(def tick-step (/ 1 200))
 (def render-step (/ 1 30))
-(def gravity-strength 15)
-(def ground-strength 10)
+(def gravity-strength 500)
+(def ground-strength 200)
 (def initial-game-state {
     :nodes {
         :t {
             :pos [150 100]
-            :vel [(- 10) 0]
+            :vel [0 0]
         }
         :u {
             :pos [350 200]
-            :vel [(- 10) 0]
+            :vel [0 0]
         }
         :v {
             :pos [250 100]
-            :vel [(- 10) 0]
+            :vel [0 0]
         }
     }
     :springs [
@@ -34,19 +34,19 @@
             :node-a :t
             :node-b :u
             :rest-length 224.0
-            :strength 50
+            :strength 2000
         }
         {
             :node-a :u
             :node-b :v
             :rest-length 141.0
-            :strength 50
+            :strength 2000
         }
         {
             :node-a :t
             :node-b :v
             :rest-length 100.0
-            :strength 50
+            :strength 2000
         }
     ] })
 
@@ -87,7 +87,7 @@
     (zipmap (keys nodes)
         (map (fn [{[ x y ] :pos [ xv yv ] :vel }]
             (if (< y 0)
-                (vec* [(- xv) (+ (- yv) (- y))] ground-strength)
+                (vec* [(- xv) (+ (Math/max 0 (- yv)) (- y))] ground-strength)
                 [0 0])) (vals nodes))))
 
 (defn calculate-all-node-forces [nodes springs]
@@ -175,11 +175,12 @@
         (do
             (. tick-timer (start))
             (. render-timer (start))
-            (goog.events/listen button goog.events.EventType/CLICK (partial input-event input-state-ref))
-            (goog.events/listen document.body goog.events.EventType/KEYDOWN (partial input-event input-state-ref) true)
-            (goog.events/listen document.body goog.events.EventType/KEYUP (partial input-event input-state-ref) true)
-            (goog.events/listen tick-timer goog.Timer/TICK #(tick game-state-ref (deref input-state-ref)))
-            (goog.events/listen render-timer goog.Timer/TICK #(rerender canvas (deref game-state-ref)))
+            (dorun (map (partial apply goog.events/listen) [
+                [button goog.events.EventType/CLICK (partial input-event input-state-ref)]
+                [document.body goog.events.EventType/KEYDOWN (partial input-event input-state-ref) true]
+                [document.body goog.events.EventType/KEYUP (partial input-event input-state-ref) true]
+                [tick-timer goog.Timer/TICK #(tick game-state-ref (deref input-state-ref))]
+                [render-timer goog.Timer/TICK #(rerender canvas (deref game-state-ref))]]))
             (goog.dom/appendChild document.body (goog.dom/createDom "div" {}
                 (goog.dom/createDom "h1" {} "Work in progress..")
                 (goog.dom/createDom "div" {} "Try clicking the button, or pressing keys.")
