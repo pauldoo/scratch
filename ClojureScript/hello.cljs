@@ -14,6 +14,36 @@
 (defn print-to-log [v]
     (.log js/console v))
 
+(def vec- (partial map -))
+(def vec+ (partial map +))
+(defn vec* [v s] (map * v (repeat s)))
+(def magnitude-squared (comp (partial apply +) (partial map #(* % %))))
+(def magnitude (comp Math/sqrt magnitude-squared))
+(def normalize (comp (partial apply vec*) (juxt identity (comp (partial / 1.0) magnitude))))
+
+(defn calculate-force [node-a node-b rest-length strength]
+    (let [a-b (vec- node-a node-b)
+        pressure (* (- rest-length (magnitude a-b)) strength)
+        force (vec* (normalize a-b) pressure)]
+            force))
+
+(defn calculate-node-forces [nodes springs]
+    (loop [forces {} springs springs]
+        (if (empty? springs) forces
+            (let [
+                [s & r] springs
+                node-a-id (s :node-a)
+                node-b-id (s :node-b)
+                force (calculate-force (nodes node-a-id) (nodes node-b-id) (:rest-length s) (:strength s))]
+                (recur
+                    (assoc forces
+                        node-a-id (vec+ (get forces node-a-id [0 0]) force)
+                        node-b-id (vec- (get forces node-b-id [0 0]) force))
+                    r)))))
+
+(print-to-log
+    (pr-str (calculate-node-forces {:t [1 1] :u [2 3] } [{:node-a :t :node-b :u :rest-length 2.0 :strength 5.0}] )))
+
 (defn input-event [input-state-ref event]
     (swap! input-state-ref
         (fn [{keys :keys}]
