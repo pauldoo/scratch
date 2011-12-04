@@ -1,12 +1,16 @@
 ; :mode=clojure:
 
 (ns hello
-    (:use
-        [goog.dom :only [appendChild createDom createTextNode removeChildren]]
-        [goog.events :only [listen]]
-        [goog.events.EventType :only [CLICK]]
-        [goog.graphics :only [createGraphics Stroke SolidFill Path]]
-        [goog :only [Timer]]
+    (:require
+        [goog.Timer :as Timer]
+        [goog.dom :as dom]
+        [goog.events :as events]
+        [goog.events.EventType :as EventType]
+        [goog.events.KeyCodes :as KeyCodes]
+        [goog.graphics :as graphics]
+        [goog.graphics.Stroke :as Stroke]
+        [goog.graphics.SolidFill :as SolidFill]
+        [goog.graphics.Path :as Path]
         ))
 
 (def my-code-url "https://github.com/pauldoo/scratch/blob/master/ClojureScript/hello.cljs")
@@ -114,38 +118,48 @@
         (fn [{keys :keys}]
             {:keys
                 (cond
-                    (= (.type event) goog.events.EventType/KEYUP)
+                    (= (.type event) EventType/KEYUP)
                         (disj keys (.keyCode event))
-                    (= (.type event) goog.events.EventType/KEYDOWN)
+                    (= (.type event) EventType/KEYDOWN)
                         (conj keys (.keyCode event))
                     :else keys)})))
 
-(defn tick-imp [state tick-step]
-    (assoc state :nodes
-        (update-node-positions
-            (update-node-velocities
-                (:nodes state)
-                (calculate-all-node-forces (:nodes state) (:springs state))
-                tick-step)
-            tick-step)))
+(defn tick-imp [state tick-step input-state]
+    (assoc state
+        :springs
+            (let [modifier (cond
+                    ((:keys input-state) KeyCodes/Q) 0.99
+                    ((:keys input-state) KeyCodes/W) 1.01
+                    :else 1.0)]
+                (map (fn [s]
+                    (assoc s :rest-length
+                        (* modifier (:rest-length s))))
+                        (:springs state)))
+        :nodes
+            (update-node-positions
+                (update-node-velocities
+                    (:nodes state)
+                    (calculate-all-node-forces (:nodes state) (:springs state))
+                    tick-step)
+                tick-step)))
 
 (defn tick [game-state-ref input-state] (do
-    (swap! game-state-ref #(tick-imp % tick-step))))
+    (swap! game-state-ref #(tick-imp % tick-step input-state))))
 
 (defn world-to-screen [[x y]]
     [x (- 275 y)])
 
 (defn draw-line [g x1 y1 x2 y2]
     (.drawPath g
-        (let [p (Path.)] (do
+        (let [p (goog.graphics.Path.)] (do
             (.moveTo p x1 y1)
             (.lineTo p x2 y2)
             p))
-        (Stroke. 1 "green") nil))
+        (goog.graphics.Stroke. 1 "green") nil))
 
 (defn rerender [canvas-element game-state]
     (let [
-        graphics (goog.graphics/createGraphics 400 300)
+        graphics (graphics/createGraphics 400 300)
         {nodes :nodes springs :springs} game-state]
         (do
             (apply draw-line graphics (apply concat (map world-to-screen [[0 0] [400 0]])))
@@ -157,9 +171,9 @@
                         (draw-line graphics x1 y1 x2 y2))) springs))
             (dorun (map
                 (fn [{p :pos}] (let [[x y] (world-to-screen p)]
-                    (.drawCircle graphics x y 3 (Stroke. 2 "green") (SolidFill. "yellow"))))
+                    (.drawCircle graphics x y 3 (goog.graphics.Stroke. 2 "green") (goog.graphics.SolidFill. "yellow"))))
                 (vals nodes)))
-            (goog.dom/removeChildren canvas-element)
+            (dom/removeChildren canvas-element)
             (.render graphics canvas-element)
             )))
 
@@ -167,26 +181,26 @@
     (let [
         game-state-ref (atom initial-game-state)
         input-state-ref (atom {:keys (set)})
-        canvas (goog.dom/createDom "div" {} "")
-        button (goog.dom/createDom "button" {} "Click!")
-        tick-timer (Timer. (Math/round (* 1000 tick-step)))
-        render-timer (Timer. (Math/round (* 1000 render-step)))
+        canvas (dom/createDom "div" {} "")
+        button (dom/createDom "button" {} "Click!")
+        tick-timer (goog.Timer. (Math/round (* 1000 tick-step)))
+        render-timer (goog.Timer. (Math/round (* 1000 render-step)))
         ]
         (do
             (. tick-timer (start))
             (. render-timer (start))
-            (dorun (map (partial apply goog.events/listen) [
-                [button goog.events.EventType/CLICK (partial input-event input-state-ref)]
-                [document.body goog.events.EventType/KEYDOWN (partial input-event input-state-ref) true]
-                [document.body goog.events.EventType/KEYUP (partial input-event input-state-ref) true]
-                [tick-timer goog.Timer/TICK #(tick game-state-ref (deref input-state-ref))]
-                [render-timer goog.Timer/TICK #(rerender canvas (deref game-state-ref))]]))
-            (goog.dom/appendChild document.body (goog.dom/createDom "div" {}
-                (goog.dom/createDom "h1" {} "Work in progress..")
-                (goog.dom/createDom "div" {} "Try clicking the button, or pressing keys.")
-                (goog.dom/createDom "div" {}
-                    (goog.dom/createTextNode "My code lives here: ")
-                    (goog.dom/createDom "a" (.strobj {"href" my-code-url}) my-code-url))
+            (dorun (map (partial apply events/listen) [
+                [button EventType/CLICK (partial input-event input-state-ref)]
+                [document.body EventType/KEYDOWN (partial input-event input-state-ref) true]
+                [document.body EventType/KEYUP (partial input-event input-state-ref) true]
+                [tick-timer Timer/TICK #(tick game-state-ref (deref input-state-ref))]
+                [render-timer Timer/TICK #(rerender canvas (deref game-state-ref))]]))
+            (dom/appendChild document.body (dom/createDom "div" {}
+                (dom/createDom "h1" {} "Work in progress..")
+                (dom/createDom "div" {} "Try clicking the button, or pressing keys.")
+                (dom/createDom "div" {}
+                    (dom/createTextNode "My code lives here: ")
+                    (dom/createDom "a" (.strobj {"href" my-code-url}) my-code-url))
                 button
                 canvas)))))
 
