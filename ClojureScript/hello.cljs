@@ -14,22 +14,22 @@
         ))
 
 (def my-code-url "https://github.com/pauldoo/scratch/blob/master/ClojureScript/hello.cljs")
-(def tick-step (/ 1 200))
-(def render-step (/ 1 30))
-(def gravity-strength 500)
-(def ground-strength 200)
+(def tick-step (/ 1 100))
+(def render-step (/ 1 25))
+(def gravity-strength 300)
+(def ground-strength 100)
 (def initial-game-state {
     :nodes {
         :t {
-            :pos [150 100]
+            :pos [50 100]
             :vel [0 0]
         }
         :u {
-            :pos [350 200]
+            :pos [250 200]
             :vel [0 0]
         }
         :v {
-            :pos [250 100]
+            :pos [150 100]
             :vel [0 0]
         }
     }
@@ -40,19 +40,29 @@
             :rest-length 224.0
             :strength 2000
         }
-        {
-            :node-a :u
-            :node-b :v
-            :rest-length 141.0
-            :strength 2000
-        }
+        ;{
+        ;    :node-a :u
+        ;    :node-b :v
+        ;    :rest-length 141.0
+        ;    :strength 2000
+        ;}
         {
             :node-a :t
             :node-b :v
             :rest-length 100.0
             :strength 2000
         }
-    ] })
+    ]
+    :hinges [
+        {
+            :node-a :u
+            :node-b :t
+            :node-c :v
+            :rest-angle (/ Math/PI 2)
+            :strength 100000
+        }
+    ]
+    })
 
 (defn print-to-log [v]
     (.log js/console v))
@@ -63,6 +73,13 @@
 (def magnitude-squared (comp (partial apply +) (partial map #(* % %))))
 (def magnitude (comp Math/sqrt magnitude-squared))
 (def normalize (comp (partial apply vec*) (juxt identity (comp (partial / 1.0) magnitude))))
+(defn dot-product [v w] (apply + (map * v w)))
+(defn clamp [v lower upper] (Math/min (Math/max v lower) upper))
+(defn angle [v w] (Math/acos (clamp
+    (dot-product (normalize v) (normalize w))
+    -1.0 1.0 )))
+(defn rot-cw [[x y]] [y (- x)])
+(defn rot-ccw [[x y]] [(- y) x])
 
 (defn calculate-force [node-a node-b rest-length strength]
     (let [a-b (vec- node-a node-b)
@@ -84,6 +101,31 @@
                         node-b-id (vec- (get forces node-b-id [0 0]) force))
                     r)))))
 
+(defn calculate-hinge-force [a b c rest-angle strength]
+    (let [
+        b-to-a (vec- a b)
+        b-to-c (vec- c b)
+        pressure (* (- rest-angle (angle b-to-a b-to-c)) strength)
+        result [
+            (vec* (rot-ccw b-to-a) (/ pressure (magnitude-squared b-to-a)))
+            (vec* (rot-cw b-to-c) (/ pressure (magnitude-squared b-to-c)))
+        ]]
+            result))
+
+(defn calculate-hinge-forces [nodes hinges]
+    (loop [forces {} hinges hinges]
+        (if (empty? hinges) forces
+            (let [
+                [h & r] hinges
+                {:keys [node-a node-b node-c rest-angle strength]} h
+                [force-a force-c] (calculate-hinge-force (:pos (nodes node-a)) (:pos (nodes node-b)) (:pos (nodes node-c)) rest-angle strength)]
+                    (recur
+                        (assoc forces
+                            node-a (vec+ (get forces node-a [0 0]) force-a)
+                            node-b (vec+ (get forces node-b [0 0]) (vec* (vec+ force-a force-c) -1.0))
+                            node-c (vec+ (get forces node-c [0 0]) force-c))
+                        r)))))
+
 (defn calculate-gravity-forces [nodes]
     (zipmap (keys nodes) (repeat [0 (- gravity-strength)])))
 
@@ -94,9 +136,10 @@
                 (vec* [(- xv) (+ (Math/max 0 (- yv)) (- y))] ground-strength)
                 [0 0])) (vals nodes))))
 
-(defn calculate-all-node-forces [nodes springs]
+(defn calculate-all-node-forces [{:keys [nodes springs hinges]}]
     (merge-with vec+
         (calculate-spring-forces nodes springs)
+        (calculate-hinge-forces nodes hinges)
         (calculate-gravity-forces nodes)
         (calculate-ground-forces nodes)))
 
@@ -139,7 +182,7 @@
             (update-node-positions
                 (update-node-velocities
                     (:nodes state)
-                    (calculate-all-node-forces (:nodes state) (:springs state))
+                    (calculate-all-node-forces state)
                     tick-step)
                 tick-step)))
 
