@@ -88,18 +88,15 @@
             force))
 
 (defn calculate-spring-forces [nodes springs]
-    (loop [forces {} springs springs]
-        (if (empty? springs) forces
-            (let [
-                [s & r] springs
-                node-a-id (s :node-a)
-                node-b-id (s :node-b)
-                force (calculate-force (:pos (nodes node-a-id)) (:pos (nodes node-b-id)) (:rest-length s) (:strength s))]
-                (recur
-                    (assoc forces
-                        node-a-id (vec+ (get forces node-a-id [0 0]) force)
-                        node-b-id (vec- (get forces node-b-id [0 0]) force))
-                    r)))))
+    (apply merge-with vec+
+        (map
+            (fn [{:keys [node-a node-b rest-length strength]}] (let [
+                force (calculate-force (:pos (nodes node-a)) (:pos (nodes node-b)) rest-length strength)]
+                {
+                    node-a force
+                    node-b (vec- force)
+                }))
+            springs)))
 
 (defn calculate-hinge-force [a b c rest-angle strength]
     (let [
@@ -113,18 +110,16 @@
             result))
 
 (defn calculate-hinge-forces [nodes hinges]
-    (loop [forces {} hinges hinges]
-        (if (empty? hinges) forces
-            (let [
-                [h & r] hinges
-                {:keys [node-a node-b node-c rest-angle strength]} h
+    (apply merge-with vec+
+        (map
+            (fn [{:keys [node-a node-b node-c rest-angle strength]}] (let [
                 [force-a force-c] (calculate-hinge-force (:pos (nodes node-a)) (:pos (nodes node-b)) (:pos (nodes node-c)) rest-angle strength)]
-                    (recur
-                        (assoc forces
-                            node-a (vec+ (get forces node-a [0 0]) force-a)
-                            node-b (vec+ (get forces node-b [0 0]) (vec* (vec+ force-a force-c) -1.0))
-                            node-c (vec+ (get forces node-c [0 0]) force-c))
-                        r)))))
+                {
+                    node-a force-a
+                    node-b (vec- [0 0] force-a force-c)
+                    node-c force-c
+                }))
+            hinges)))
 
 (defn calculate-gravity-forces [nodes]
     (zipmap (keys nodes) (repeat [0 (- gravity-strength)])))
