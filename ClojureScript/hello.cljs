@@ -14,55 +14,12 @@
         ))
 
 (def my-code-url "https://github.com/pauldoo/scratch/blob/master/ClojureScript/hello.cljs")
+(def width-in-px 800)
+(def height-in-px 300)
 (def tick-step (/ 1 100))
 (def render-step (/ 1 25))
 (def gravity-strength 300)
 (def ground-strength 100)
-(def initial-game-state {
-    :nodes {
-        :t {
-            :pos [50 100]
-            :vel [0 0]
-        }
-        :u {
-            :pos [250 200]
-            :vel [0 0]
-        }
-        :v {
-            :pos [150 100]
-            :vel [0 0]
-        }
-    }
-    :springs [
-        {
-            :node-a :t
-            :node-b :u
-            :rest-length 224.0
-            :strength 2000
-        }
-        ;{
-        ;    :node-a :u
-        ;    :node-b :v
-        ;    :rest-length 141.0
-        ;    :strength 2000
-        ;}
-        {
-            :node-a :t
-            :node-b :v
-            :rest-length 100.0
-            :strength 2000
-        }
-    ]
-    :hinges [
-        {
-            :node-a :u
-            :node-b :t
-            :node-c :v
-            :rest-angle (/ Math/PI 2)
-            :strength 100000
-        }
-    ]
-    })
 
 (defn print-to-log [v]
     (.log js/console v))
@@ -74,12 +31,69 @@
 (def magnitude (comp Math/sqrt magnitude-squared))
 (def normalize (comp (partial apply vec*) (juxt identity (comp (partial / 1.0) magnitude))))
 (defn dot-product [v w] (apply + (map * v w)))
-(defn clamp [v lower upper] (Math/min (Math/max v lower) upper))
-(defn angle [v w] (Math/acos (clamp
-    (dot-product (normalize v) (normalize w))
-    -1.0 1.0 )))
+(defn cross-product [[a b] [c d]] (- (* a d) (* b c)))
+;(defn clamp [v lower upper] (Math/min (Math/max v lower) upper))
+(defn angle [v w] (Math/atan2 (cross-product v w) (dot-product v w)))
 (defn rot-cw [[x y]] [y (- x)])
 (defn rot-ccw [[x y]] [(- y) x])
+
+(defn make-node [x y] {:pos [x y] :vel [0 0]})
+(defn make-spring [a b] {:node-a a :node-b b})
+(defn make-hinge [a b c] {:node-a a :node-b b :node-c c})
+(defn make-state [nodes springs hinges] {
+    :nodes nodes
+    :springs (map
+        (fn [s] (assoc s
+            :rest-length (magnitude (vec- (:pos (nodes (:node-a s))) (:pos (nodes (:node-b s)))))
+            :strength 1000))
+        springs)
+    :hinges (map
+        (fn [h] (assoc h
+            :rest-angle (let [
+                a (vec- (:pos (nodes (:node-a h))) (:pos (nodes (:node-b h))))
+                c (vec- (:pos (nodes (:node-c h))) (:pos (nodes (:node-b h))))]
+                (angle a c))
+            :strength 20000))
+        hinges)
+})
+
+(def initial-game-state (make-state
+    {
+        :head (make-node 250 150)
+        :tail (make-node 50 150)
+        :h-l-k (make-node 270 75)
+        :h-l-f (make-node 270 0)
+        :h-t-k (make-node 230 75)
+        :h-t-f (make-node 230 0)
+        :t-l-k (make-node 70 75)
+        :t-l-f (make-node 70 0)
+        :t-t-k (make-node 30 75)
+        :t-t-f (make-node 30 0)
+    }
+    (map (partial apply make-spring) [
+        [:head :tail]
+        [:head :h-l-k]
+        [:h-l-k :h-l-f]
+        [:head :h-t-k]
+        [:h-t-k :h-t-f]
+        [:tail :t-l-k]
+        [:t-l-k :t-l-f]
+        [:tail :t-t-k]
+        [:t-t-k :t-t-f]
+    ])
+    (map (partial apply make-hinge) [
+        [:tail :head :h-l-k]
+        [:head :h-l-k :h-l-f]
+        [:tail :head :h-t-k]
+        [:head :h-t-k :h-t-f]
+        [:head :tail :t-l-k]
+        [:tail :t-l-k :t-l-f]
+        [:head :tail :t-t-k]
+        [:tail :t-t-k :t-t-f]
+    ])
+))
+
+;(print-to-log (pr-str initial-game-state))
 
 (defn calculate-force [node-a node-b rest-length strength]
     (let [a-b (vec- node-a node-b)
@@ -98,14 +112,23 @@
                 }))
             springs)))
 
+(defn real-mod [a b]
+    (mod (+ (mod a b) b) b))
+(defn pi-mod [a]
+    (-
+        (real-mod
+            (+ a Math/PI)
+            (* 2 Math/PI))
+        Math/PI))
+
 (defn calculate-hinge-force [a b c rest-angle strength]
     (let [
         b-to-a (vec- a b)
         b-to-c (vec- c b)
-        pressure (* (- rest-angle (angle b-to-a b-to-c)) strength)
+        pressure (* (pi-mod (- rest-angle (angle b-to-a b-to-c))) strength)
         result [
-            (vec* (rot-ccw b-to-a) (/ pressure (magnitude-squared b-to-a)))
-            (vec* (rot-cw b-to-c) (/ pressure (magnitude-squared b-to-c)))
+            (vec* (rot-cw b-to-a) (/ pressure (magnitude-squared b-to-a)))
+            (vec* (rot-ccw b-to-c) (/ pressure (magnitude-squared b-to-c)))
         ]]
             result))
 
@@ -197,10 +220,10 @@
 
 (defn rerender [canvas-element game-state]
     (let [
-        graphics (graphics/createGraphics 400 300)
+        graphics (graphics/createGraphics width-in-px height-in-px)
         {nodes :nodes springs :springs} game-state]
         (do
-            (apply draw-line graphics (apply concat (map world-to-screen [[0 0] [400 0]])))
+            (apply draw-line graphics (apply concat (map world-to-screen [[0 0] [width-in-px 0]])))
             (dorun (map
                 (fn [{a :node-a b :node-b}]
                     (let [
