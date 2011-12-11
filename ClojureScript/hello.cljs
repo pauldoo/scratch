@@ -32,20 +32,20 @@
 (def normalize (comp (partial apply vec*) (juxt identity (comp (partial / 1.0) magnitude))))
 (defn dot-product [v w] (apply + (map * v w)))
 (defn cross-product [[a b] [c d]] (- (* a d) (* b c)))
-;(defn clamp [v lower upper] (Math/min (Math/max v lower) upper))
+(defn clamp [v lower upper] (Math/min (Math/max v lower) upper))
 (defn angle [v w] (Math/atan2 (cross-product v w) (dot-product v w)))
 (defn rot-cw [[x y]] [y (- x)])
 (defn rot-ccw [[x y]] [(- y) x])
 
 (defn make-node [x y] {:pos [x y] :vel [0 0]})
 (defn make-spring [a b] {:node-a a :node-b b})
-(defn make-hinge [a b c] {:node-a a :node-b b :node-c c})
+(defn make-hinge [a b c min-a max-a] {:node-a a :node-b b :node-c c :min-modifier-angle min-a :max-modifier-angle max-a})
 (defn make-state [nodes springs hinges] {
     :nodes nodes
     :springs (map
         (fn [s] (assoc s
             :rest-length (magnitude (vec- (:pos (nodes (:node-a s))) (:pos (nodes (:node-b s)))))
-            :strength 1000))
+            :strength 2000))
         springs)
     :hinges (map
         (fn [h] (assoc h
@@ -53,7 +53,8 @@
                 a (vec- (:pos (nodes (:node-a h))) (:pos (nodes (:node-b h))))
                 c (vec- (:pos (nodes (:node-c h))) (:pos (nodes (:node-b h))))]
                 (angle a c))
-            :strength 20000))
+            :modifier-angle 0.0
+            :strength 1000000))
         hinges)
 })
 
@@ -61,14 +62,14 @@
     {
         :head (make-node 250 150)
         :tail (make-node 50 150)
-        :h-l-k (make-node 270 75)
-        :h-l-f (make-node 270 0)
-        :h-t-k (make-node 230 75)
-        :h-t-f (make-node 230 0)
-        :t-l-k (make-node 70 75)
-        :t-l-f (make-node 70 0)
-        :t-t-k (make-node 30 75)
-        :t-t-f (make-node 30 0)
+        :h-l-k (make-node 260 75)
+        :h-l-f (make-node 250 0)
+        :h-t-k (make-node 260 75)
+        :h-t-f (make-node 250 0)
+        :t-l-k (make-node 40 75)
+        :t-l-f (make-node 50 0)
+        :t-t-k (make-node 40 75)
+        :t-t-f (make-node 50 0)
     }
     (map (partial apply make-spring) [
         [:head :tail]
@@ -82,14 +83,14 @@
         [:t-t-k :t-t-f]
     ])
     (map (partial apply make-hinge) [
-        [:tail :head :h-l-k]
-        [:head :h-l-k :h-l-f]
-        [:tail :head :h-t-k]
-        [:head :h-t-k :h-t-f]
-        [:head :tail :t-l-k]
-        [:tail :t-l-k :t-l-f]
-        [:head :tail :t-t-k]
-        [:tail :t-t-k :t-t-f]
+        [:tail :head :h-l-k -0.5 0.5]
+        [:head :h-l-k :h-l-f -1 0.0]
+        [:tail :head :h-t-k -0.5 0.5]
+        [:head :h-t-k :h-t-f -1 0.0]
+        [:head :tail :t-l-k -0.5 0.5]
+        [:tail :t-l-k :t-l-f -1 0.0]
+        [:head :tail :t-t-k -0.5 0.5]
+        [:tail :t-t-k :t-t-f -1 0.0]
     ])
 ))
 
@@ -135,8 +136,8 @@
 (defn calculate-hinge-forces [nodes hinges]
     (apply merge-with vec+
         (map
-            (fn [{:keys [node-a node-b node-c rest-angle strength]}] (let [
-                [force-a force-c] (calculate-hinge-force (:pos (nodes node-a)) (:pos (nodes node-b)) (:pos (nodes node-c)) rest-angle strength)]
+            (fn [{:keys [node-a node-b node-c rest-angle modifier-angle strength]}] (let [
+                [force-a force-c] (calculate-hinge-force (:pos (nodes node-a)) (:pos (nodes node-b)) (:pos (nodes node-c)) (+ rest-angle modifier-angle) strength)]
                 {
                     node-a force-a
                     node-b (vec- [0 0] force-a force-c)
@@ -185,17 +186,41 @@
                         (conj keys (.keyCode event))
                     :else keys)})))
 
+(defn hinge-nodes [h]
+    (map h [:node-a :node-b :node-c]))
+
 (defn tick-imp [state tick-step input-state]
     (assoc state
-        :springs
-            (let [modifier (cond
-                    ((:keys input-state) KeyCodes/Q) 0.99
-                    ((:keys input-state) KeyCodes/W) 1.01
-                    :else 1.0)]
-                (map (fn [s]
-                    (assoc s :rest-length
-                        (* modifier (:rest-length s))))
-                        (:springs state)))
+        :hinges
+            (let
+                [[q w i o a s k l] (map (:keys input-state) [
+                    KeyCodes/Q KeyCodes/W KeyCodes/I KeyCodes/O
+                    KeyCodes/A KeyCodes/S KeyCodes/K KeyCodes/L
+                    ])]
+                (map (fn [h] (let [hn (hinge-nodes h)]
+                    (assoc h :modifier-angle
+                        (clamp (+ (:modifier-angle h)
+                            (cond
+                                (= hn [:tail :head :h-l-k])
+                                    (+ (if q 0.05 0.0) (if w -0.05 0.0))
+                                (= hn [:head :h-l-k :h-l-f])
+                                    (+ (if i 0.05 0.0) (if o -0.05 0.0))
+                                (= hn [:tail :head :h-t-k])
+                                    (+ (if q -0.05 0.0) (if w 0.05 0.0))
+                                (= hn [:head :h-t-k :h-t-f])
+                                    (+ (if i -0.05 0.0) (if o 0.05 0.0))
+                                (= hn [:head :tail :t-l-k])
+                                    (+ (if a 0.05 0.0) (if s -0.05 0.0))
+                                (= hn [:tail :t-l-k :t-l-f])
+                                    (+ (if k 0.05 0.0) (if l -0.05 0.0))
+                                (= hn [:head :tail :t-t-k])
+                                    (+ (if a -0.05 0.0) (if s 0.05 0.0))
+                                (= hn [:tail :t-t-k :t-t-f])
+                                    (+ (if k -0.05 0.0) (if l 0.05 0.0))
+                                :else
+                                    0.0))
+                            (:min-modifier-angle h) (:max-modifier-angle h)))))
+                    (:hinges state)))
         :nodes
             (update-node-positions
                 (update-node-velocities
