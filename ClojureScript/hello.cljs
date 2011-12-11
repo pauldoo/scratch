@@ -19,7 +19,9 @@
 (def tick-step (/ 1 100))
 (def render-step (/ 1 25))
 (def gravity-strength 300)
-(def ground-strength 100)
+(def ground-rebound-strength 200)
+(def ground-grip-strength 50)
+(def drag-factor 5)
 
 (defn print-to-log [v]
     (.log js/console v))
@@ -37,7 +39,7 @@
 (defn rot-cw [[x y]] [y (- x)])
 (defn rot-ccw [[x y]] [(- y) x])
 
-(defn make-node [x y] {:pos [x y] :vel [0 0]})
+(defn make-node [x y m] {:pos [x y] :vel [0 0] :mass m})
 (defn make-spring [a b] {:node-a a :node-b b})
 (defn make-hinge [a b c min-a max-a] {:node-a a :node-b b :node-c c :min-modifier-angle min-a :max-modifier-angle max-a})
 (defn make-state [nodes springs hinges] {
@@ -60,18 +62,23 @@
 
 (def initial-game-state (make-state
     {
-        :head (make-node 250 150)
-        :tail (make-node 50 150)
-        :h-l-k (make-node 260 75)
-        :h-l-f (make-node 250 0)
-        :h-t-k (make-node 260 75)
-        :h-t-f (make-node 250 0)
-        :t-l-k (make-node 40 75)
-        :t-l-f (make-node 50 0)
-        :t-t-k (make-node 40 75)
-        :t-t-f (make-node 50 0)
+        :hump (make-node 200 225 2)
+        :head (make-node 300 150 2)
+        :tail (make-node 100 150 2)
+
+        :h-l-k (make-node 310 75 0.5)
+        :h-l-f (make-node 300 0 0.5)
+        :h-t-k (make-node 310 75 0.5)
+        :h-t-f (make-node 300 0 0.5)
+
+        :t-l-k (make-node 90 75 0.5)
+        :t-l-f (make-node 100 0 0.5)
+        :t-t-k (make-node 90 75 0.5)
+        :t-t-f (make-node 100 0 0.5)
     }
     (map (partial apply make-spring) [
+        [:hump :head]
+        [:hump :tail]
         [:head :tail]
         [:head :h-l-k]
         [:h-l-k :h-l-f]
@@ -146,26 +153,37 @@
             hinges)))
 
 (defn calculate-gravity-forces [nodes]
-    (zipmap (keys nodes) (repeat [0 (- gravity-strength)])))
+    (zipmap (keys nodes)
+        (map (fn [{m :mass}]
+            [0 (- (* gravity-strength m))])
+            (vals nodes))))
 
 (defn calculate-ground-forces [nodes]
     (zipmap (keys nodes)
         (map (fn [{[ x y ] :pos [ xv yv ] :vel }]
             (if (< y 0)
-                (vec* [(- xv) (+ (Math/max 0 (- yv)) (- y))] ground-strength)
+                (vec+
+                    (vec* [(- xv) (Math/max 0 (- yv))] ground-grip-strength)
+                    (vec* [0 (- y)] ground-rebound-strength))
                 [0 0])) (vals nodes))))
+
+(defn calculate-drag-forces [nodes]
+    (zipmap (keys nodes)
+        (map (fn [{v :vel m :mass}] (vec* v (- (* m drag-factor))))
+            (vals nodes))))
 
 (defn calculate-all-node-forces [{:keys [nodes springs hinges]}]
     (merge-with vec+
         (calculate-spring-forces nodes springs)
         (calculate-hinge-forces nodes hinges)
         (calculate-gravity-forces nodes)
-        (calculate-ground-forces nodes)))
+        (calculate-ground-forces nodes)
+        (calculate-drag-forces nodes)))
 
 (defn update-node-velocities [nodes forces time-step]
     (merge-with (fn [n f]
         (assoc n
-            :vel (vec+ (:vel n) (vec* f time-step))))
+            :vel (vec+ (:vel n) (vec* f (/ time-step (:mass n))))))
         nodes
         forces))
 
@@ -193,30 +211,30 @@
     (assoc state
         :hinges
             (let
-                [[q w i o a s k l] (map (:keys input-state) [
-                    KeyCodes/Q KeyCodes/W KeyCodes/I KeyCodes/O
-                    KeyCodes/A KeyCodes/S KeyCodes/K KeyCodes/L
+                [[fca fcb fka fkb rca rcb rka rkb] (map (:keys input-state) [
+                    KeyCodes/I KeyCodes/O KeyCodes/K KeyCodes/L
+                    KeyCodes/Q KeyCodes/W KeyCodes/A KeyCodes/S
                     ])]
                 (map (fn [h] (let [hn (hinge-nodes h)]
                     (assoc h :modifier-angle
                         (clamp (+ (:modifier-angle h)
                             (cond
                                 (= hn [:tail :head :h-l-k])
-                                    (+ (if q 0.05 0.0) (if w -0.05 0.0))
+                                    (+ (if fca 0.05 0.0) (if fcb -0.05 0.0))
                                 (= hn [:head :h-l-k :h-l-f])
-                                    (+ (if i 0.05 0.0) (if o -0.05 0.0))
+                                    (+ (if fka 0.05 0.0) (if fkb -0.05 0.0))
                                 (= hn [:tail :head :h-t-k])
-                                    (+ (if q -0.05 0.0) (if w 0.05 0.0))
+                                    (+ (if fca -0.05 0.0) (if fcb 0.05 0.0))
                                 (= hn [:head :h-t-k :h-t-f])
-                                    (+ (if i -0.05 0.0) (if o 0.05 0.0))
+                                    (+ (if fka -0.05 0.0) (if fkb 0.05 0.0))
                                 (= hn [:head :tail :t-l-k])
-                                    (+ (if a 0.05 0.0) (if s -0.05 0.0))
+                                    (+ (if rca 0.05 0.0) (if rcb -0.05 0.0))
                                 (= hn [:tail :t-l-k :t-l-f])
-                                    (+ (if k 0.05 0.0) (if l -0.05 0.0))
+                                    (+ (if rka 0.05 0.0) (if rkb -0.05 0.0))
                                 (= hn [:head :tail :t-t-k])
-                                    (+ (if a -0.05 0.0) (if s 0.05 0.0))
+                                    (+ (if rca -0.05 0.0) (if rcb 0.05 0.0))
                                 (= hn [:tail :t-t-k :t-t-f])
-                                    (+ (if k -0.05 0.0) (if l 0.05 0.0))
+                                    (+ (if rka -0.05 0.0) (if rkb 0.05 0.0))
                                 :else
                                     0.0))
                             (:min-modifier-angle h) (:max-modifier-angle h)))))
@@ -268,7 +286,6 @@
         game-state-ref (atom initial-game-state)
         input-state-ref (atom {:keys (set)})
         canvas (dom/createDom "div" {} "")
-        button (dom/createDom "button" {} "Click!")
         tick-timer (goog.Timer. (Math/round (* 1000 tick-step)))
         render-timer (goog.Timer. (Math/round (* 1000 render-step)))
         ]
@@ -276,14 +293,13 @@
             (. tick-timer (start))
             (. render-timer (start))
             (dorun (map (partial apply events/listen) [
-                [button EventType/CLICK (partial input-event input-state-ref)]
                 [document.body EventType/KEYDOWN (partial input-event input-state-ref) true]
                 [document.body EventType/KEYUP (partial input-event input-state-ref) true]
                 [tick-timer Timer/TICK #(tick game-state-ref (deref input-state-ref))]
                 [render-timer Timer/TICK #(rerender canvas (deref game-state-ref))]]))
             (dom/appendChild document.body (dom/createDom "div" {}
-                (dom/createDom "h1" {} "Work in progress..")
-                (dom/createDom "div" {} "Try clicking the button, or pressing keys.")
+                (dom/createDom "h1" {} "QWASIOKL!!")
+                (dom/createDom "div" {} "Try pressing keys Q, W, A, S, I, O, K, and L.")
                 (dom/createDom "div" {}
                     (dom/createTextNode "My code lives here: ")
                     (dom/createDom "a" (.strobj {"href" my-code-url}) my-code-url))
