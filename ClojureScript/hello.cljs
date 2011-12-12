@@ -62,7 +62,8 @@
 
 (def initial-game-state (make-state
     {
-        :hump (make-node 200 225 2)
+        :head-a (make-node 270 200 1)
+        :tail-a (make-node 130 200 1)
         :head (make-node 300 150 2)
         :tail (make-node 100 150 2)
 
@@ -75,10 +76,14 @@
         :t-l-f (make-node 100 0 0.5)
         :t-t-k (make-node 90 75 0.5)
         :t-t-f (make-node 100 0 0.5)
+
+        :top-of-head (make-node 320 200 1)
     }
     (map (partial apply make-spring) [
-        [:hump :head]
-        [:hump :tail]
+        [:head-a :head]
+        [:tail-a :tail]
+        [:head-a :tail-a]
+        [:top-of-head :head]
         [:head :tail]
         [:head :h-l-k]
         [:h-l-k :h-l-f]
@@ -90,14 +95,19 @@
         [:t-t-k :t-t-f]
     ])
     (map (partial apply make-hinge) [
-        [:tail :head :h-l-k -0.5 0.5]
+        [:tail :head :h-l-k -0.7 0.7]
         [:head :h-l-k :h-l-f -1 0.0]
-        [:tail :head :h-t-k -0.5 0.5]
+        [:tail :head :h-t-k -0.7 0.7]
         [:head :h-t-k :h-t-f -1 0.0]
-        [:head :tail :t-l-k -0.5 0.5]
+        [:head :tail :t-l-k -0.7 0.7]
         [:tail :t-l-k :t-l-f -1 0.0]
-        [:head :tail :t-t-k -0.5 0.5]
+        [:head :tail :t-t-k -0.7 0.7]
         [:tail :t-t-k :t-t-f -1 0.0]
+        [:tail :head :top-of-head 0.0 0.0]
+        [:head :tail :tail-a 0.0 0.0]
+        [:tail :tail-a :head-a 0.0 0.0]
+        [:tail-a :head-a :head 0.0 0.0]
+        [:head-a :head :tail 0.0 0.0]
     ])
 ))
 
@@ -259,12 +269,12 @@
             (.moveTo p x1 y1)
             (.lineTo p x2 y2)
             p))
-        (goog.graphics.Stroke. 1 "green") nil))
+        (goog.graphics.Stroke. 3 "brown") nil))
 
 (defn rerender [canvas-element game-state]
     (let [
         graphics (graphics/createGraphics width-in-px height-in-px)
-        {nodes :nodes springs :springs} game-state]
+        {:keys [nodes springs]} game-state]
         (do
             (apply draw-line graphics (apply concat (map world-to-screen [[0 0] [width-in-px 0]])))
             (dorun (map
@@ -275,8 +285,13 @@
                         (draw-line graphics x1 y1 x2 y2))) springs))
             (dorun (map
                 (fn [{p :pos}] (let [[x y] (world-to-screen p)]
-                    (.drawCircle graphics x y 3 (goog.graphics.Stroke. 2 "green") (goog.graphics.SolidFill. "yellow"))))
+                    (.drawCircle graphics x y 5 (goog.graphics.Stroke. 2 "brown") (goog.graphics.SolidFill. "brown"))))
                 (vals nodes)))
+            (let [head (.drawImage graphics -75 -75 150 150 "rudolf.png")
+                [x y] (world-to-screen (:pos (:top-of-head nodes)))
+                angle (* (/ 180 Math/PI) (angle (vec- (:pos (:top-of-head nodes)) (:pos (:head nodes))) [1 1]))
+                ]
+                (.setElementTransform graphics head x y angle 0 0))
             (dom/removeChildren canvas-element)
             (.render graphics canvas-element)
             )))
