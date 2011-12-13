@@ -11,20 +11,27 @@
         [goog.graphics.Stroke :as Stroke]
         [goog.graphics.SolidFill :as SolidFill]
         [goog.graphics.Path :as Path]
+        [goog.date.UtcDateTime :as UtcDateTime]
         ))
 
 (def my-code-url "https://github.com/pauldoo/scratch/blob/master/ClojureScript/hello.cljs")
 (def width-in-px 800)
 (def height-in-px 300)
-(def tick-step (/ 1 100))
-(def render-step (/ 1 25))
-(def gravity-strength 300)
-(def ground-rebound-strength 200)
-(def ground-grip-strength 50)
-(def drag-factor 5)
+(def ideal-tick-step (/ 1 100))
+(def worst-tick-step (/ 1 50))
+(def ideal-render-step (/ 1 25))
+(def gravity-strength 500)
+(def ground-rebound-strength 500)
+(def ground-drag-factor 30)
+(def air-drag-factor 1)
 
 (defn print-to-log [v]
     (.log js/console v))
+
+(defn print-passer [v] (do
+    (print-to-log (pr-str v))
+    v))
+
 
 (def vec- (partial map -))
 (def vec+ (partial map +))
@@ -47,7 +54,7 @@
     :springs (map
         (fn [s] (assoc s
             :rest-length (magnitude (vec- (:pos (nodes (:node-a s))) (:pos (nodes (:node-b s)))))
-            :strength 2000))
+            :strength 500))
         springs)
     :hinges (map
         (fn [h] (assoc h
@@ -56,7 +63,7 @@
                 c (vec- (:pos (nodes (:node-c h))) (:pos (nodes (:node-b h))))]
                 (angle a c))
             :modifier-angle 0.0
-            :strength 1000000))
+            :strength 2000000))
         hinges)
 })
 
@@ -67,23 +74,25 @@
         :head (make-node 300 150 2)
         :tail (make-node 100 150 2)
 
-        :h-l-k (make-node 310 75 0.5)
+        :h-l-k (make-node 300 75 0.5)
         :h-l-f (make-node 300 0 0.5)
-        :h-t-k (make-node 310 75 0.5)
+        :h-t-k (make-node 300 75 0.5)
         :h-t-f (make-node 300 0 0.5)
 
-        :t-l-k (make-node 90 75 0.5)
+        :t-l-k (make-node 100 75 0.5)
         :t-l-f (make-node 100 0 0.5)
-        :t-t-k (make-node 90 75 0.5)
+        :t-t-k (make-node 100 75 0.5)
         :t-t-f (make-node 100 0 0.5)
 
         :top-of-head (make-node 320 200 1)
+        :end-of-tail (make-node 80 200 1)
     }
     (map (partial apply make-spring) [
         [:head-a :head]
         [:tail-a :tail]
         [:head-a :tail-a]
         [:top-of-head :head]
+        [:end-of-tail :tail]
         [:head :tail]
         [:head :h-l-k]
         [:h-l-k :h-l-f]
@@ -96,18 +105,19 @@
     ])
     (map (partial apply make-hinge) [
         [:tail :head :h-l-k -0.7 0.7]
-        [:head :h-l-k :h-l-f -1 0.0]
+        [:head :h-l-k :h-l-f -1.2 0.2]
         [:tail :head :h-t-k -0.7 0.7]
-        [:head :h-t-k :h-t-f -1 0.0]
+        [:head :h-t-k :h-t-f -1.2 0.2]
         [:head :tail :t-l-k -0.7 0.7]
-        [:tail :t-l-k :t-l-f -1 0.0]
+        [:tail :t-l-k :t-l-f -1.2 0.2]
         [:head :tail :t-t-k -0.7 0.7]
-        [:tail :t-t-k :t-t-f -1 0.0]
+        [:tail :t-t-k :t-t-f -1.2 0.2]
         [:tail :head :top-of-head 0.0 0.0]
         [:head :tail :tail-a 0.0 0.0]
         [:tail :tail-a :head-a 0.0 0.0]
         [:tail-a :head-a :head 0.0 0.0]
         [:head-a :head :tail 0.0 0.0]
+        [:head :tail :end-of-tail 0.0 0.0]
     ])
 ))
 
@@ -170,32 +180,56 @@
 
 (defn calculate-ground-forces [nodes]
     (zipmap (keys nodes)
-        (map (fn [{[ x y ] :pos [ xv yv ] :vel }]
+        (map (fn [{[ _ y ] :pos}]
             (if (< y 0)
-                (vec+
-                    (vec* [(- xv) (Math/max 0 (- yv))] ground-grip-strength)
-                    (vec* [0 (- y)] ground-rebound-strength))
-                [0 0])) (vals nodes))))
-
-(defn calculate-drag-forces [nodes]
-    (zipmap (keys nodes)
-        (map (fn [{v :vel m :mass}] (vec* v (- (* m drag-factor))))
+                (vec* [0 (- y)] ground-rebound-strength)
+                [0 0]))
             (vals nodes))))
+
+(defn calculate-ground-impulses [nodes time-step]
+    (let [loss (- 1.0 (Math/exp (- (* time-step ground-drag-factor))))]
+        (zipmap (keys nodes)
+            (map (fn [{[ _ y ] :pos [ xv yv ] :vel mass :mass}]
+                (if (< y 0)
+                    (vec* [(- xv) (Math/max 0 (- yv))] (* loss mass))
+                    [0 0]))
+                (vals nodes)))))
+
+(defn calculate-air-impulses [nodes time-step]
+    (let [loss (- 1.0 (Math/exp (- (* time-step air-drag-factor))))]
+        (zipmap (keys nodes)
+            (map (fn [{[_ y] :pos vel :vel mass :mass}]
+                (if (< y 0)
+                    [0 0]
+                    (vec* vel (* -1 loss mass))))
+                (vals nodes)))))
 
 (defn calculate-all-node-forces [{:keys [nodes springs hinges]}]
     (merge-with vec+
         (calculate-spring-forces nodes springs)
         (calculate-hinge-forces nodes hinges)
         (calculate-gravity-forces nodes)
-        (calculate-ground-forces nodes)
-        (calculate-drag-forces nodes)))
+        (calculate-ground-forces nodes)))
 
-(defn update-node-velocities [nodes forces time-step]
-    (merge-with (fn [n f]
-        (assoc n
-            :vel (vec+ (:vel n) (vec* f (/ time-step (:mass n))))))
-        nodes
-        forces))
+(defn calculate-all-node-impulses [nodes time-step]
+    (merge-with vec+
+        (calculate-ground-impulses nodes time-step)
+        (calculate-air-impulses nodes time-step)))
+
+(defn update-node-velocities [nodes forces impulses time-step]
+    (merge-with
+        (fn [n i] (assoc n
+            :vel (vec+
+                (:vel n)
+                (vec* i (/ 1.0 (:mass n))))))
+        (merge-with
+            (fn [n f] (assoc n
+                :vel (vec+
+                    (:vel n)
+                    (vec* f (/ time-step (:mass n))))))
+            nodes
+            forces)
+        impulses))
 
 (defn update-node-positions [nodes time-step]
     (zipmap (keys nodes) (map (fn [n]
@@ -216,6 +250,27 @@
 
 (defn hinge-nodes [h]
     (map h [:node-a :node-b :node-c]))
+
+(defn now-in-milliseconds []
+    (. (goog.date.UtcDateTime.) (getTime)))
+
+(defn delta [f]
+    (let [prev (atom (f))] (fn []
+        (let [next (f) result (- next @prev)] (do
+            (reset! prev next)
+            result)))))
+
+(defn limiter [f]
+    (fn [] (Math/min (* 1000 worst-tick-step) (f))))
+
+(defn smooth [f]
+    (let [prev (atom 0.0)] (fn []
+        (let [next (f) result (+ (* 0.01 next) (* 0.99 @prev))] (do
+            (reset! prev result)
+            result)))))
+
+(def real-tick-step
+    (smooth (limiter (delta now-in-milliseconds))))
 
 (defn tick-imp [state tick-step input-state]
     (assoc state
@@ -254,11 +309,12 @@
                 (update-node-velocities
                     (:nodes state)
                     (calculate-all-node-forces state)
+                    (calculate-all-node-impulses (:nodes state) tick-step)
                     tick-step)
                 tick-step)))
 
-(defn tick [game-state-ref input-state] (do
-    (swap! game-state-ref #(tick-imp % tick-step input-state))))
+(defn tick [game-state-ref input-state] (let [real-step (* 0.001 (real-tick-step))] (do
+    (swap! game-state-ref #(tick-imp % real-step input-state)))))
 
 (defn world-to-screen [[x y]]
     [x (- 275 y)])
@@ -301,8 +357,8 @@
         game-state-ref (atom initial-game-state)
         input-state-ref (atom {:keys (set)})
         canvas (dom/createDom "div" {} "")
-        tick-timer (goog.Timer. (Math/round (* 1000 tick-step)))
-        render-timer (goog.Timer. (Math/round (* 1000 render-step)))
+        tick-timer (goog.Timer. (Math/round (* 1000 ideal-tick-step)))
+        render-timer (goog.Timer. (Math/round (* 1000 ideal-render-step)))
         ]
         (do
             (. tick-timer (start))
