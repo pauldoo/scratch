@@ -374,6 +374,15 @@
                 (dom/createDom "div" {}
                     (dom/createTextNode "My code lives here: ")
                     (dom/createDom "a" (.strobj {"href" my-code-url}) my-code-url))
-                button
-                canvas)))))
+                (dom/createDom "div" {}
+                    (dom/createTextNode "This was my entry for the ")
+                    (dom/createDom "a" (.strobj {"href" "http://groups.google.com/group/techmeetup/browse_thread/thread/e9462c7a7815aee"}) "2011 christmas competition")
+                    (dom/createTextNode " at ")
+                    (dom/createDom "a" (.strobj {"href" "http://techmeetup.co.uk"}) "TechMeetup")
+                    (dom/createTextNode ".")
+                )
+                canvas
+                (dom/createDom "div" {}
+                    (dom/createDom "a" (.strobj {"href" "http://pauldoo.com/"}) "http://pauldoo.com/"))
+                )))))
 
