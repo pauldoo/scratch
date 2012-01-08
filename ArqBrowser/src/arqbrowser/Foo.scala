@@ -141,14 +141,6 @@ object Foo extends Application {
 			MessageDigest.getInstance("SHA-1").digest(data)
 	}
 
-	def getIv(secret: SecretKey) : IvParameterSpec = {
-			val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-			cipher.init(Cipher.ENCRYPT_MODE, secret);
-			val params = cipher.getParameters();
-			val iv :IvParameterSpec = params.getParameterSpec(classOf[IvParameterSpec]);	
-			return iv;
-	}
-
 	def getObjectStream(client :AmazonS3, bucket :String, path :String) : InputStream = {
 			client.getObject(new GetObjectRequest(bucket, path)).getObjectContent()
 	}
