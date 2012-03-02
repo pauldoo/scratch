@@ -27,7 +27,7 @@ object Utils {
     }.toMap;
 
   def bytesToHex(bytes: Array[Byte]): String =
-    bytes.map(toUnsigned).map("%02X".format(_)).reduce(_ + " " + _);
+    bytes.map(toUnsigned).map("%02X".format(_)).grouped(4).map(_.reduce(_ + _)).reduce(_ + " " + _);
 
   def toUnsigned(b: Byte): Int = {
     val r = b.toInt;
@@ -60,7 +60,7 @@ object Utils {
     return Hash.fromString(new String(r, "UTF-8"));
   }
 
-  def readStringWithIsNullHeader(stream: DataInput): String = {
+  private def readStringWithIsNullHeader(stream: DataInput): String = {
     val isNull = stream.readBoolean();
     if (isNull) {
       return null;
@@ -119,5 +119,12 @@ object Utils {
       }
     }
     throw new RuntimeException("Unreachable.");
+  }
+
+  def readVersionBytes(stream: DataInput): Int = {
+    val versionBytes = new Array[Byte](3);
+    stream.readFully(versionBytes);
+    val version = Integer.parseInt(new String(versionBytes));
+    return version
   }
 }

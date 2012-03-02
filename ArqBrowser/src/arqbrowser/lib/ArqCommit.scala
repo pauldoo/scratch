@@ -21,9 +21,7 @@ object ArqCommit {
       }
     }
 
-    val versionBytes = new Array[Byte](3);
-    stream.readFully(versionBytes);
-    val version = Integer.parseInt(new String(versionBytes));
+    val version = Utils.readVersionBytes(stream);
 
     version match {
       case 6 => {

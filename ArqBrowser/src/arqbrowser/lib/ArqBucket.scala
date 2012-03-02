@@ -4,6 +4,8 @@ import java.io.InputStream
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.model.S3ObjectSummary
 import com.amazonaws.services.s3.model.GetObjectRequest
+import scala.actors.Futures
+import scala.actors.Future
 
 class ArqBucket(
   val s3client: AmazonS3,
@@ -12,10 +14,10 @@ class ArqBucket(
   val bucketUuid: String,
   val decrypter: Decrypter) {
 
-  val treePacks: List[ArqPack] = openAllPacks("trees");
-  val blobPacks: List[ArqPack] = openAllPacks("blobs");
+  val treePacks: Future[List[Future[ArqPack]]] = Futures.future { openAllPacks("trees") };
+  val blobPacks: Future[List[Future[ArqPack]]] = Futures.future { openAllPacks("blobs") };
 
-  def openAllPacks(packsetType: String): List[ArqPack] = {
+  def openAllPacks(packsetType: String): List[Future[ArqPack]] = {
     println("Scanning packs of " + packsetType + " ..");
 
     val fileList: List[S3ObjectSummary] = ArqStore.listObjects(
@@ -24,22 +26,24 @@ class ArqBucket(
     fileList.filter(_.getKey().endsWith(".index")).map((index) => {
       val packName = index.getKey().replaceAll(".index", ".pack");
       val pack = fileList.find(_.getKey().equals(packName)).get;
-      new ArqPack(s3client, index, pack)
+      Futures.future {
+        new ArqPack(s3client, index, pack)
+      }
     })
   };
 
   def getRawStreamForObject(hash: Hash): InputStream = {
     println("Fetching object with hash %s".format(hash.toString));
 
-    for (tp <- treePacks) {
-      val r = tp.getObject(hash);
+    for (tp <- treePacks.apply()) {
+      val r = tp.apply().getObject(hash);
       if (r.isDefined) {
         return r.get;
       }
     }
 
-    for (bp <- blobPacks) {
-      val r = bp.getObject(hash);
+    for (bp <- blobPacks.apply()) {
+      val r = bp.apply().getObject(hash);
       if (r.isDefined) {
         return r.get;
       }

@@ -12,13 +12,15 @@ class ArqCommitTreeNode(
   val commitHash: Hash) extends TreeNodeAdapter {
   val arqCommit = ArqCommit.read(Utils.asDataInput(arqBucket.getDecryptedStreamForObject(commitHash)));
 
-  override val toString = commitHash.toString;
+  override val toString = "[commit]: " + commitHash.toString;
 
   override def isLeaf() = false;
 
   override def getChildCount() = 1;
 
   override def getChildAt(v: Int): TreeNode = {
-    return new DefaultMutableTreeNode(arqCommit.treeHash);
+    return new ArqTreeTreeNode(
+      arqBucket,
+      arqCommit.treeHash);
   }
 }
