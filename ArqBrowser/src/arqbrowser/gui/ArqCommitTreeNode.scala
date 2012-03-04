@@ -21,6 +21,7 @@ class ArqCommitTreeNode(
   override def getChildAt(v: Int): TreeNode = {
     return new ArqTreeTreeNode(
       arqBucket,
-      arqCommit.treeHash);
+      arqCommit.treeHash,
+      "<todo>");
   }
 }

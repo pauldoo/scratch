@@ -1,7 +1,7 @@
 package arqbrowser.lib
 import java.io.DataInput
 
-class ArqTreeNode(val isTree: Boolean) {
+class ArqTreeNode(val isTree: Boolean, val dataHashes: List[Tuple2[Hash, Boolean]]) {
 
 }
 
@@ -12,10 +12,10 @@ object ArqTreeNode {
     val xattrs_are_compressed = stream.readBoolean();
     val acl_is_compressed = stream.readBoolean();
     val data_sha1s_count = stream.readInt();
-    for (j <- 0 until data_sha1s_count) {
-      val data_sha1 = Utils.readStringWithIsNotNullHeader(stream)
-      val is_data_encryption_key_stretched = stream.readBoolean();
-    }
+    val data_sha1s: List[Tuple2[Hash, Boolean]] =
+      (for (j <- 0 until data_sha1s_count) yield (
+        Hash.fromString(Utils.readStringWithIsNotNullHeader(stream)),
+        stream.readBoolean())).toList;
     val data_size = stream.readLong();
     val thumbnail_sha1 = Utils.readStringWithIsNotNullHeader(stream);
     val is_thumbnail_encryption_key_stretched = stream.readBoolean();
@@ -48,7 +48,7 @@ object ArqTreeNode {
     val st_blocks = stream.readLong();
     val st_blksize = stream.readInt();
 
-    new ArqTreeNode(isTree);
+    new ArqTreeNode(isTree, data_sha1s);
 
   }
 }
