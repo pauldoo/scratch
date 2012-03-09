@@ -11,6 +11,7 @@
     (:use
         [clojure.contrib.command-line]
         [clojure.java.io]
+        [clojure.xml]
         [clojure.string :only [join]]
         [irclj.core]
     )
@@ -215,7 +216,49 @@
     ", please!"
 ))
 
-; BURRITO!
+; End BURRITO!
+
+; YOUTUBE!
+
+(defn elements-with-tag [tag x]
+    (cond
+        (map? x)
+            (if (= (:tag x) tag)
+                [x]
+                (elements-with-tag tag (:content x)))
+        (coll? x)
+            (apply concat (map (partial elements-with-tag tag) x))
+        :else
+            []
+            ))
+
+(defn get-all-comment-urls [x]
+    (apply concat (map
+        (fn [k]
+            (map
+                (fn [e] (:href (:attrs e)))
+                (filter
+                    (fn [e] (= :gd:feedLink (:tag e)))
+                    (:content k))))
+        (elements-with-tag :gd:comments x))))
+
+
+(defn get-all-comments [x]
+    (apply concat (map
+        (fn [k] (:content k))
+        (elements-with-tag :content x))))
+
+; Could use something other than the most commented video list:
+; https://developers.google.com/youtube/2.0/reference#Standard_feeds
+(defn pick-random-youtube-comment []
+    (let [
+       feed-xml (clojure.xml/parse "https://gdata.youtube.com/feeds/api/standardfeeds/most_discussed")
+       comments-url (rand-nth (get-all-comment-urls feed-xml))
+       comments-xml (clojure.xml/parse comments-url)
+       comment (rand-nth (get-all-comments comments-xml))]
+       comment))
+
+; End YOUTUBE!
 
 (defn on-message [{:keys [nick channel message irc]} state-ref]
     (log-sentence! message)
@@ -228,6 +271,9 @@
     (if (.startsWith message "!burrito")
         (send-message irc channel
             (generate-burrito)))
+    (if (.startsWith message "!comment")
+        (send-message irc channel
+            (pick-random-youtube-comment)))
     (if (.startsWith message "!memory")
         (send-message irc channel
             (let [
