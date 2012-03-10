@@ -15,11 +15,31 @@ namespace {
     const int chunkHeight = 500;
     const int sampleWidth = 12800;
     const int sampleHeight = 9600;
-    const double sampleMinX = -2.5;
-    const double sampleMinY = -1.5;
-    const double sampleMaxX = 1.5;
-    const double sampleMaxY = 1.5;
     const int maximumIterations = 500;
+
+    // Bhuddabrot
+#if 1
+    const double sampleMinA = 0.0;
+    const double sampleMinB = 0.0;
+    const double sampleMinC = -2.5;
+    const double sampleMinD = -1.5;
+    const double sampleMaxA = 0.0;
+    const double sampleMaxB = 0.0;
+    const double sampleMaxC = 1.5;
+    const double sampleMaxD = 1.5;
+#endif
+
+    // Juliabrot (?)
+#if 0
+    const double sampleMinA = -2.0;
+    const double sampleMinB = -2.0;
+    const double sampleMinC = -0.4;
+    const double sampleMinD = 0.6;
+    const double sampleMaxA = 2.0;
+    const double sampleMaxB = 2.0;
+    const double sampleMaxC = -0.4;
+    const double sampleMaxD = 0.6;
+#endif
 
     const int imageWidth = 320;
     const int imageHeight = 240;
@@ -103,24 +123,33 @@ int main(void) {
         std::vector<cl::Event> computeEvents;
         for (int h = 0; h < sampleHeight; h += chunkHeight) {
             for (int w = 0; w < sampleWidth; w += chunkWidth) {
-                const double chunkMinX = sampleMinX + ((sampleMaxX - sampleMinX) * (w + 0)) / sampleWidth;
-                const double chunkMinY = sampleMinY + ((sampleMaxY - sampleMinY) * (h + 0)) / sampleHeight;
-                const double chunkMaxX = sampleMinX + ((sampleMaxX - sampleMinX) * std::min((w + chunkWidth), sampleWidth)) / sampleWidth;
-                const double chunkMaxY = sampleMinY + ((sampleMaxY - sampleMinY) * std::min((h + chunkHeight), sampleHeight)) / sampleHeight;
+                const double chunkMinA = sampleMinA + ((sampleMaxA - sampleMinA) * (w + 0)) / sampleWidth;;
+                const double chunkMinB = sampleMinB + ((sampleMaxB - sampleMinB) * (h + 0)) / sampleHeight;;
+                const double chunkMinC = sampleMinC + ((sampleMaxC - sampleMinC) * (w + 0)) / sampleWidth;
+                const double chunkMinD = sampleMinD + ((sampleMaxD - sampleMinD) * (h + 0)) / sampleHeight;
+                const double chunkMaxA = sampleMinA + ((sampleMaxA - sampleMinA) * std::min((w + chunkWidth), sampleWidth)) / sampleWidth;
+                const double chunkMaxB = sampleMinB + ((sampleMaxB - sampleMinB) * std::min((h + chunkHeight), sampleHeight)) / sampleHeight;
+                const double chunkMaxC = sampleMinC + ((sampleMaxC - sampleMinC) * std::min((w + chunkWidth), sampleWidth)) / sampleWidth;
+                const double chunkMaxD = sampleMinD + ((sampleMaxD - sampleMinD) * std::min((h + chunkHeight), sampleHeight)) / sampleHeight;
 
                 cl::Kernel buddhaKernel(program, "Buddhabrot");
-                buddhaKernel.setArg(0, static_cast<float>(chunkMinX));
-                buddhaKernel.setArg(1, static_cast<float>(chunkMinY));
-                buddhaKernel.setArg(2, static_cast<float>(chunkMaxX));
-                buddhaKernel.setArg(3, static_cast<float>(chunkMaxY));
-                buddhaKernel.setArg(4, imageWidth);
-                buddhaKernel.setArg(5, imageHeight);
-                buddhaKernel.setArg(6, static_cast<float>(imageMinX));
-                buddhaKernel.setArg(7, static_cast<float>(imageMinY));
-                buddhaKernel.setArg(8, static_cast<float>(imageMaxX));
-                buddhaKernel.setArg(9, static_cast<float>(imageMaxY));
-                buddhaKernel.setArg(10, maximumIterations);
-                buddhaKernel.setArg(11, outputBuffer);
+                int argIndex = 0;
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMinA));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMinB));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMinC));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMinD));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMaxA));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMaxB));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMaxC));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(chunkMaxD));
+                buddhaKernel.setArg(argIndex++, imageWidth);
+                buddhaKernel.setArg(argIndex++, imageHeight);
+                buddhaKernel.setArg(argIndex++, static_cast<float>(imageMinX));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(imageMinY));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(imageMaxX));
+                buddhaKernel.setArg(argIndex++, static_cast<float>(imageMaxY));
+                buddhaKernel.setArg(argIndex++, maximumIterations);
+                buddhaKernel.setArg(argIndex++, outputBuffer);
 
                 computeEvents.push_back(cl::Event());
                 queue.enqueueNDRangeKernel(
