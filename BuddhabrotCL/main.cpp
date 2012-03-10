@@ -13,16 +13,16 @@
 namespace {
     const int chunkWidth = 500;
     const int chunkHeight = 500;
-    const int sampleWidth = 128000;
-    const int sampleHeight = 96000;
+    const int sampleWidth = 12800;
+    const int sampleHeight = 9600;
     const double sampleMinX = -2.5;
     const double sampleMinY = -1.5;
     const double sampleMaxX = 1.5;
     const double sampleMaxY = 1.5;
     const int maximumIterations = 500;
 
-    const int imageWidth = 3200;
-    const int imageHeight = 2400;
+    const int imageWidth = 320;
+    const int imageHeight = 240;
     const double imageMinX = -0.8;
     const double imageMinY = -1.125;
     const double imageMaxX = 0.2;
@@ -87,15 +87,18 @@ int main(void) {
         const size_t outputBufferSize = imageWidth * imageHeight * sizeof(int);
         cl::Buffer outputBuffer(context, CL_MEM_READ_WRITE, outputBufferSize);
 
-        const std::vector<cl::Event> memsetEvent(1,
-            cl::Kernel(program, "Memzero").bind(
-                    queue,
-                    cl::NDRange(1000),
-                    cl::NDRange()
-                )(
-                    imageWidth * imageHeight,
-                    outputBuffer
-                ));
+
+        std::vector<cl::Event> memsetEvent(1);
+        cl::Kernel memsetKernel(program, "Memzero");
+        memsetKernel.setArg(0, imageWidth * imageHeight);
+        memsetKernel.setArg(1, outputBuffer);
+        queue.enqueueNDRangeKernel(
+            memsetKernel,
+            cl::NDRange(),
+            cl::NDRange(1000),
+            cl::NDRange(),
+            NULL,
+            &(memsetEvent.back()));
 
         std::vector<cl::Event> computeEvents;
         for (int h = 0; h < sampleHeight; h += chunkHeight) {
@@ -104,25 +107,30 @@ int main(void) {
                 const double chunkMinY = sampleMinY + ((sampleMaxY - sampleMinY) * (h + 0)) / sampleHeight;
                 const double chunkMaxX = sampleMinX + ((sampleMaxX - sampleMinX) * std::min((w + chunkWidth), sampleWidth)) / sampleWidth;
                 const double chunkMaxY = sampleMinY + ((sampleMaxY - sampleMinY) * std::min((h + chunkHeight), sampleHeight)) / sampleHeight;
-                computeEvents.push_back(cl::Kernel(program, "Buddhabrot").bind(
-                        queue,
-                        cl::NDRange(chunkWidth, chunkHeight),
-                        cl::NDRange()
-                    )(
-                        static_cast<float>(chunkMinX),
-                        static_cast<float>(chunkMinY),
-                        static_cast<float>(chunkMaxX),
-                        static_cast<float>(chunkMaxY),
-                        imageWidth,
-                        imageHeight,
-                        static_cast<float>(imageMinX),
-                        static_cast<float>(imageMinY),
-                        static_cast<float>(imageMaxX),
-                        static_cast<float>(imageMaxY),
-                        maximumIterations,
-                        outputBuffer,
-                        &memsetEvent
-                    ));
+
+                cl::Kernel buddhaKernel(program, "Buddhabrot");
+                buddhaKernel.setArg(0, static_cast<float>(chunkMinX));
+                buddhaKernel.setArg(1, static_cast<float>(chunkMinY));
+                buddhaKernel.setArg(2, static_cast<float>(chunkMaxX));
+                buddhaKernel.setArg(3, static_cast<float>(chunkMaxY));
+                buddhaKernel.setArg(4, imageWidth);
+                buddhaKernel.setArg(5, imageHeight);
+                buddhaKernel.setArg(6, static_cast<float>(imageMinX));
+                buddhaKernel.setArg(7, static_cast<float>(imageMinY));
+                buddhaKernel.setArg(8, static_cast<float>(imageMaxX));
+                buddhaKernel.setArg(9, static_cast<float>(imageMaxY));
+                buddhaKernel.setArg(10, maximumIterations);
+                buddhaKernel.setArg(11, outputBuffer);
+
+                computeEvents.push_back(cl::Event());
+                queue.enqueueNDRangeKernel(
+                    buddhaKernel,
+                    cl::NDRange(),
+                    cl::NDRange(chunkWidth, chunkHeight),
+                    cl::NDRange(),
+                    &memsetEvent,
+                    &(computeEvents.back()));
+
             }
         }
 
