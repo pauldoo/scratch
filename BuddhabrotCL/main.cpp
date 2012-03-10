@@ -11,10 +11,10 @@
 #include "cl.hpp"
 
 namespace {
-    const int chunkWidth = 500;
-    const int chunkHeight = 500;
-    const int sampleWidth = 12800;
-    const int sampleHeight = 9600;
+    const int chunkWidth = 100;
+    const int chunkHeight = 100;
+    const int sampleWidth = 10000;
+    const int sampleHeight = 10000;
     const int maximumIterations = 500;
 
     // Bhuddabrot
@@ -41,12 +41,12 @@ namespace {
     const double sampleMaxD = 0.6;
 #endif
 
-    const int imageWidth = 320;
-    const int imageHeight = 240;
-    const double imageMinX = -0.8;
-    const double imageMinY = -1.125;
-    const double imageMaxX = 0.2;
-    const double imageMaxY = -0.375;
+    const int imageWidth = 640;
+    const int imageHeight = 360;
+    const double imageMinX = - 16.0 / 8.0;
+    const double imageMinY = - 9.0 / 8.0;
+    const double imageMaxX = 16.0 / 8.0;
+    const double imageMaxY = 9.0 / 8.0;
 
     const std::string ReadFileIntoString(const std::string& filename)
     {
@@ -217,19 +217,20 @@ int main(int argc, char** argv) {
 
         std::wclog << L"OpenCL time: " << (endTime - startTime) << L"s\n";
 
-        const int minimumValue = Percentile(resultBuffer, 0.001);
-        const int maximumValue = Percentile(resultBuffer, 0.999);
-
-        const int maxImageLevel = (maximumValue - minimumValue);
+        const int64_t maxPnmLevel = 65535;
         std::wcout
             << L"P2\n"
             << L"# buddhabrot\n"
             << imageWidth << L" " << imageHeight << "\n"
-            << maxImageLevel << "\n";
+            << maxPnmLevel << "\n";
 
+        const int minimumValue = Percentile(resultBuffer, 0.001);
+        const int maximumValue = Percentile(resultBuffer, 0.999);
         for (int y = 0; y < imageHeight; y++) {
             for (int x = 0; x < imageWidth; x++) {
-                const int outputValue = Clamp(resultBuffer.at(y * imageWidth + x), minimumValue, maximumValue) - minimumValue;
+                const int outputValue = Clamp(
+                    ((resultBuffer.at(y * imageWidth + x) - minimumValue) * maxPnmLevel) / (maximumValue - minimumValue),
+                    0, maxPnmLevel );
                 std::wcout << outputValue << L" ";
             }
             std::wcout << L"\n";

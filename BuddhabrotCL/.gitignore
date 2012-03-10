@@ -1,7 +1,7 @@
 /*.o
 /*.d
 /html/
-/image.pnm
+/*.pnm
 /buddhabrot
-/image.png
-/image.jpg
+/*.png
+/*.jpg

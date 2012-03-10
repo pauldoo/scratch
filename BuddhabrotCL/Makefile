@@ -1,8 +1,8 @@
-all: bhudda.png judda.png
+all: buddha.png juddha.png
 
-bhudda.pnm: buddhabrot kernel.cl
+buddha.pnm: buddhabrot kernel.cl
 	time ./buddhabrot 0.0 0.0 -2.5 -1.5 0.0 0.0 1.5 1.5 > $@
-judda.pnm: buddhabrot kernel.cl
+juddha.pnm: buddhabrot kernel.cl
 	time ./buddhabrot -2.0 -2.0 -0.4 0.6 2.0 2.0 -0.4 0.6 > $@
 
 OBJS := main.o
