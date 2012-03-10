@@ -1,7 +1,9 @@
-all: image.png image.jpg
+all: bhudda.png judda.png
 
-image.pnm: buddhabrot kernel.cl
-	time ./buddhabrot > image.pnm
+bhudda.pnm: buddhabrot kernel.cl
+	time ./buddhabrot 0.0 0.0 -2.5 -1.5 0.0 0.0 1.5 1.5 > $@
+judda.pnm: buddhabrot kernel.cl
+	time ./buddhabrot -2.0 -2.0 -0.4 0.6 2.0 2.0 -0.4 0.6 > $@
 
 OBJS := main.o
 CXXFLAGS := -Wall -Os -g

@@ -18,7 +18,7 @@ namespace {
     const int maximumIterations = 500;
 
     // Bhuddabrot
-#if 1
+#if 0
     const double sampleMinA = 0.0;
     const double sampleMinB = 0.0;
     const double sampleMinC = -2.5;
@@ -77,10 +77,51 @@ namespace {
     {
         return std::min(std::max(x, min), max);
     }
+
+    class Exception : public std::exception
+    {
+    private:
+        const std::string m_err;
+
+    public:
+        Exception(const std::string& err) : m_err(err)
+        {}
+
+        virtual ~Exception() throw()
+        {}
+
+        virtual const char* what() const throw()
+        {
+            return m_err.c_str();
+        }
+    };
+
+    template<typename T> const T fromString(const std::string& string)
+    {
+        std::istringstream buf(string);
+        T result;
+        buf >> result;
+        if (!buf) {
+            throw Exception("Error parsing: " + string);
+        }
+        return result;
+    }
 }
 
-int main(void) {
+int main(int argc, char** argv) {
     try {
+        if (argc != 9) {
+            throw Exception("Exactly 8 arguments needed.");
+        }
+        const double sampleMinA = fromString<double>(argv[1]);
+        const double sampleMinB = fromString<double>(argv[2]);
+        const double sampleMinC = fromString<double>(argv[3]);
+        const double sampleMinD = fromString<double>(argv[4]);
+        const double sampleMaxA = fromString<double>(argv[5]);
+        const double sampleMaxB = fromString<double>(argv[6]);
+        const double sampleMaxC = fromString<double>(argv[7]);
+        const double sampleMaxD = fromString<double>(argv[8]);
+
         const std::string kernelSource = ReadFileIntoString("kernel.cl");
 
         cl::Context context(CL_DEVICE_TYPE_GPU);
