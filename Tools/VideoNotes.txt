@@ -6,7 +6,9 @@ CBR: "-b NNNk"
 VBR: "-qscale N" (N from 1 to 30)
 
 # Add hinting for http streaming
-mp4creator -hint=1 test.mp4
+# mp4creator comes from "mpeg4ip" macports package
+mp4creator -list test.mp4
+mp4creator -hint=N test.mp4
 mp4creator -optimize test.mp4
 
 # Convert existing file to high quality Vimeo settings
