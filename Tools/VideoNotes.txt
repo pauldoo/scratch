@@ -1,9 +1,13 @@
 # Convert a sequence of image files to good quality h264
-ffmpeg -r 5 -i output_%d.bmp -vcodec libx264 -vpre hq -acodec none -b 3000k -r 5 -s 1024x768 -aspect 4:3 test.mp4
+ffmpeg -r 25 -i frameC_10%03d.pnm.bmp -vcodec libx264 -profile high -preset slow -acodec none -b 2000k -r 25 -s 640x360 -aspect 16:9 test.mp4
+ffmpeg -r 5 -i output_%d.bmp -vcodec libx264 -profile high -preset slow -acodec none -b 3000k -r 5 -s 1024x768 -aspect 4:3 test.mp4
+
+CBR: "-b NNNk"
+VBR: "-qscale N" (N from 1 to 30)
 
 # Add hinting for http streaming
-mp4creator -hint=1 test.mp4 
-mp4creator -optimize test.mp4 
+mp4creator -hint=1 test.mp4
+mp4creator -optimize test.mp4
 
 # Convert existing file to high quality Vimeo settings
 ffmpeg -i foobar.avi -deinterlace -vcodec libx264 -vpre hq -acodec libfaac -b 5000k -ab 192k test.mp4
