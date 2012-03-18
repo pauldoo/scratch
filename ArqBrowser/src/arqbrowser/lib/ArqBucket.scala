@@ -6,6 +6,7 @@ import com.amazonaws.services.s3.model.S3ObjectSummary
 import com.amazonaws.services.s3.model.GetObjectRequest
 import scala.actors.Futures
 import scala.actors.Future
+import java.util.zip.GZIPInputStream
 
 class ArqBucket(
   val s3client: AmazonS3,
@@ -51,9 +52,12 @@ class ArqBucket(
 
     return s3client.getObject(new GetObjectRequest(
       s3bucket,
-      computerUuid + "/objects/" + hash.toString.toLowerCase())).getObjectContent();
+      computerUuid + "/objects/" + hash.toBlockText().toLowerCase())).getObjectContent();
   }
 
   def getDecryptedStreamForObject(hash: Hash): InputStream =
     decrypter.decrypt(getRawStreamForObject(hash));
+
+  def getDecompressedAndDecryptedStreamForObject(hash: Hash): InputStream =
+    new GZIPInputStream(getDecryptedStreamForObject(hash));
 }

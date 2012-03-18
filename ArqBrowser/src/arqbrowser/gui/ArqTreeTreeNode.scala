@@ -31,7 +31,10 @@ class ArqTreeTreeNode(
         child._2.dataHashes(0)._1,
         child._1);
     } else {
-      new DefaultMutableTreeNode(child._1);
+      new ArqTreeFileNode(
+        arqBucket,
+        child._2.dataHashes,
+        child._1);
     }
   }
 }

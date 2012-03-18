@@ -5,6 +5,7 @@ import java.io.DataInput
 import java.io.DataInputStream
 import java.io.InputStream
 import java.io.ByteArrayOutputStream
+import java.io.OutputStream
 
 object Utils {
   def iterated[T](
@@ -26,7 +27,10 @@ object Utils {
       case Seq(keyNode, elementNode) => (keyNode.text, elementNode.text)
     }.toMap;
 
-  def bytesToHex(bytes: Array[Byte]): String =
+  def bytesToBlockHex(bytes: Array[Byte]): String =
+    bytes.map(toUnsigned).map("%02X".format(_)).reduce(_ + _);
+
+  def bytesToReadableHex(bytes: Array[Byte]): String =
     bytes.map(toUnsigned).map("%02X".format(_)).grouped(4).map(_.reduce(_ + _)).reduce(_ + " " + _);
 
   def toUnsigned(b: Byte): Int = {
@@ -107,18 +111,22 @@ object Utils {
     }
   }
 
-  def readAll(is: InputStream): Array[Byte] = {
-    val buffer = new ByteArrayOutputStream();
+  def copyAll(in: InputStream, out: OutputStream): Unit = {
     val data = new Array[Byte](10240);
     while (true) {
-      val length = is.read(data);
+      val length = in.read(data);
       if (length != -1) {
-        buffer.write(data, 0, length);
+        out.write(data, 0, length);
       } else {
-        return buffer.toByteArray();
+        return
       }
     }
-    throw new RuntimeException("Unreachable.");
+  }
+
+  def readAll(is: InputStream): Array[Byte] = {
+    val buffer = new ByteArrayOutputStream();
+    copyAll(is, buffer);
+    return buffer.toByteArray();
   }
 
   def readVersionBytes(stream: DataInput): Int = {

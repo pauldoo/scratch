@@ -13,6 +13,7 @@ import arqbrowser.lib.ArqStore
 import com.amazonaws.services.s3.AmazonS3Client
 import javax.swing.JTree
 import javax.swing.JScrollPane
+import java.io.File
 
 object Login {
 
@@ -37,8 +38,24 @@ object Login {
           new String(awsPrivate.getPassword()));
 
         val tree = new JTree(new S3BucketTreeNode(awsCred));
+        val button = new JButton("GO!");
+        button.addActionListener(new ActionListener {
+          def actionPerformed(e: ActionEvent): Unit = {
+            val obj = tree.getSelectionPath().getLastPathComponent();
+            System.out.println(obj);
+
+            obj match {
+              case file: ArqTreeFileNode => {
+                file.saveToDisk(new File("/tmp/" + file.toString));
+              }
+            }
+          }
+        });
+        val panel = new JPanel();
+        panel.add(new JScrollPane(tree));
+        panel.add(button);
         val frame = new JFrame();
-        frame.add(new JScrollPane(tree));
+        frame.add(panel);
         frame.setSize(800, 600);
         frame.show();
       }

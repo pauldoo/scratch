@@ -29,8 +29,12 @@ final class Hash(val value: Array[Byte]) extends Ordered[Hash] {
     }
   }
 
+  def toBlockText(): String = {
+    Utils.bytesToBlockHex(value);
+  }
+
   override val toString: String =
-    Utils.bytesToHex(value);
+    Utils.bytesToReadableHex(value);
 }
 
 object Hash {
