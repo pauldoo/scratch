@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2005, 2006, 2007, 2008  Paul Richards.
+    Copyright (c) 2005, 2006, 2007, 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package pigeon.view;
@@ -107,7 +106,7 @@ final class RaceSummary extends javax.swing.JPanel {
         } else {
             racepointCombo.setSelectedIndex(0);
         }
-        
+
         darknessBegins.setMode(DateTimeDisplayMode.HOURS_MINUTES);
         darknessEnds.setMode(DateTimeDisplayMode.HOURS_MINUTES);
 
@@ -375,7 +374,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
             }
             race = race.repSetHoursOfDarkness((int)darknessBegins, (int)darknessEnds);
         }
-        
+
         {
             Map<String, Integer> membersEntered = new TreeMap<String, Integer>();
             Map<String, Integer> birdsEntered = new TreeMap<String, Integer>();
@@ -386,7 +385,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
             race = race.repSetMembersEntered(membersEntered);
             race = race.repSetBirdsEntered(birdsEntered);
         }
-        
+
         {
             Map<String, Map<String, Integer>> entrantsCount = new TreeMap<String, Map<String, Integer>>();
             for (Map.Entry<String, Map<String, JTextField>> i: poolEntrantsCountFields.entrySet()) {
@@ -397,7 +396,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
             }
             race = race.repSetBirdsEnteredInPools(entrantsCount);
         }
-        
+
         {
             Map<String, List<Double>> prizes = new TreeMap<String, List<Double>>();
             for (Map.Entry<String, List<JTextField>> i: prizeFields.entrySet()) {
@@ -437,7 +436,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
         Race race = Race.createEmpty();
         return editRace(parent, race, club, configuration, true);
     }
-    
+
     /**
         Populates the JPanel which contains the input dialogs for inputting the number of
         members and birds entered from each section.
@@ -448,7 +447,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
         panel.setLayout(gridbag);
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.insets = new Insets(10, 10, 10, 10);
-        
+
         {
             constraints.gridx = 1;
             JLabel memberCountLabel = new JLabel("Members");
@@ -462,7 +461,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
             gridbag.setConstraints(birdCountLabel, constraints);
             panel.add(birdCountLabel);
         }
-        
+
         List<String> sections = pigeon.report.Utilities.participatingSections(club);
         for (String section: sections) {
             {
@@ -503,7 +502,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
             }
         }
     }
-    
+
     /**
         Populates the JPanel which contains the input dialogs for inputting the number of
         birds entered in the pools.
@@ -540,7 +539,7 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
             for (String section: sections) {
                 if (c.isAvailableInOpen() || !section.equals("Open")) {
                     final int index = sections.indexOf(section);
-                    
+
                     constraints.anchor = GridBagConstraints.EAST;
                     constraints.fill = GridBagConstraints.NONE;
                     constraints.gridx = index * 2;
@@ -568,12 +567,12 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
         panel.setFocusTraversalPolicyProvider(true);
         panel.setFocusTraversalPolicy(new TopDownFocusTraversalPolicy());
     }
-    
+
     private static void populatePrizesPanel(JPanel panel, Map<String, List<JTextField>> fields, Organization club)
     {
         GridBagLayout gridbag = new GridBagLayout();
         panel.setLayout(gridbag);
-        
+
         List<String> sections = pigeon.report.Utilities.participatingSections(club);
         for (String section: sections) {
             GridBagConstraints constraints = new GridBagConstraints();
@@ -582,9 +581,9 @@ private void daysCoveredComboActionPerformed(java.awt.event.ActionEvent evt) {//
             JLabel label = new JLabel(section);
             gridbag.setConstraints(label, constraints);
             panel.add(label);
-            
+
             List<JTextField> list = new ArrayList<JTextField>();
-            
+
             for (int i = 0; i < 20; ++i) {
                 constraints.fill = GridBagConstraints.NONE;
                 constraints.anchor = GridBagConstraints.EAST;

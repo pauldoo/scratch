@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2005, 2006, 2007, 2008  Paul Richards.
+    Copyright (c) 2005, 2006, 2007, 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package pigeon.model;
@@ -58,7 +57,7 @@ public final class Organization implements Serializable
                 Utilities.createEmptyList(Racepoint.class),
                 Utilities.createEmptyList(DistanceEntry.class));
     }
-    
+
     public String getName() {
         return name;
     }
@@ -86,7 +85,7 @@ public final class Organization implements Serializable
 
     public Organization repAddMember(Member member) throws ValidationException {
         List<Member> newMembers = Utilities.replicateListAdd(this.members, member);
-        
+
         List<DistanceEntry> newDistances = Utilities.modifiableListCopy(distances);
         for (Racepoint racepoint: racepoints) {
             DistanceEntry entry = new DistanceEntry(member, racepoint, Distance.createFromMetric(0));
@@ -94,13 +93,13 @@ public final class Organization implements Serializable
                 throw new IllegalStateException("Failed to add distance entries");
             }
         }
-        
+
         return new Organization(name, newMembers, racepoints, newDistances);
     }
 
     public Organization repAddRacepoint(Racepoint racepoint) throws ValidationException {
         List<Racepoint> newRacepoints = Utilities.replicateListAdd(this.racepoints, racepoint);
-        
+
         List<DistanceEntry> newDistances = Utilities.modifiableListCopy(distances);
         for (Member member: members) {
             DistanceEntry entry = new DistanceEntry(member, racepoint, Distance.createFromMetric(0));
@@ -108,13 +107,13 @@ public final class Organization implements Serializable
                 throw new IllegalStateException("Failed to add distance entries");
             }
         }
-        
+
         return new Organization(name, members, newRacepoints, newDistances);
     }
 
     public Organization repRemoveMember(Member member) {
         List<Member> newMembers = Utilities.replicateListRemove(this.members, member);
-        
+
         List<DistanceEntry> newDistances = Utilities.modifiableListCopy(distances);
         for (Racepoint racepoint: racepoints) {
             DistanceEntry entry = new DistanceEntry(member, racepoint, Distance.createFromMetric(0));
@@ -122,13 +121,13 @@ public final class Organization implements Serializable
                 throw new IllegalStateException("Failed to remove distance entries");
             }
         }
-        
+
         return new Organization(name, newMembers, racepoints, newDistances);
     }
 
     public Organization repRemoveRacepoint(Racepoint racepoint) {
         List<Racepoint> newRacepoints = Utilities.replicateListRemove(this.racepoints, racepoint);
-        
+
         List<DistanceEntry> newDistances = Utilities.modifiableListCopy(distances);
         for (Member member: members) {
             DistanceEntry entry = new DistanceEntry(member, racepoint, Distance.createFromMetric(0));
@@ -136,7 +135,7 @@ public final class Organization implements Serializable
                 throw new IllegalStateException("Failed to remove distance entries");
             }
         }
-        
+
         return new Organization(name, members, newRacepoints, newDistances);
     }
 
@@ -185,7 +184,7 @@ public final class Organization implements Serializable
         }
         return retval;
     }
-    
+
     public Organization repReplaceRacepoint(Racepoint oldRacepoint, Racepoint newRacepoint) throws ValidationException
     {
         Organization result = this.repRemoveRacepoint(oldRacepoint).repAddRacepoint(newRacepoint);
@@ -194,7 +193,7 @@ public final class Organization implements Serializable
         }
         return result;
     }
-    
+
     public Organization repReplaceMember(Member oldMember, Member newMember) throws ValidationException
     {
         Organization result = this.repRemoveMember(oldMember).repAddMember(newMember);

@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2005, 2006, 2007, 2008  Paul Richards.
+    Copyright (c) 2005, 2006, 2007, 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package pigeon;
@@ -140,7 +139,7 @@ public final class ExtendedTest extends TestCase
             if (daysCovered >= 2) {
                 race = race.repSetHoursOfDarkness(darknessBegins, darknessEnds);
             }
-            
+
             {
                 Map<String, Integer> membersEntered = new TreeMap<String, Integer>();
                 membersEntered.put("East", random.nextInt(50) + 50);
@@ -240,7 +239,7 @@ public final class ExtendedTest extends TestCase
                 }
             }
             race = race.repSetBirdsEnteredInPools(entrantsCount);
-            
+
             Map<String, List<Double>> prizes = new TreeMap<String, List<Double>>();
             for (int s = 1; s < sections.length; s++) {
                 prizes.put(sections[s], new ArrayList<Double>());
@@ -249,7 +248,7 @@ public final class ExtendedTest extends TestCase
                 }
             }
             race = race.repSetPrizes(prizes);
-            
+
             season = season.repAddRace(race);
         }
     }
@@ -373,7 +372,7 @@ public final class ExtendedTest extends TestCase
                 member.toString(),
                 "Racepoint",
                 season.getOrganization().getDistancesForMember(member));
-            
+
             RegressionStreamProvider streamProvider = new RegressionStreamProvider();
             reporter.write(streamProvider);
             checkRegression(streamProvider.getBytes(), "Distance_" + member.getName());
@@ -432,7 +431,7 @@ public final class ExtendedTest extends TestCase
         applyXslTransforms(streamProvider);
         checkRegression(streamProvider.getBytes("members.xhtml"), "MembersXhtml");
     }
-    
+
     private static void applyXslTransforms(RegressionStreamProvider streams) throws IOException
     {
         try {
@@ -458,7 +457,7 @@ public final class ExtendedTest extends TestCase
             throw new IOException(e);
         }
     }
-    
+
     private static void verifyXmlStylesheet(byte[] xmlFile) throws IOException
     {
         try {

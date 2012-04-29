@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008  Paul Richards.
+    Copyright (c) 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package pigeon.report;
@@ -38,7 +37,7 @@ import pigeon.view.Configuration;
 final public class MembersReporter implements Reporter
 {
     private final Document document;
-    
+
     public MembersReporter(String organization, Collection<Member> members, Configuration.Mode mode)
     {
         try {
@@ -50,7 +49,7 @@ final public class MembersReporter implements Reporter
             final Element organisationElement = document.createElement("Organisation");
             organisationElement.setTextContent(organization);
             rootElement.appendChild(organisationElement);
-            
+
             final Element memberListElement = document.createElement("MemberList");
             for (Member member: members) {
                 final Element memberElement = document.createElement("Member");
@@ -67,7 +66,7 @@ final public class MembersReporter implements Reporter
                 final Element shuNumberElement = document.createElement("ShuNumber");
                 shuNumberElement.setTextContent(member.getSHUNumber());
                 memberElement.appendChild(shuNumberElement);
-                
+
                 switch (mode) {
                     case CLUB:
                         break;
@@ -79,7 +78,7 @@ final public class MembersReporter implements Reporter
                         sectionElement.setTextContent(member.getSection());
                         memberElement.appendChild(sectionElement);
                 }
-                
+
                 memberListElement.appendChild(memberElement);
             }
             rootElement.appendChild(memberListElement);
@@ -95,11 +94,11 @@ final public class MembersReporter implements Reporter
         try {
             final Transformer xmlOutputTransformer = TransformerFactory.newInstance().newTransformer();
             xmlOutputTransformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            
+
             xmlOutputTransformer.transform(
                     new DOMSource(document),
                     new StreamResult(streamProvider.createNewStream("members.xml", true)));
-            
+
             final Transformer csvOutputTransformer = TransformerFactory.newInstance().newTransformer(new StreamSource(ClassLoader.getSystemResourceAsStream("resources/" + Constants.XSL_FOR_CSV_FILENAME)));
             csvOutputTransformer.transform(
                     new DOMSource(document),

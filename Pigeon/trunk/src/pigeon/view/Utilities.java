@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2005, 2006, 2007, 2011  Paul Richards.
+    Copyright (c) 2005, 2006, 2007, 2011, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package pigeon.view;
@@ -99,7 +98,7 @@ public final class Utilities {
         The local time zone is taken into account.
     */
     public static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-    
+
     /**
         Given an Organization, return a list of all the club names mentioned in member profiles.
     */
@@ -171,7 +170,7 @@ public final class Utilities {
 
     /**
         Checks through previous races looking for a bird with the given ring number.
-     
+
         This is used to "guess" the sex and colour of a bird when the same ring number
         is entered in a later race.
     */
@@ -189,8 +188,8 @@ public final class Utilities {
             }
         }
         return null;
-    }    
-    
+    }
+
     /**
         Returns a list of all the competition names in a configuration.
     */
@@ -264,7 +263,7 @@ public final class Utilities {
         }
         return result;
     }
-    
+
     private static void saveUserSettings(Properties properties)
     {
         String filename = System.getProperty("user.home") + File.separator + ".RacePoint.xml";
@@ -284,20 +283,20 @@ public final class Utilities {
             }
         }
     }
-    
+
     private static String loadProperty(String key)
     {
         Properties properties = loadUserSettings();
         return properties.getProperty(key);
     }
-    
+
     private static void saveProperty(String key, String value)
     {
         Properties properties = loadUserSettings();
         properties.setProperty(key, value);
         saveUserSettings(properties);
     }
-    
+
     public static File getMostRecentFile()
     {
         String mostRecentFilename = loadProperty("MostRecentFile");
@@ -307,12 +306,12 @@ public final class Utilities {
             return null;
         }
     }
-    
+
     public static void setMostRecentFile(File file)
     {
         saveProperty("MostRecentFile", file.getPath());
-    }    
-    
+    }
+
     public static Season loadSeasonFromFile(File file) throws FileNotFoundException, IOException, ClassNotFoundException
     {
         InputStream fileIn = null;
@@ -345,7 +344,7 @@ public final class Utilities {
             }
         }
     }
-    
+
     public static NumberFormat currencyFormat()
     {
         NumberFormat format = NumberFormat.getNumberInstance();
@@ -353,11 +352,11 @@ public final class Utilities {
         format.setMinimumFractionDigits(2);
         return format;
     }
-    
+
     public interface Func1<O, I> {
         public O call(I arg);
     }
-    
+
     public static <I, O> List<O> map(List<I> coll, Func1<O, I> func) {
         List<O> result = new ArrayList<O>();
         for (I v: coll) {
@@ -365,7 +364,7 @@ public final class Utilities {
         }
         return Collections.unmodifiableList(result);
     }
-    
+
     public static <T extends Comparable<? super T>> T median00(Collection<T> coll) {
         if (coll.isEmpty()) {
             return null;
