@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2005, 2006, 2007, 2008, 2009, 2012 Paul Richards <paul.richards@gmail.com>
 
-    Permission to use, copy, modify, and distribute this software for any
+    Permission to use, copy, modify, and/or distribute this software for any
     purpose with or without fee is hereby granted, provided that the above
     copyright notice and this permission notice appear in all copies.
 
@@ -76,7 +76,7 @@ public final class About
 
         writer.println("Copyright (c) 2005-2012 Paul Richards <paul.richards@gmail.com>");
         writer.println("");
-        writer.println("Permission to use, copy, modify, and distribute this software for any");
+        writer.println("Permission to use, copy, modify, and/or distribute this software for any");
         writer.println("purpose with or without fee is hereby granted, provided that the above");
         writer.println("copyright notice and this permission notice appear in all copies.");
         writer.println("");
