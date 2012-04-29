@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2007  Paul Richards.
+    Copyright (c) 2007, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package tuner;
@@ -42,7 +41,7 @@ public final class MainWindow extends JFrame
     private Thread updateThread;
     private JComboBox instrumentPicker;
     private JComboBox stringPicker;
-    
+
     private final class LocalItemListener implements ItemListener
     {
         public void itemStateChanged(ItemEvent e)
@@ -59,7 +58,7 @@ public final class MainWindow extends JFrame
             }
         }
     }
-    
+
     private MainWindow(Configuration configuration) throws LineUnavailableException
     {
         this.configuration = configuration;
@@ -74,7 +73,7 @@ public final class MainWindow extends JFrame
         this.getContentPane().add(frequencyCurve, BorderLayout.CENTER);
         this.getContentPane().add(createButtonPanel(), BorderLayout.NORTH);
         this.getContentPane().add(createStatusPanel(), BorderLayout.SOUTH);
-        
+
         pack();
     }
 
@@ -85,7 +84,7 @@ public final class MainWindow extends JFrame
         updateThread.interrupt();
         updateThread = null;
     }
-    
+
     public void startUpdateThread() throws LineUnavailableException
     {
         AudioSource audioSource = new MicrophoneAudioSource();
@@ -93,12 +92,12 @@ public final class MainWindow extends JFrame
         updateThread.setDaemon(true);
         updateThread.start();
     }
-    
+
     private JPanel createButtonPanel()
     {
         LayoutManager layout = new GridLayout(1, 2);
         JPanel buttonPanel = new JPanel(layout);
-        
+
         instrumentPicker = new JComboBox(configuration.instrumentNames().toArray());
         instrumentPicker.addItemListener(new LocalItemListener());
         buttonPanel.add(instrumentPicker);
@@ -106,14 +105,14 @@ public final class MainWindow extends JFrame
         stringPicker = new JComboBox();
         stringPicker.addItemListener(new LocalItemListener());
         buttonPanel.add(stringPicker);
-        
+
         instrumentPicker.setSelectedIndex(0);
         updateSelectedInstrument();
         stringPicker.setSelectedIndex(0);
         updateSelectedString();
         return buttonPanel;
     }
-    
+
     private JPanel createStatusPanel()
     {
         JPanel statusPanel = new JPanel();
@@ -121,12 +120,12 @@ public final class MainWindow extends JFrame
         statusPanel.add(new JLabel("\u00A9 2007-2008 Paul Richards <paul.richards@gmail.com>."));
         return statusPanel;
     }
-    
+
     private String getSelectedInstrument()
     {
         return (String)instrumentPicker.getSelectedItem();
     }
-    
+
     private String getSelectedString()
     {
         return (String)stringPicker.getSelectedItem();
@@ -139,14 +138,14 @@ public final class MainWindow extends JFrame
             stringPicker.addItem(stringName);
         }
     }
-    
+
     private void updateSelectedString()
     {
         double semitone = configuration.stringSemitone(getSelectedInstrument(), getSelectedString());
         double targetFrequency = configuration.frequencyInHzOfMiddleC() * Math.pow(2.0, semitone / 12);
         spectralView.setTargetFrequency(targetFrequency);
     }
-    
+
     public static void main(String[] args) throws LineUnavailableException, IOException
     {
         InputStream stream = new BufferedInputStream(new FileInputStream("instruments.xml"));
@@ -157,7 +156,7 @@ public final class MainWindow extends JFrame
             stream.close();
             stream = null;
         }
-        
+
         MainWindow window = new MainWindow(configuration);
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setVisible(true);

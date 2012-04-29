@@ -1,19 +1,18 @@
 /*
-    Copyright (C) 2007  Paul Richards.
- 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
- 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
- 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+    Copyright (c) 2007, 2012 Paul Richards <paul.richards@gmail.com>
+
+    Permission to use, copy, modify, and/or distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+*/
 
 
 package imageconverter;
@@ -36,7 +35,7 @@ final class ImageScaler implements Runnable
     private final int newHeight;
     private final String outputType;
     private final File output;
-    
+
     public ImageScaler(Image input, int newWidth, int newHeight, String outputType, File output)
     {
         this.input = input;
@@ -60,24 +59,24 @@ final class ImageScaler implements Runnable
             System.exit(1);
         }
     }
-    
+
     private static void writeImage(BufferedImage image, String format, File outfile) throws IOException
     {
-        
+
         ImageWriter writer = (ImageWriter)ImageIO.getImageWritersByFormatName(format).next();
         ImageWriteParam params = writer.getDefaultWriteParam();
         if (params.canWriteProgressive())
         {
             params.setProgressiveMode(params.MODE_DEFAULT);
         }
-        
+
         // Prepare output file
         ImageOutputStream ios = ImageIO.createImageOutputStream(outfile);
         writer.setOutput(ios);
-        
+
         // Write the image
         writer.write(null, new IIOImage(image, null, null), params);
-        
+
         // Cleanup
         ios.flush();
         writer.dispose();
@@ -109,52 +108,52 @@ final class ImageFileFilter extends javax.swing.filechooser.FileFilter
  */
 public final class Main
 {
-    
+
     /** Maximum dimension for a thumbnail.
      */
     protected static int thumbSize = 160;
-    
+
     /** Maximum dimension for a full sized image.
      */
     protected static int fullSize = 1024;
-    
+
     /** Image type.
      */
     protected static String imageType = "jpeg";
-    
+
     /** Main method.
      */
     public static void main(String args[]) throws IOException, InterruptedException
     {
-        
+
         // Load properties file
         Properties props = new Properties();
         props.load( new BufferedInputStream( ClassLoader.getSystemResourceAsStream("ImageConverter.properties") ) );
-        
+
         // Retrieve entries, default is to leave alone the above values if entries aren't found
         thumbSize = Integer.parseInt( props.getProperty( "ThumbSize", Integer.toString(thumbSize) ) );
         fullSize = Integer.parseInt( props.getProperty( "FullSize", Integer.toString(fullSize) ) );
         imageType = props.getProperty( "ImageType", imageType );
-        
+
         // Construct and show file chooser dialog
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new ImageFileFilter());
         fileChooser.setMultiSelectionEnabled(true);
         fileChooser.showOpenDialog(null);
-        
+
         // Get list of files and construct output dir
         File[] inputFiles = fileChooser.getSelectedFiles();
         if (inputFiles.length == 0)
             System.exit(0);
         File parentDir = inputFiles[0].getParentFile();
-        
+
         String title = parentDir.getName();
         File outputDir = new File(parentDir, title);
         if (!outputDir.mkdir()) {
             throw new IOException("Could not create directory: " + outputDir);
         }
         extractStaticContent(outputDir);
-        
+
         // Open index.html in output dir
         PrintWriter outWriter = new PrintWriter( new FileWriter( new File(outputDir, "index.html") ) );
         outWriter.println("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">");
@@ -177,17 +176,17 @@ public final class Main
         outWriter.println("    </div>");
         outWriter.println("    <div id=\"content\">");
         outWriter.println("      <h2><a href=\"javascript:history.go(-1)\">&lt; Back</a></h2>");
-                
+
         for (int i = 0; i < inputFiles.length; i++)
         {
             // Open original file
             BufferedImage orig = ImageIO.read( inputFiles[i] );
-            
+
             // Calculate image sizes for the thumb and full images
             int
                 thumbWidth = thumbSize, thumbHeight = thumbSize,
                 fullWidth = fullSize, fullHeight = fullSize;
-            
+
             if ( orig.getWidth() > orig.getHeight() )
             {
                 thumbHeight = thumbWidth * orig.getHeight() / orig.getWidth();
@@ -198,7 +197,7 @@ public final class Main
                 thumbWidth = thumbHeight * orig.getWidth() / orig.getHeight();
                 fullWidth = fullHeight * orig.getWidth() / orig.getHeight();
             }
-            
+
             if ( thumbWidth >= orig.getWidth() )
             {
                 thumbWidth = orig.getWidth();
@@ -209,7 +208,7 @@ public final class Main
                 fullWidth = orig.getWidth();
                 fullHeight = orig.getHeight();
             }
-            
+
             String thumbName = "thumb_" + inputFiles[i].getName();
             thumbName = thumbName.substring( 0, thumbName.lastIndexOf( '.' ) ) + "." + imageType;
             File thumbFileName = new File(outputDir, thumbName);
@@ -221,17 +220,17 @@ public final class Main
             // Create thumbnail image and write it out
             Thread thumbThread = new Thread(new ImageScaler(orig, thumbWidth, thumbHeight, imageType, thumbFileName));
             thumbThread.start();
-            
+
             Thread fullsizeThread = new Thread(new ImageScaler(orig, fullWidth, fullHeight, imageType, fullFileName));
             fullsizeThread.start();
-            
+
             thumbThread.join();
             fullsizeThread.join();
-            
+
             thumbName = URIEscape(thumbName);
             fullName = URIEscape(fullName);
             String altText = fullWidth + "x" + fullHeight + ", " + ((int)(fullFileName.length() / 1024)) + "KiB";
-            
+
             if (i % 3 == 0) {
                 outWriter.println("      <div class=\"groupof3\">");
             }
@@ -241,20 +240,20 @@ public final class Main
             if (((i % 3) == 2) || (i == (inputFiles.length - 1))) {
                 outWriter.println("      </div>");
             }
-            
+
         }
-        
+
         // All done.
 	outWriter.println("      <h2 class=\"clear\"><a href=\"javascript:history.go(-1)\">&lt; Back</a></h2>");
         outWriter.println("    </div>");
         outWriter.println("  </div>");
         outWriter.println("</body>");
-        outWriter.println("</html>");        
+        outWriter.println("</html>");
         outWriter.close();
-        
+
         System.exit(0);
     }
-    
+
     // Calculate URL safe filenames, (convert spaces to %20 etc..)
     private static String URIEscape(String str)
     {
@@ -264,7 +263,7 @@ public final class Main
             throw new IllegalArgumentException("Value '" + str + "' could not be made URI safe");
         }
     }
-    
+
     private static void extractStaticContent(File baseDirectory) throws IOException
     {
         InputStream in = null;

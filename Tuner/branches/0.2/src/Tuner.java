@@ -1,21 +1,19 @@
 /*
 
 Tuner, a simple application to help you tune your musical instrument.
-Copyright (C) 2003-2005 Paul Richards
+Copyright (c) 2003, 2004, 2005, 2012 Paul Richards <paul.richards@gmail.com>
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 */
 
@@ -28,7 +26,7 @@ import javax.sound.sampled.*;
 import java.io.*;
 
 public class Tuner extends JFrame implements ActionListener, Runnable {
-    
+
     // Version number of application
     private static final String VERSION = "0.2";
     // Copyright message
@@ -42,36 +40,36 @@ public class Tuner extends JFrame implements ActionListener, Runnable {
     private static final String TITLE = "Tuner v" + VERSION;
     // Credits message
     private static final String CREDITS = "Made by Paul Richards, pauldoo@users.sf.net";
-    
+
     // Instrument names
     private final String[] instruments;
-    
+
     // For each instrument, the list of note semitones and names
     private final int[][] semitones;
     private final String[][] names;
-    
+
     // AudioInput object connected to microphone
     private AudioInput audioInput;
-    
+
     // GUI components
     private JPanel chooserPanel;
     private JComboBox instrumentBox;
     private JComboBox noteBox;
     private TuningBars bars;
-    
+
     // Main
     public static void main(String[] args) throws Exception {
         JOptionPane.showMessageDialog( null, COPYRIGHT );
 
-	InputStream in = new BufferedInputStream( new FileInputStream( "tuner.properties" ) );    
+	InputStream in = new BufferedInputStream( new FileInputStream( "tuner.properties" ) );
 	Properties props = new Properties();
 	props.load( in );
-	
+
 	int instrumentCount = Integer.parseInt( props.getProperty("InstrumentCount") );
 	String[] instruments = new String[ instrumentCount ];
 	int[][] semitones = new int[instrumentCount][];
 	String[][] names = new String[instrumentCount][];
-	
+
 	for (int i = 0; i < instrumentCount; i++) {
 	    String iPrefix = "Instrument_" + i;
 	    String name = props.getProperty(iPrefix + ".Name");
@@ -87,46 +85,46 @@ public class Tuner extends JFrame implements ActionListener, Runnable {
 		names[i][j] = noteName;
 	    }
 	}
-	
+
         Tuner t = new Tuner( TITLE, instruments, semitones, names );
         t.launch();
-        
+
     }
-    
+
     public Tuner( String title, String[] instruments, int[][] semitones, String[][] names ) {
         super( title );
         this.setDefaultCloseOperation( EXIT_ON_CLOSE );
         this.instruments = instruments;
         this.semitones = semitones;
         this.names = names;
-        
+
 	chooserPanel = new JPanel(new GridLayout( 1, 2 ));
 	instrumentBox = new JComboBox( instruments );
 	instrumentBox.addActionListener( this );
 	noteBox = new JComboBox();
 	noteBox.addActionListener( this );
 	chooserPanel.add( instrumentBox );
-	
+
         this.getContentPane().add( chooserPanel, BorderLayout.NORTH );
-        
+
         JLabel credits = new JLabel( CREDITS );
         this.getContentPane().add( credits, BorderLayout.SOUTH );
     }
-    
-    
+
+
     public void launch() throws Exception {
 	this.audioInput = TuningBars.createAudioInput();
 
         updateInstrument();
         this.setVisible(true);
-	
+
         new Thread(this).start();
     }
-    
+
     private int getNoteNumber() {
 	return noteBox.getSelectedIndex();
     }
-    
+
     private void updateNote() {
 	int noteNumber = getNoteNumber();
 	if (bars != null) {
@@ -137,11 +135,11 @@ public class Tuner extends JFrame implements ActionListener, Runnable {
 	this.getContentPane().add( bars, BorderLayout.CENTER );
         this.pack();
     }
-    
+
     private int getInstrumentNumber() {
 	return instrumentBox.getSelectedIndex();
     }
-    
+
     private void updateInstrument() {
 	int instrumentNumber = getInstrumentNumber();
 	if (noteBox != null) {
@@ -153,16 +151,16 @@ public class Tuner extends JFrame implements ActionListener, Runnable {
 	chooserPanel.add( noteBox );
 	updateNote();
     }
-    
+
     public void actionPerformed(ActionEvent e) {
 	if (e.getSource() == instrumentBox) {
 	    updateInstrument();
 	} else if (e.getSource() == noteBox) {
 	    updateNote();
 	}
-	
+
     }
-    
+
     public void run() {
         try {
             while (true) {
@@ -172,6 +170,6 @@ public class Tuner extends JFrame implements ActionListener, Runnable {
             e.printStackTrace();
         }
     }
-    
+
 }
 
