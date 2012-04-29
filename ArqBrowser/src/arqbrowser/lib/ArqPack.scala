@@ -68,7 +68,7 @@ class ArqPack(
 
         Utils.readHashRaw(stream);
 
-        val indices = (entries.values.map(_._1) ++ List(packObject.getSize())).toList.sort(_ < _);
+        val indices = (entries.values.map(_._1) ++ List(packObject.getSize())).toList.sortWith(_ < _);
 
         return entries.mapValues(t => {
           val currOffset = t._1;

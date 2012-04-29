@@ -57,14 +57,14 @@ object Login {
         val frame = new JFrame();
         frame.add(panel);
         frame.setSize(800, 600);
-        frame.show();
+        frame.setVisible(true);
       }
     });
 
     val frame = new JFrame();
     frame.add(panel);
     frame.pack();
-    frame.show();
+    frame.setVisible(true);
   }
 
 }
