@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2007, 2008  Paul Richards.
+    Copyright (c) 2007, 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals.math;
@@ -26,7 +25,7 @@ public final class Vector4
     private final double b;
     private final double c;
     private final double d;
-    
+
     public Vector4(double a, double b, double c, double d)
     {
         this.a = a;
@@ -34,7 +33,7 @@ public final class Vector4
         this.c = c;
         this.d = d;
     }
-    
+
     public double getA() {
         return a;
     }
@@ -60,13 +59,13 @@ public final class Vector4
             new Double(getC()).hashCode() ^
             new Double(getD()).hashCode();
     }
-    
+
     @Override
     public boolean equals(Object o)
     {
         return equals((Vector4)o);
     }
-    
+
     boolean equals(Vector4 other)
     {
         return
@@ -76,13 +75,13 @@ public final class Vector4
                 this.getC() == other.getC() &&
                 this.getD() == other.getD());
     }
-    
+
     @Override
     public String toString()
     {
         return "(" + getA() + ", " + getB() + ", " + getC() + ", " + getD() + ")";
     }
-    
+
     public static Vector4 add(Vector4 lhs, Vector4 rhs)
     {
         return new Vector4(
@@ -91,12 +90,12 @@ public final class Vector4
                 lhs.getC() + rhs.getC(),
                 lhs.getD() + rhs.getD());
     }
-    
+
     public Vector4 add(Vector4 rhs)
     {
         return add(this, rhs);
     }
-    
+
     public static Vector4 multiply(Vector4 vector, double scalar)
     {
         return new Vector4(
@@ -105,7 +104,7 @@ public final class Vector4
                 vector.getC() * scalar,
                 vector.getD() * scalar);
     }
-    
+
     public Vector4 multiply(double scalar)
     {
         return multiply(this, scalar);

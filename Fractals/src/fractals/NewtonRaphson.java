@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008, 2010  Paul Richards.
+    Copyright (c) 2008, 2010, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -29,7 +28,7 @@ final class NewtonRaphson implements TileProvider<IntegerTile>
         These have been precomputed using maxima:
 
         (%i14) float(solve(z^4 + z^3 - 1));<br/>
-        (%o14) [z = - 1.380277569097613, z = .8191725133961627,<br/> 
+        (%o14) [z = - 1.380277569097613, z = .8191725133961627,<br/>
         z = - .9144736629677245 %i - 0.219447472149275,<br/>
         z = .9144736629677245 %i - 0.219447472149275]<br/>
     */
@@ -39,19 +38,19 @@ final class NewtonRaphson implements TileProvider<IntegerTile>
         new Complex(- 0.219447472149275, - .9144736629677245),
         new Complex(0.219447472149275, .9144736629677245)
     };
-    
+
     private static final Complex minusOne = new Complex(-1.0, 0.0);
     private static final Complex two = new Complex(2.0, 0.0);
     private static final Complex three = new Complex(3.0, 0.0);
     private static final Complex four = new Complex(4.0, 0.0);
 
     final int maxIterations;
-    
+
     NewtonRaphson(int maxIterations)
     {
         this.maxIterations = maxIterations;
     }
-    
+
     static JComponent createView()
     {
         TileProvider<RenderableTile> source = new ColorAndExposeFilter(new NewtonRaphson(50), roots.length, 0.08);
@@ -59,7 +58,7 @@ final class NewtonRaphson implements TileProvider<IntegerTile>
         view.startAllThreads();
         return view;
     }
-    
+
     private static int iterateUntilFinished(final double x, final double y, final int maxIterations)
     {
         Complex z = new Complex(x, y);
@@ -79,7 +78,7 @@ final class NewtonRaphson implements TileProvider<IntegerTile>
         }
         return 0;
     }
-    
+
     private static Complex calculateStep(final Complex x)
     {
         // (z^4 + z^3 - 1) / (4x^3 + 3x^2)
@@ -87,20 +86,20 @@ final class NewtonRaphson implements TileProvider<IntegerTile>
 
         Complex temp = x.multiply(x);
         Complex denom = temp.multiply(three);
-        
+
         Complex.multiplyReplace(temp, x);
         Complex.addReplace(numerator, temp);
         Complex.addReplace(denom, temp.multiply(four));
-        
+
         Complex.multiplyReplace(temp, x);
         Complex.addReplace(numerator, temp);
 
         Complex.divideReplace(numerator, denom);
-        
+
         return numerator;
     }
-    
-    
+
+
     public IntegerTile getTile(TilePosition pos)
     {
         IntegerTile tile = new IntegerTile(pos);

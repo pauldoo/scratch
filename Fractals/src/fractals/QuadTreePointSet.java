@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008  Paul Richards.
+    Copyright (c) 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -28,22 +27,22 @@ import java.util.Iterator;
 final class QuadTreePointSet implements PointSet
 {
     private final Node rootNode;
-    
+
     public QuadTreePointSet()
     {
         this.rootNode = new EmptyNode(new Point2D.Double(0.0, 0.0), new Point2D.Double(1.0, 1.0));
     }
-    
+
     private QuadTreePointSet(Node rootNode)
     {
         this.rootNode = rootNode;
     }
-    
+
     public PointSet add(Point2D.Double point)
     {
         return new QuadTreePointSet(rootNode.add((Point2D.Double)point.clone()));
     }
-    
+
     public PointSet remove(Point2D.Double point)
     {
         return new QuadTreePointSet(rootNode.remove(point));
@@ -57,21 +56,21 @@ final class QuadTreePointSet implements PointSet
         }
         return result;
     }
-    
+
     public Iterator<Point2D.Double> iterator()
     {
         Collection<Point2D.Double> collection = new ArrayList<Point2D.Double>();
         rootNode.collectPoints(collection);
         return collection.iterator();
     }
-    
+
     public int size()
     {
         return rootNode.numberOfPoints();
     }
-    
+
     /**
-        Root class for internal implementation classes. 
+        Root class for internal implementation classes.
     */
     private static abstract class Node
     {
@@ -79,12 +78,12 @@ final class QuadTreePointSet implements PointSet
             Most negative corner of the bounds of this node, inclusive.
         */
         protected final Point2D.Double min;
-        
+
         /**
             Most positive corner of the bounds of this node, exclusive.
         */
         protected final Point2D.Double max;
-        
+
         Node(Point2D.Double min, Point2D.Double max)
         {
             this.min = min;
@@ -98,7 +97,7 @@ final class QuadTreePointSet implements PointSet
                 throw new RuntimeException();
             }
         }
-        
+
         /**
             Adds a point to the quadtree, possibly extending
             the quadtree in the process.
@@ -118,20 +117,20 @@ final class QuadTreePointSet implements PointSet
                 Point2D.Double newMax = new Point2D.Double(
                         (dx < 0) ? (max.x) : (max.x + width),
                         (dy < 0) ? (max.y) : (max.y + height));
-                
+
                 Quadrant expandDirection = Utilities.quadrant(getCenter(), point);
                 return (new InnerNode(newMin, newMax)).repReplaceSubNode(Utilities.diagonallyOpposite(expandDirection), this).add(point);
             }
         }
-        
+
         /**
             Adds a point to the quadtree, never extending
             the quadtree in the process.
         */
         abstract Node addInside(Point2D.Double point);
-        
+
         abstract Node remove(Point2D.Double point);
-        
+
         abstract Point2D.Double findClosest(Point2D.Double point);
 
         /**
@@ -143,7 +142,7 @@ final class QuadTreePointSet implements PointSet
                     point.x >= min.x && point.x < max.x &&
                     point.y >= min.y && point.y < max.y;
         }
-        
+
         /**
             Returns the center point of the node (also the top left corner of the 4th quadrant).
         */
@@ -151,7 +150,7 @@ final class QuadTreePointSet implements PointSet
         {
             return new Point2D.Double((min.x + max.x) / 2, (min.y + max.y) / 2);
         }
-        
+
         /**
             Returns the lower bound distance of this node to a given point.
         */
@@ -162,12 +161,12 @@ final class QuadTreePointSet implements PointSet
                     Math.max(min.y, Math.min(max.y, point.y)));
             return clampedPoint.distance(point);
         }
-        
+
         abstract void collectPoints(Collection<Point2D.Double> collection);
-        
+
         abstract int numberOfPoints();
     }
-    
+
     /**
         A node in the tree that is empty and contains no points or further
         child nodes.
@@ -178,13 +177,13 @@ final class QuadTreePointSet implements PointSet
         {
             super(min, max);
         }
-        
+
         @Override
         Node addInside(Point2D.Double point)
         {
             return new LeafNode(min, max, point);
         }
-        
+
         @Override
         Node remove(Point2D.Double point)
         {
@@ -201,14 +200,14 @@ final class QuadTreePointSet implements PointSet
         void collectPoints(Collection<Point2D.Double> collection)
         {
         }
-        
+
         @Override
         int numberOfPoints()
         {
             return 0;
         }
     }
-    
+
     /**
         A node in the tree that itself contains no points but has 4 child nodes.
     */
@@ -222,13 +221,13 @@ final class QuadTreePointSet implements PointSet
         InnerNode(Point2D.Double min, Point2D.Double max)
         {
             super(min, max);
-            
+
             subNodeA = new EmptyNode(
                     min,
                     getCenter());
             subNodeB = new EmptyNode(
                     new Point2D.Double(getCenter().x, min.y),
-                    new Point2D.Double(max.x, getCenter().y));                    
+                    new Point2D.Double(max.x, getCenter().y));
             subNodeC = new EmptyNode(
                     new Point2D.Double(min.x, getCenter().y),
                     new Point2D.Double(getCenter().x, max.y));
@@ -236,7 +235,7 @@ final class QuadTreePointSet implements PointSet
                     getCenter(),
                     max);
         }
-        
+
         private InnerNode(
                 Point2D.Double min,
                 Point2D.Double max,
@@ -246,27 +245,27 @@ final class QuadTreePointSet implements PointSet
                 Node subNodeD)
         {
             super(min, max);
-            
+
             this.subNodeA = subNodeA;
             this.subNodeB = subNodeB;
             this.subNodeC = subNodeC;
             this.subNodeD = subNodeD;
         }
-        
+
         @Override
         Node addInside(Point2D.Double point)
         {
             Quadrant q = Utilities.quadrant(getCenter(), point);
             return repReplaceSubNode(q, getSubNode(q).addInside(point));
         }
-        
+
         @Override
         Node remove(Point2D.Double point)
         {
             Quadrant q = Utilities.quadrant(getCenter(), point);
             return repReplaceSubNode(q, getSubNode(q).remove(point)).normalizeForEmpty();
         }
-        
+
         private final Node normalizeForEmpty()
         {
             if (this.subNodeA instanceof EmptyNode &&
@@ -294,7 +293,7 @@ final class QuadTreePointSet implements PointSet
                     throw new RuntimeException();
             }
         }
-        
+
         @Override
         Point2D.Double findClosest(Point2D.Double point)
         {
@@ -320,7 +319,7 @@ final class QuadTreePointSet implements PointSet
             }
             return result;
         }
-        
+
         InnerNode repReplaceSubNode(Quadrant q, Node replacementSubNode)
         {
             switch (q) {
@@ -345,7 +344,7 @@ final class QuadTreePointSet implements PointSet
             subNodeC.collectPoints(collection);
             subNodeD.collectPoints(collection);
         }
-        
+
         @Override
         int numberOfPoints()
         {
@@ -356,14 +355,14 @@ final class QuadTreePointSet implements PointSet
                 subNodeD.numberOfPoints();
         }
     }
-    
+
     /**
         A node in the tree that contains one point and no other children nodes.
     */
     private static final class LeafNode extends Node
     {
         private final Point2D.Double point;
-        
+
         LeafNode(Point2D.Double min, Point2D.Double max, Point2D.Double point)
         {
             super(min, max);
@@ -372,13 +371,13 @@ final class QuadTreePointSet implements PointSet
                 throw new RuntimeException("Point is outside of leaf bounds");
             }
         }
-        
+
         @Override
         Node addInside(Point2D.Double point)
         {
             return (new InnerNode(min, max)).addInside(this.point).addInside(point);
         }
-        
+
         @Override
         Node remove(Point2D.Double point)
         {
@@ -400,24 +399,24 @@ final class QuadTreePointSet implements PointSet
         {
             collection.add((Point2D.Double)point.clone());
         }
-        
+
         @Override
         int numberOfPoints()
         {
             return 1;
         }
     }
-    
+
     private static enum Quadrant {
         A, B, C, D;
     }
-    
+
     private static final class Utilities
     {
         private Utilities()
         {
         }
-        
+
         static Quadrant quadrant(Point2D.Double origin, Point2D.Double point)
         {
             final int quadrantIndex =
@@ -425,7 +424,7 @@ final class QuadTreePointSet implements PointSet
                     ((point.getY() >= origin.getY()) ? 2 : 0);
             return Quadrant.values()[quadrantIndex];
         }
-        
+
         static Quadrant diagonallyOpposite(Quadrant q)
         {
             switch (q) {
@@ -441,7 +440,7 @@ final class QuadTreePointSet implements PointSet
                     throw new RuntimeException();
             }
         }
-        
+
         static Quadrant neighbourAlongX(Quadrant q)
         {
             switch (q) {
@@ -457,7 +456,7 @@ final class QuadTreePointSet implements PointSet
                     throw new RuntimeException();
             }
         }
-        
+
         static Quadrant neighbourAlongY(Quadrant q)
         {
             switch (q) {

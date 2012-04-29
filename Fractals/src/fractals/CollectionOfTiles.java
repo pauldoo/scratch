@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2007  Paul Richards.
+    Copyright (c) 2007, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -52,24 +51,24 @@ public final class CollectionOfTiles
             }
         }
     }
-    
+
     private enum State {
         HAVE_NEW_TILES,
         NEED_HIGH_QUALITY_RENDER,
         UP_TO_DATE
     }
-    
+
     private final Object lockThing = new Object();
     private final int maximumCapacity;
     private final List<RenderableTile> tiles = new LinkedList<RenderableTile>();
-    
+
     State state = State.HAVE_NEW_TILES;
-    
+
     public CollectionOfTiles(int maximumCapacity)
     {
         this.maximumCapacity = maximumCapacity;
     }
-    
+
     /**
         Given an AffineTransformation attempts to figure out the scale it applies.
 
@@ -84,7 +83,7 @@ public final class CollectionOfTiles
             throw new IllegalArgumentException("AffineTransform is not a \"uniform scale\" or \"identity\" transform: " + transform.getType());
         }
     }
-    
+
     private static Rectangle calculateZoomCorrectedBounds(Rectangle2D clipBounds, int bestScaleIndex)
     {
         double xmin = clipBounds.getMinX();
@@ -101,7 +100,7 @@ public final class CollectionOfTiles
                 (int)(Math.ceil(xmax) - Math.floor(xmin)),
                 (int)(Math.ceil(ymax) - Math.floor(ymin)));
     }
-    
+
     /**
         Uses currently available tiles to blit over the Graphics2D object's clip bounds.
         Returns the list of tiles that if rendered would have made this blit look nicer.
@@ -113,7 +112,7 @@ public final class CollectionOfTiles
         boolean doHighQualityRender = false;
         synchronized(lockThing) {
             tilesCopy.addAll(tiles);
-            
+
             if (state == State.HAVE_NEW_TILES) {
                 // Do a quick render as we are still getting new tiles, and mark ourselves as requiring a better blit.
                 state = State.NEED_HIGH_QUALITY_RENDER;
@@ -139,17 +138,17 @@ public final class CollectionOfTiles
             t.render(g);
         }
 //        System.out.println(this.getClass().getName() + ".blitImmediately() took: " + time + "ms");
-        
+
         AffineTransform forwardTransform = g.getTransform();
-        
+
         double magnification = recoverScale(forwardTransform);
         int bestScaleIndex = (int)Math.ceil(Math.log(magnification) / Math.log(TilePosition.SCALE_POWER));
-        
+
 //        System.out.println("bestScaleIndex: " + bestScaleIndex);
-        
+
         Rectangle bounds = calculateZoomCorrectedBounds(g.getClip().getBounds2D(), bestScaleIndex);
 //        System.out.println(bounds);
-        
+
         Set<TilePosition> remainingVisibleTiles = new HashSet<TilePosition>();
         int minX = bounds.x - ((bounds.x % TilePosition.SIZE) + TilePosition.SIZE) % TilePosition.SIZE;
         int minY = bounds.y - ((bounds.y % TilePosition.SIZE) + TilePosition.SIZE) % TilePosition.SIZE;
@@ -176,14 +175,14 @@ public final class CollectionOfTiles
         }
         return remainingVisibleTiles;
     }
-    
+
     public boolean wouldLookBetterWithAnotherBlit()
     {
         synchronized(lockThing) {
             return state != State.UP_TO_DATE;
         }
     }
-    
+
     /**
         Adds a tile to the canvas.  If a different tile had to be purged to make
         space for this one, the position of the purged tile is returned (so it can
@@ -201,7 +200,7 @@ public final class CollectionOfTiles
         }
         return (purgedTile != null) ? (purgedTile.getPosition()) : null;
     }
-    
+
     int getMaximumCapacity()
     {
         return maximumCapacity;

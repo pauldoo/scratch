@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2007, 2008, 2010  Paul Richards.
+    Copyright (c) 2007, 2008, 2010, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -60,17 +59,17 @@ final class BackwardsIterationJuliaView extends JComponent
     private static final Complex viewMin = new Complex(-2.5, -1.5);
     /// Complex coordinate of the bottom right corner of the view.
     private static final Complex viewMax = new Complex(1.5, 1.5);
-    
+
     private Complex constant;
-    
+
     public static JComponent createView()
     {
         JPanel result = new JPanel();
         result.setLayout(new BorderLayout());
         JLayeredPane layeredPane = new JLayeredPane();
-        
+
         layeredPane.setLayout(new SpecializedLayoutManager());
-        
+
         Image backgroundImage = MandelbrotSet.quickMandelbrotRender(viewMin, viewMax, new Dimension(600, 400));
 
         BackwardsIterationJuliaView backwardsIterationJuliaView = new BackwardsIterationJuliaView();
@@ -78,42 +77,42 @@ final class BackwardsIterationJuliaView extends JComponent
         layeredPane.add(backwardsIterationJuliaView, new Integer(1));
         layeredPane.add(new DraggableSpot(backwardsIterationJuliaView), new Integer(2));
         result.add(layeredPane, BorderLayout.CENTER);
-        
+
         JButton button = new JButton("View \"proper\" rendering");
         button.addActionListener(new ButtonListener(backwardsIterationJuliaView));
         result.add(button, BorderLayout.SOUTH);
-        
+
         return result;
     }
-    
+
     private BackwardsIterationJuliaView()
     {
         constant = new Complex(0.4, 0.3);
     }
-    
+
     @Override
     public void paint(Graphics g)
     {
         paint((Graphics2D)g);
     }
-    
+
     private void setConstant(Complex c)
     {
         this.constant = c;
         repaint();
     }
-    
+
     public Complex getConstant()
     {
         return this.constant.clone();
     }
-        
+
     public void paint(Graphics2D g)
     {
         final Dimension size = getSize();
         final Complex c = constant.clone();
         final Complex half = new Complex(0.5, 0.0);
-        
+
         Random random = new Random();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setColor(new Color(0.0f, 1.0f, 0.0f, 0.5f));
@@ -136,14 +135,14 @@ final class BackwardsIterationJuliaView extends JComponent
                         //g.drawRect(x, y, 1, 1);
                     }
                 }
-                
+
                 if (previousZ.subtract(z).magnitudeSquared() < 0.001) {
                     break;
                 }
             }
         }
     }
-    
+
     public void updateSpotPosition(Point2D p)
     {
         double x = p.getX() * (viewMax.getReal() - viewMin.getReal()) / getSize().width + viewMin.getReal();
@@ -194,10 +193,10 @@ final class SpecializedLayoutManager implements LayoutManager
 final class DraggableSpot extends JComponent implements MouseInputListener, ComponentListener
 {
     private static final long serialVersionUID = 392823523233732646L;
-    
+
     private final BackwardsIterationJuliaView backwardsIterationJuliaView;
     private Point previousPoint = null;
-    
+
     public DraggableSpot(BackwardsIterationJuliaView backwardsIterationJuliaView)
     {
         this.backwardsIterationJuliaView = backwardsIterationJuliaView;
@@ -205,13 +204,13 @@ final class DraggableSpot extends JComponent implements MouseInputListener, Comp
         addMouseMotionListener(this);
         addComponentListener(this);
     }
-    
+
     @Override
     public void paint(Graphics g)
     {
         paint((Graphics2D)g);
     }
-    
+
     private void paint(Graphics2D g)
     {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -220,7 +219,7 @@ final class DraggableSpot extends JComponent implements MouseInputListener, Comp
         g.setColor(Color.ORANGE);
         g.fill(new Ellipse2D.Double(0, 0, w, h));
     }
-    
+
     private void updateBounds()
     {
         Rectangle r = getBounds();
@@ -238,18 +237,18 @@ final class DraggableSpot extends JComponent implements MouseInputListener, Comp
     public void mouseMoved(MouseEvent e)
     {
     }
-    
+
     private void updateDrag(Point currentPoint)
     {
         int dispX = currentPoint.x - previousPoint.x;
         int dispY = currentPoint.y - previousPoint.y;
-       
+
         Rectangle bounds = getBounds();
         bounds.translate(dispX, dispY);
         setBounds(bounds);
         //previousPoint = currentPoint;
     }
-    
+
     public void mouseClicked(MouseEvent e)
     {
     }
@@ -308,13 +307,13 @@ final class StrechyImage extends JComponent
     {
         this.image = image;
     }
-    
+
     @Override
     public void paint(Graphics g)
     {
         paint((Graphics2D)g);
     }
-    
+
     private void paint(Graphics2D g)
     {
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
@@ -327,7 +326,7 @@ final class StrechyImage extends JComponent
 final class ButtonListener implements ActionListener
 {
     final BackwardsIterationJuliaView backwardsIterationJuliaView;
-    
+
     ButtonListener(BackwardsIterationJuliaView view)
     {
         this.backwardsIterationJuliaView = view;
@@ -336,7 +335,7 @@ final class ButtonListener implements ActionListener
     public void actionPerformed(ActionEvent e)
     {
         Complex c = backwardsIterationJuliaView.getConstant();
-        
+
         TileProvider<RenderableTile> source = null;
         source = new RenderFilter(MandelbrotSet.createJuliaSet(1000, c), 0.02);
         JPanel statusPanel = new JPanel();

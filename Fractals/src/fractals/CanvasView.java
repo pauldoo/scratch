@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2007, 2008  Paul Richards.
+    Copyright (c) 2007, 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -38,15 +37,15 @@ import javax.swing.JComponent;
 public class CanvasView extends JComponent
 {
     private static final long serialVersionUID = 6622327481400970118L;
-    
+
     private final CollectionOfTiles canvas;
     private final TileProvider<RenderableTile> source;
-    
+
     /**
         Mutex for modifying the renderingTasks map.
     */
     private final Object lockThing = new Object();
-    
+
     /**
         All tiles that have ever been submitted to the thread pool gizmo for
         rendering.  Entries are not removed after the rendering has finished,
@@ -54,31 +53,31 @@ public class CanvasView extends JComponent
         cache.
     */
     private final Map<TilePosition, Future> renderingTasks = new HashMap<TilePosition, Future>();
-    
+
     /**
         Periodic repaint task.
     */
     private Future updateTask;
-    
+
     private AffineTransform transform = new AffineTransform();
-    
+
     CanvasView(int width, int height, TileProvider<RenderableTile> source)
     {
         // Configure the canvas with 6 megapixels of cache
         this.canvas = new CollectionOfTiles((6 * 1000000) / (TilePosition.SIZE * TilePosition.SIZE));
         this.source = source;
-        
+
         this.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         CanvasViewInputHandler listener = new CanvasViewInputHandler(this);
         this.addMouseListener(listener);
         this.addMouseMotionListener(listener);
         this.addMouseWheelListener(listener);
         this.addKeyListener(listener);
-        
+
         this.setFocusable(true);
         this.setDoubleBuffered(true);
     }
-    
+
     private ScheduledFuture startUpdateTask()
     {
         final CanvasView self = this;
@@ -92,16 +91,16 @@ public class CanvasView extends JComponent
 
         return Utilities.getLightThreadPool().scheduleWithFixedDelay(r, 500, 500, TimeUnit.MILLISECONDS);
     }
-    
+
     private final class RenderTileRunner implements Runnable
     {
         private final TilePosition position;
-        
+
         RenderTileRunner(TilePosition position)
         {
             this.position = position;
         }
-        
+
         public void run()
         {
             RenderableTile t = source.getTile(position);
@@ -124,7 +123,7 @@ public class CanvasView extends JComponent
         transform.preConcatenate(zoomTransform);
         repaint();
     }
-    
+
     public void moveBy(int dispX, int dispY)
     {
         AffineTransform translateTransform = new AffineTransform();
@@ -132,7 +131,7 @@ public class CanvasView extends JComponent
         transform.preConcatenate(translateTransform);
         repaint();
     }
-    
+
     public void rotateBy(double angleInRadians)
     {
         AffineTransform rotateTransform = new AffineTransform();
@@ -142,7 +141,7 @@ public class CanvasView extends JComponent
         transform.preConcatenate(rotateTransform);
         repaint();
     }
-    
+
     @Override
     public void paint(Graphics g)
     {
@@ -160,7 +159,7 @@ public class CanvasView extends JComponent
         synchronized(lockThing) {
             for (Iterator<Map.Entry<TilePosition, Future> > i = renderingTasks.entrySet().iterator(); i.hasNext(); ) {
                 final Map.Entry<TilePosition, Future> entry = i.next();
-                
+
                 if (neededTiles.contains(entry.getKey())) {
                     // A tile we have already queued for rendering has been requested again,
                     // so don't requeue.
@@ -178,7 +177,7 @@ public class CanvasView extends JComponent
             }
         }
     }
-    
+
     synchronized void stopAllThreads()
     {
         updateTask.cancel(false);
@@ -188,12 +187,12 @@ public class CanvasView extends JComponent
         }
         renderingTasks.clear();
     }
-    
+
     synchronized void startAllThreads()
     {
         updateTask = startUpdateTask();
     }
-    
+
     /**
         This component has a number of background threads which it uses for rendering.
         These must be terminated when the component is no longer visible.  The best way I

@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008, 2010  Paul Richards.
+    Copyright (c) 2008, 2010, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -52,12 +51,12 @@ final class DraggableQuadrilateral extends JComponent implements MouseInputListe
     private static final Stroke FINE_STROKE = new BasicStroke(1.0f);
     /// Stroke used to render an outline shape used for selection.
     private static final Stroke SELECTING_STROKE = new BasicStroke((float)SELECTING_FUZZ);
-    
+
     private Point2D.Double cornerA;
     private Point2D.Double cornerB;
     private Point2D.Double cornerC;
     private Point2D.Double cornerD;
-    
+
     private boolean isBeingHoveredOver = false;
     private Point dragStart = null;
     /**
@@ -65,9 +64,9 @@ final class DraggableQuadrilateral extends JComponent implements MouseInputListe
         whichever corner is being dragged (only for the duration of the drag).
     */
      private Point2D.Double dragCorner = null;
-    
+
      private final List<Listener> listeners = new ArrayList<Listener>();
-     
+
     DraggableQuadrilateral()
     {
         Random rng = new Random();
@@ -75,34 +74,34 @@ final class DraggableQuadrilateral extends JComponent implements MouseInputListe
         cornerB = new Point2D.Double(300 + rng.nextInt(100), 100 + rng.nextInt(100));
         cornerC = new Point2D.Double(300 + rng.nextInt(100), 300 + rng.nextInt(100));
         cornerD = new Point2D.Double(100 + rng.nextInt(100), 300 + rng.nextInt(100));
-        
+
         setOpaque(false);
         setRequestFocusEnabled(true);
         addMouseListener(this);
         addMouseMotionListener(this);
     }
-    
+
     void addListener(Listener listener){
         listeners.add(listener);
     }
-    
+
     private void notifyListeners()
     {
         for (Listener listener: listeners) {
             listener.draggableQuadrilateralHasMoved(this);
         }
     }
-    
+
     @Override
     public void paintComponent(Graphics g)
     {
         paintComponent((Graphics2D)g);
     }
-    
+
     public void paintComponent(Graphics2D g)
     {
         Utilities.setGraphicsToHighQuality(g);
-        
+
         g.setColor(isBeingHoveredOver ? Color.RED : Color.BLACK);
         g.setStroke(NORMAL_STROKE);
         g.draw(getShape());
@@ -116,7 +115,7 @@ final class DraggableQuadrilateral extends JComponent implements MouseInputListe
             g.draw(new Line2D.Double(IteratedFunctionSystem.GAP_FROM_EDGE, height - IteratedFunctionSystem.GAP_FROM_EDGE, cornerD.getX(), cornerD.getY()));
         }
     }
-    
+
     public Shape getShape()
     {
         Polygon result = new Polygon();
@@ -126,17 +125,17 @@ final class DraggableQuadrilateral extends JComponent implements MouseInputListe
         result.addPoint((int)Math.round(cornerD.getX()), (int)Math.round(cornerD.getY()));
         return result;
     }
-    
+
     Shape getSelectingOutlineShape()
     {
         return SELECTING_STROKE.createStrokedShape(getShape());
     }
-    
+
     private static Point2D.Double displacePoint(Point2D.Double p, double dx, double dy)
     {
         return new Point2D.Double(p.getX() + dx, p.getY() + dy);
     }
-    
+
     public void mouseClicked(MouseEvent e)
     {
     }
@@ -155,7 +154,7 @@ final class DraggableQuadrilateral extends JComponent implements MouseInputListe
             if (e.getPoint().distance(cornerD) < e.getPoint().distance(closestCorner)) {
                 closestCorner = cornerD;
             }
-            
+
             if (e.getPoint().distance(closestCorner) <= SELECTING_FUZZ) {
                 dragCorner = closestCorner;
             }
@@ -235,7 +234,7 @@ final class DraggableQuadrilateral extends JComponent implements MouseInputListe
     {
         return (Point2D.Double)cornerD.clone();
     }
-    
+
     static interface Listener
     {
         public void draggableQuadrilateralHasMoved(DraggableQuadrilateral source);

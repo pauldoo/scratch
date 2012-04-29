@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2007  Paul Richards.
+    Copyright (c) 2007, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -21,16 +20,16 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-public final class RenderableTile extends Tile 
+public final class RenderableTile extends Tile
 {
     private final BufferedImage image;
-    
+
     RenderableTile(TilePosition position)
     {
         super(position);
         image = new BufferedImage(TilePosition.SIZE, TilePosition.SIZE, BufferedImage.TYPE_INT_RGB);
     }
-    
+
     public void render(Graphics2D g)
     {
         if (false) {
@@ -46,7 +45,7 @@ public final class RenderableTile extends Tile
             g.setTransform(saved);
         }
     }
-    
+
     public void setPixel(int x, int y, int rgb)
     {
         image.setRGB(x - position.getMinX(), y - position.getMinY(), rgb);

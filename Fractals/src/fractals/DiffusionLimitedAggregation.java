@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008  Paul Richards.
+    Copyright (c) 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -29,23 +28,23 @@ final class DiffusionLimitedAggregation
 {
     private static final double PARTICLE_RADIUS = 0.75;
     private static final double STICKINESS = 1.0;
-    
+
     private static final Color COLOR_EXISTING = new Color(0x606096);
     private static final Color COLOR_ADDED = new Color(0x480266);
     private static final Color COLOR_REMOVED = new Color(0x280266);
-    
+
     private PointSet pointSet;
     private final double width;
     private final double height;
-    
+
     private Point2D.Double currentReleasePoint = null;
     private boolean releaseAntiParticles = false;
-    
+
     static JComponent createView()
     {
         return new DiffusionLimitedAggregationComponent();
     }
-    
+
     DiffusionLimitedAggregation(double width, double height)
     {
         this.pointSet = new QuadTreePointSet();
@@ -64,14 +63,14 @@ final class DiffusionLimitedAggregation
             renderPoint(p, COLOR_EXISTING, graphics);
         }
     }
-    
+
     void renderMore(Graphics2D graphics) throws InterruptedException
     {
         while (true) {
             if (releaseAntiParticles && pointSet.size() <= 1) {
                 break;
             }
-            
+
             //System.out.print(".");
             Point2D.Double p = currentReleasePoint;
             if (p == null) {
@@ -82,10 +81,10 @@ final class DiffusionLimitedAggregation
                 if (Thread.interrupted()) {
                     throw new InterruptedException();
                 }
-                
+
                 final Point2D.Double closestPoint = pointSet.findClosest(p);
                 final double closestPointDistance = closestPoint.distance(p);
-                
+
                 if (closestPointDistance <= PARTICLE_RADIUS * 2.0) {
                     if (Math.random() < STICKINESS) {
                         if (releaseAntiParticles) {
@@ -97,24 +96,24 @@ final class DiffusionLimitedAggregation
                         }
                     }
                 }
-                
+
                 final double stepSize = Math.max(PARTICLE_RADIUS * 0.25, closestPointDistance - PARTICLE_RADIUS * 3);
                 final double stepAngle = Math.random() * Math.PI * 2.0;
                 p.setLocation(
                         p.getX() + Math.cos(stepAngle) * stepSize,
                         p.getY() + Math.sin(stepAngle) * stepSize);
-                
+
                 p = clampPosition(p);
             }
         }
     }
-    
+
     synchronized void setCurrentReleasePoint(Point2D.Double point, boolean releaseAntiParticles)
     {
         this.currentReleasePoint = (point == null) ? null : (Point2D.Double)point.clone();
         this.releaseAntiParticles = releaseAntiParticles;
     }
-    
+
     private void annihilatePoint(Point2D.Double point, Graphics2D graphics)
     {
         if (graphics != null) {
@@ -133,13 +132,13 @@ final class DiffusionLimitedAggregation
             pointSet = pointSet.add(point);
         }
     }
-    
+
     private static void renderPoint(Point2D.Double point, Color color, Graphics2D graphics)
     {
         graphics.setColor(color);
         graphics.fill(new Ellipse2D.Double(point.getX() - PARTICLE_RADIUS, point.getY() - PARTICLE_RADIUS, PARTICLE_RADIUS * 2, PARTICLE_RADIUS * 2));
     }
-    
+
     /**
         Clamps a point to be within a certain distance of a given center.
     */
@@ -158,7 +157,7 @@ final class DiffusionLimitedAggregation
 final class DiffusionLimitedAggregationComponent extends BackgroundRenderingComponent
 {
     private static final long serialVersionUID = 3769090052648725711L;
-    
+
     private DiffusionLimitedAggregation dla = null;
 
     DiffusionLimitedAggregationComponent()
@@ -167,14 +166,14 @@ final class DiffusionLimitedAggregationComponent extends BackgroundRenderingComp
         addMouseListener(new InputHandler());
         addMouseMotionListener(new InputHandler());
     }
-    
+
     @Override
     protected void render(Graphics2D g) throws InterruptedException
     {
         Utilities.setGraphicsToHighQuality(g);
         g.setBackground(Color.BLACK);
         g.clearRect(0, 0, getWidth(), getHeight());
-        
+
         if (dla == null) {
             dla = new DiffusionLimitedAggregation(getWidth(), getHeight());
         }
@@ -182,7 +181,7 @@ final class DiffusionLimitedAggregationComponent extends BackgroundRenderingComp
         super.bufferIsNowOkayToBlit();
         dla.renderMore(g);
     }
-    
+
     private void setReleaseLocation(Point2D.Double p, boolean releaseAntiParticles)
     {
         final DiffusionLimitedAggregation localDla = this.dla;
@@ -191,7 +190,7 @@ final class DiffusionLimitedAggregationComponent extends BackgroundRenderingComp
         }
         rerender();
     }
-    
+
     final class InputHandler implements MouseInputListener
     {
         public void mouseClicked(MouseEvent e)

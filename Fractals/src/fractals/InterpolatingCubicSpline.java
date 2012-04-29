@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008  Paul Richards.
+    Copyright (c) 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -21,7 +20,7 @@ final class InterpolatingCubicSpline
 {
     private final double samples[];
     private final double coefficients[][];
-    
+
     InterpolatingCubicSpline(double[] samples)
     {
         this.samples = Utilities.copyDoubleArray(samples);
@@ -30,7 +29,7 @@ final class InterpolatingCubicSpline
             throw new IllegalArgumentException("Coefficients array should be exactly one element shorter than the samples array");
         }
     }
-    
+
     double sample(double x)
     {
         final int i = Utilities.clamp(0, (int)Math.floor(x), coefficients.length-1);
@@ -38,41 +37,41 @@ final class InterpolatingCubicSpline
         if (localCoefficients.length != 4) {
             throw new IllegalArgumentException("Incorrect number of cubic coefficients");
         }
-        
+
         final double z = x - i;
-        final double result = 
+        final double result =
                 localCoefficients[0] +
                 localCoefficients[1] * z +
                 localCoefficients[2] * (z * z) +
                 localCoefficients[3] * (z * z * z);
         return result;
     }
-    
+
     private static double[][] computeCoefficients(double[] samples)
     {
         // Source array is valid over [0, n].
         final int n = samples.length - 1;
-        
+
         double[] gamma = new double[n+1];
         gamma[0] = 0.5;
         for (int i = 1; i < n; i++) {
             gamma[i] = 1 / (4 - gamma[i-1]);
         }
         gamma[n] = 1 / (2 - gamma[n-1]);
-        
+
         double[] delta = new double[n+1];
         delta[0] = 3 * (samples[1] - samples[0]) * gamma[0];
         for (int i = 1; i < n; i++) {
             delta[i] = (3 * (samples[i+1] - samples[i-1]) - delta[i-1]) * gamma[i];
         }
         delta[n] = (3 * (samples[n] - samples[n-1]) - delta[n-1]) * gamma[n];
-    
+
         double[] d = new double[n+1];
         d[n] = delta[n];
         for (int i = n-1; i>= 0; i--) {
             d[i] = delta[i] - gamma[i] * d[i+1];
         }
-        
+
         double[][] result = new double[n][];
         for (int i = 0; i < n; i++) {
             result[i] = new double[4];
@@ -81,7 +80,7 @@ final class InterpolatingCubicSpline
             result[i][2] = 3 * (samples[i+1] - samples[i]) - 2 * d[i] - d[i+1];
             result[i][3] = 2 * (samples[i] - samples[i+1]) + d[i] + d[i+1];
         }
-        
+
         return result;
     }
 }

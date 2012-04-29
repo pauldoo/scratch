@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008, 2009, 2010  Paul Richards.
+    Copyright (c) 2008, 2009, 2010, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -39,21 +38,21 @@ abstract class BackgroundRenderingComponent extends JComponent
         Supersample by this amount in both x and y.
     */
     private final int supersamplingFactor;
-    
+
     /**
         The current buffer that "paint()" will use.  Is being concurrently
         written to by the background rendering thread.
     */
     private BufferedImage buffer = null;
-    
+
     /**
         Future object kept in order to cancel the background thread.
     */
     private Future renderer = null;
-    
+
     /**
         Object used as an event for the bufferIsNowOkayToBlit method.
-     
+
         @see #bufferIsNowOkayToBlit()
     */
     private Object bufferFirstBlitEventObject = null;
@@ -63,12 +62,12 @@ abstract class BackgroundRenderingComponent extends JComponent
         that calls repaint in order to cause the buffer to be reblitted.
     */
     private Future repainter = null;
-    
+
     protected BackgroundRenderingComponent(int supersamplingFactor)
     {
         this.supersamplingFactor = supersamplingFactor;
     }
-    
+
     /**
         Copies the buffered image to the screen, and does so quickly.
     */
@@ -77,7 +76,7 @@ abstract class BackgroundRenderingComponent extends JComponent
     {
         paintComponent((Graphics2D)g);
     }
-    
+
     private final void paintComponent(Graphics2D g)
     {
         Utilities.setGraphicsToHighQuality(g);
@@ -114,7 +113,7 @@ abstract class BackgroundRenderingComponent extends JComponent
             repainter = Utilities.getLightThreadPool().schedule(runnable, 250, TimeUnit.MILLISECONDS);
         }
     }
-        
+
     /**
         Implementors of this class are expected to render progressively
         higher quality images to the graphics context.  Periodically the image
@@ -126,7 +125,7 @@ abstract class BackgroundRenderingComponent extends JComponent
         \see bufferIsNowOkayToBlit
     */
     protected abstract void render(Graphics2D g) throws InterruptedException;
-    
+
     /**
         Restarts the background rendering thread with a new buffer.
     */
@@ -165,7 +164,7 @@ abstract class BackgroundRenderingComponent extends JComponent
         renderer = Utilities.getHeavyThreadPool().submit(runner);
         repaint();
     }
-    
+
     public final void stopBackgroundThread()
     {
         if (renderer != null) {
@@ -173,7 +172,7 @@ abstract class BackgroundRenderingComponent extends JComponent
             renderer = null;
         }
     }
-    
+
     /**
         Returns true iff there is a background thread still running.
     */
@@ -181,7 +180,7 @@ abstract class BackgroundRenderingComponent extends JComponent
     {
         return renderer != null && renderer.isDone() == false;
     }
-    
+
     /**
         To avoid certain types of flicker we don't blit the buffer within
         "paintComponent()" until after the background thread has
@@ -204,7 +203,7 @@ abstract class BackgroundRenderingComponent extends JComponent
             }
         }
     }
-    
+
     /**
         Width of the offscreen buffer to which the render method is drawing.
         May be larger than the width of the component on screen due to

@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2007, 2008, 2010  Paul Richards.
+    Copyright (c) 2007, 2008, 2009, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -40,13 +39,13 @@ final class MandelbrotSet
     private final Vector4 origin;
     private final Vector4 dx;
     private final Vector4 dy;
-    
+
     MandelbrotSet(Vector4 origin, Vector4 dx, Vector4 dy) {
         this.origin = origin;
         this.dx = dx;
         this.dy = dy;
     }
-    
+
     private static TileProvider<IntegerTile> createMandelbrotSet(int maxIterations)
     {
         return new MandelbrotSetTileProvider(new MandelbrotSet(
@@ -54,7 +53,7 @@ final class MandelbrotSet
                 new Vector4(0, 0, 1, 0),
                 new Vector4(0, 0, 0, 1)), maxIterations);
     }
-    
+
     static TileProvider<IntegerTile> createJuliaSet(int maxIterations, Complex constant)
     {
         return new MandelbrotSetTileProvider(new MandelbrotSet(
@@ -62,7 +61,7 @@ final class MandelbrotSet
                 new Vector4(1, 0, 0, 0),
                 new Vector4(0, 1, 0, 0)), maxIterations);
     }
-    
+
     static JComponent createView()
     {
         TileProvider<RenderableTile> source = new RenderFilter(MandelbrotSet.createMandelbrotSet(1000), 0.02);
@@ -70,15 +69,15 @@ final class MandelbrotSet
         view.startAllThreads();
         return view;
     }
-    
+
     static JComponent createMandelbrot4dView()
     {
         JPanel result = new JPanel();
         result.setLayout(new BorderLayout());
-        
+
         JPanel viewPanel = new JPanel();
         viewPanel.setLayout(new GridLayout(2, 3));
-        
+
         final MandelbrotSlice[] components = new MandelbrotSlice[]{
                 new MandelbrotSlice(new Vector4(1, 0, 0, 0), new Vector4(0, 1, 0, 0)),
                 new MandelbrotSlice(new Vector4(1, 0, 0, 0), new Vector4(0, 0, 1, 0)),
@@ -90,10 +89,10 @@ final class MandelbrotSet
         for (MandelbrotSlice component: components) {
             viewPanel.add(component);
         }
-        
+
         JPanel controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayout(1, 4));
-        
+
         final JSlider[] sliders = new JSlider[]{
             new JSlider(JSlider.VERTICAL, 0, 1000, 500),
             new JSlider(JSlider.VERTICAL, 0, 1000, 500),
@@ -123,11 +122,11 @@ final class MandelbrotSet
                     }
                 }
             });
-        }        
-                
+        }
+
         result.add(viewPanel, BorderLayout.CENTER);
         result.add(controlPanel, BorderLayout.EAST);
-        
+
         return result;
     }
 
@@ -135,15 +134,15 @@ final class MandelbrotSet
     {
         Vector4 p = origin.add(dx.multiply(x)).add(dy.multiply(y));
         return iterate4dSequence(p, maxIterations);
-    }    
-   
+    }
+
     static int iterate4dSequence(
             final Vector4 p,
             final int maxIterations)
     {
         Complex z = new Complex(p.getA(), p.getB());
         final Complex constant = new Complex(p.getC(), p.getD());
-        
+
         int v;
         for (v = 0; v < maxIterations && z.magnitudeSquared() <= 4; v++) {
             Complex.multiplyReplace(z, z);
@@ -151,7 +150,7 @@ final class MandelbrotSet
         }
         return v % maxIterations;
     }
-    
+
     static BufferedImage quickMandelbrotRender(Complex min, Complex max, Dimension imageSize)
     {
         BufferedImage result = new BufferedImage(imageSize.width, imageSize.height, BufferedImage.TYPE_BYTE_GRAY);
@@ -164,25 +163,25 @@ final class MandelbrotSet
             for (int x = 0; x < imageSize.width; x++) {
                 final double cR = ((x + 0.5) / imageSize.width) * (max.getReal() - min.getReal()) + min.getReal();
                 int v = me.iterateUntilEscapes(cR, cI, 32);
-                int rgb = (v << 3) | (v << 11) | (v << 19); 
+                int rgb = (v << 3) | (v << 11) | (v << 19);
                 result.setRGB(x, y, rgb);
             }
         }
         return result;
-    }      
+    }
 }
 
 final class MandelbrotSetTileProvider implements TileProvider<IntegerTile>
 {
     private final MandelbrotSet source;
     private final int maxIterations;
-    
+
     MandelbrotSetTileProvider(MandelbrotSet source, int maxIterations)
     {
         this.source = source;
         this.maxIterations = maxIterations;
     }
-    
+
     public IntegerTile getTile(TilePosition pos)
     {
         IntegerTile tile = new IntegerTile(pos);
@@ -201,18 +200,18 @@ final class MandelbrotSetTileProvider implements TileProvider<IntegerTile>
 final class MandelbrotSlice extends BackgroundRenderingComponent
 {
     private static final long serialVersionUID = 1931567046579817883L;
-    
+
     private Vector4 origin;
     private final Vector4 dx;
     private final Vector4 dy;
-    
+
     MandelbrotSlice(Vector4 dx, Vector4 dy) {
         super(1);
         this.origin = new Vector4(0, 0, 0, 0);
         this.dx = dx;
         this.dy = dy;
     }
-    
+
     @Override
     protected void render(Graphics2D g) throws InterruptedException
     {
@@ -234,12 +233,12 @@ final class MandelbrotSlice extends BackgroundRenderingComponent
             }
         }
     }
-    
+
     Vector4 getOrigin()
     {
         return this.origin;
     }
-    
+
     void setOrigin(Vector4 origin)
     {
         this.origin = origin;

@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008  Paul Richards.
+    Copyright (c) 2008, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -45,17 +44,17 @@ import javax.swing.border.BevelBorder;
 final class IteratedFunctionSystem extends BackgroundRenderingComponent implements DraggableQuadrilateral.Listener
 {
     private static final long serialVersionUID = 5488481579716517944L;
-    
+
     public static final int GAP_FROM_EDGE = 60;
 
     private final JLayeredPane quadrilateralsPane;
     private final List<DraggableQuadrilateral> draggableQuadrilaterals = new ArrayList<DraggableQuadrilateral>();
-    
+
     static JComponent createView()
     {
         JPanel root = new JPanel();
         root.setLayout(new BorderLayout());
-        
+
         JLayeredPane panel = new JLayeredPane();
         JLayeredPane nestedPanel = new JLayeredPane();
         panel.setBorder(new BevelBorder(BevelBorder.LOWERED));
@@ -70,7 +69,7 @@ final class IteratedFunctionSystem extends BackgroundRenderingComponent implemen
         root.add(buttonPanel, BorderLayout.NORTH);
 
         ifs.removeAllDraggableQuadrilaterals();
-        
+
         return root;
     }
 
@@ -80,13 +79,13 @@ final class IteratedFunctionSystem extends BackgroundRenderingComponent implemen
         this.quadrilateralsPane = containerPane;
         setOpaque(false);
     }
-    
+
     private JPanel createButtonPanel()
     {
         JPanel buttonPanel = new JPanel();
         LayoutManager layout = new FlowLayout();
         buttonPanel.setLayout(layout);
-        
+
         {
             JButton addButton = new JButton("Add new transform");
             addButton.addActionListener(new ActionListener(){
@@ -96,7 +95,7 @@ final class IteratedFunctionSystem extends BackgroundRenderingComponent implemen
             });
             buttonPanel.add(addButton);
         }
-        
+
         {
             JButton resetButton = new JButton("Reset applet");
             resetButton.addActionListener(new ActionListener(){
@@ -108,7 +107,7 @@ final class IteratedFunctionSystem extends BackgroundRenderingComponent implemen
         }
         return buttonPanel;
     }
-    
+
     private void addDraggableQuadrilateral()
     {
         stopBackgroundThread();
@@ -119,7 +118,7 @@ final class IteratedFunctionSystem extends BackgroundRenderingComponent implemen
         draggableQuadrilaterals.add(quad);
         rerender();
     }
-    
+
     private void removeAllDraggableQuadrilaterals()
     {
         stopBackgroundThread();
@@ -128,7 +127,7 @@ final class IteratedFunctionSystem extends BackgroundRenderingComponent implemen
         addDraggableQuadrilateral();
         rerender();
     }
-    
+
     protected void render(Graphics2D g) throws InterruptedException
     {
         Utilities.setGraphicsToHighQuality(g);
@@ -147,7 +146,7 @@ final class IteratedFunctionSystem extends BackgroundRenderingComponent implemen
         if (draggableQuadrilaterals.isEmpty()) {
             return;
         }
-        
+
         Random generator = new Random();
         Point2D.Double point = new Point2D.Double(generator.nextDouble() * width, generator.nextDouble() * height);
 

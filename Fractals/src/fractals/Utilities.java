@@ -1,18 +1,17 @@
 /*
-    Copyright (C) 2008, 2009, 2010  Paul Richards.
+    Copyright (c) 2008, 2009, 2010, 2012 Paul Richards <paul.richards@gmail.com>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    Permission to use, copy, modify, and distribute this software for any
+    purpose with or without fee is hereby granted, provided that the above
+    copyright notice and this permission notice appear in all copies.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+    WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+    MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+    ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
 package fractals;
@@ -55,19 +54,19 @@ public final class Utilities
     private Utilities()
     {
     }
-    
+
     static void setGraphicsToHighQuality(Graphics2D g)
     {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
     }
-    
+
     static void setGraphicsToLowQuality(Graphics2D g)
     {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
         g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
     }
-    
+
     /**
         Simplistic exposure function that returns 1.0 - e^(-exposure * value).
     */
@@ -75,7 +74,7 @@ public final class Utilities
     {
         return 1.0 - Math.exp(-exposure * value);
     }
-    
+
     /**
         A thread pool intended for light background tasks (e.g. to triggering repaints).
     */
@@ -83,7 +82,7 @@ public final class Utilities
     {
         return lightThreadPool;
     }
-    
+
     /**
         A thread pool intended for heavy tasks that benefit image quality
         in the short term (e.g. rendering, projecting).
@@ -92,7 +91,7 @@ public final class Utilities
     {
         return heavyThreadPool;
     }
-    
+
     /**
         Clamps the value 'x' to be in the range [min, max].
     */
@@ -103,7 +102,7 @@ public final class Utilities
         }
         return Math.max(min, Math.min(max, x));
     }
-    
+
     /**
         Copies an array of doubles, returns the new copy.
     */
