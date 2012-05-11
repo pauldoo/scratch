@@ -1,0 +1,21 @@
+<html>
+<head>
+<title>Foo</title>
+<script type="text/javascript">
+function tick() {
+    document.getElementById("myframe").contentWindow.location.reload(true);
+    tock();
+}
+function tock() {
+    // Poll every 3s
+    setTimeout("tick()", 3000);
+}
+
+tock();
+</script>
+</head>
+<body>
+<iframe id="myframe" width="640" height="480" src="/chat"></iframe>
+</body>
+</html>
+
