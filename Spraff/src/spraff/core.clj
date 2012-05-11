@@ -14,9 +14,6 @@
         [clojure.xml]
         [clojure.string :only [join]]
         [irclj.core]
-        [ring.adapter.jetty :only [run-jetty]]
-        [ring.util.response :only [response redirect]]
-        [ring.middleware.resource :only [wrap-resource]]
     )
 )
 
@@ -29,7 +26,6 @@
     :forwardtable {}
     :backwardtable {}
     :n-grams (sorted-set)
-    :recent-lines []
 })
 
 
@@ -267,9 +263,6 @@
 (defn on-message [{:keys [nick channel message irc]} state-ref]
     (log-sentence! message)
     (update-state! message state-ref)
-    (dosync (ref-set state-ref (assoc @state-ref
-        :recent-lines (take-last 1000
-                (concat (:recent-lines @state-ref) [(str nick ": " message)])))))
     (if (and (not (= nick (:name @irc))) (.contains message (:name @irc)))
         (send-message irc channel
             (join (take 450 (join " " (generate-sentence
@@ -292,12 +285,6 @@
                 (str "Total: " (to-mb total) " MiB" " - " "Free: " (to-mb free) " MiB"))))
 )
 
-
-(defn web-handler [state-ref {uri :uri}]
-    (condp = uri
-        "/chat" (response (apply str (map #(str % "\n") (:recent-lines @state-ref))))
-        (redirect "/index.html")))
-
 (defn -main
     [& args]
     (with-command-line
@@ -310,14 +297,12 @@
         ]
         (let [state-ref (ref empty-state)] (do
             (println channel nick server)
-            (future (run-jetty (wrap-resource
-                (partial web-handler state-ref) "public") {:port 3000}))
             (connect
                 (create-irc {
                     :name nick
                     :server server
                     :fnmap {
-                        :on-message (fn [event] (on-message event state-ref))
+                        :on-message #(on-message % state-ref)
                     }
                 })
                 :channels [channel])
