@@ -268,8 +268,8 @@
     (log-sentence! message)
     (update-state! message state-ref)
     (dosync (ref-set state-ref (assoc @state-ref
-        :recent-lines
-                (concat (:recent-lines @state-ref) [(str nick ": " message)]))))
+        :recent-lines (take-last 1000
+                (concat (:recent-lines @state-ref) [(str nick ": " message)])))))
     (if (and (not (= nick (:name @irc))) (.contains message (:name @irc)))
         (send-message irc channel
             (join (take 450 (join " " (generate-sentence
