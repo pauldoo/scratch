@@ -1,7 +1,12 @@
 function tick() {
-    $.getJSON("chat.json", function(data) {
-        $('#userlist').empty();
-        $('#userlist').append('<ul/>');
+    $.getJSON("chat.json", function(d) {
+        var channel = "#" + $.query.get('channel');
+        var data = d[channel];
+
+        $('#channelname').text(channel);
+        $('#channeltopic').text(data['topic']);
+
+        $('#userlist').html('<ul/>');
         $.each(data.users, function(i, user) {
             var userList = $('#userlist ul');
             $(userlist).append('<li/>')
@@ -45,6 +50,11 @@ function tick() {
                 $('<span class="nick"/>').text(line.nick).appendTo(p);
                 $('<span/>').text(" ").appendTo(p);
                 $('<span/>').text(line.message).appendTo(p);
+            } else if (line.doing == 'TOPIC') {
+                p.addClass("action");
+                $('<span class="first nick"/>').text(line.nick).appendTo(p);
+                $('<span/>').text(" has changed the topic to: ").appendTo(p);
+                $('<span/>').text(line.topic).appendTo(p);
             }
 
             if (p.children().length > 0) {

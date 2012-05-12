@@ -14,10 +14,7 @@
     )
 )
 
-(def empty-state {
-    :recentlines []
-    :users []
-})
+(def empty-state {})
 
 (defn on-any [allow-privmsg {:keys [
     channel
@@ -28,14 +25,19 @@
     message
     target
     reason
-    action?]} state-ref]
+    action?
+    topic]} state-ref]
     (if (= (= doing "PRIVMSG") allow-privmsg)
         (dosync
-            (if-let [channel-obj ((@irc :channels) channel)] (ref-set state-ref (assoc @state-ref
-                :users (sort (map first (channel-obj :users))))))
-            (ref-set state-ref (assoc @state-ref
-                    :recentlines (take 1000
-                        (concat (:recentlines @state-ref)
+            (if-let [channel-obj ((@irc :channels) channel)] (ref-set state-ref
+                (assoc @state-ref channel
+                    (assoc (@state-ref channel)
+                        :users (sort (map first (channel-obj :users)))
+                        :topic (channel-obj :topic)))))
+            (if channel
+                (ref-set state-ref (assoc-in @state-ref [channel :recentlines]
+                    (take 1000
+                        (concat (:recentlines (@state-ref channel))
                             [(into {} (filter val {
                                 :nick nick
                                 :newnick new-nick
@@ -44,11 +46,13 @@
                                 :target target
                                 :reason reason
                                 :isaction action?
-                            }))])))))))
+                                :topic topic
+                            }))]))))))))
 
 (defn web-handler [{uri :uri} state-ref]
     (condp = uri
-        "/chat.json" (json-response @state-ref)
+        "/chat.json" (assoc-in (json-response @state-ref)
+            [:headers "Cache-Control"] "max-age=2")
         "/" (redirect "/chat.html")))
 
 (defn -main

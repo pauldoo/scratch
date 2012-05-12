@@ -3,12 +3,27 @@ body {
     background: #ffffff url("gradient.png") repeat-x top;
 }
 
+#channelname {
+    background-color: #fdfdfd;
+    border: 1px solid #999999;
+    width: 70%;
+    margin: 0px;
+    padding: 0px 2em;
+}
+#channeltopic {
+    background-color: #fdfdfd;
+    border: 1px solid #999999;
+    width: 70%;
+    margin: 0px;
+    padding: 0px 2em;
+}
+
 #chatlog {
     background-color: #fdfdfd;
     border: 1px solid #999999;
     width: 70%;
     padding: 2em;
-    height: 90%;
+    height: 80%;
     overflow: scroll;
 }
 
