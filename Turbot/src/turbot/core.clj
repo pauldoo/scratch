@@ -17,6 +17,11 @@
 
 (def empty-state {})
 
+(defn fix-channel [c]
+    (if (and c (not (= \# (first c))))
+        (str \# c)
+        c))
+
 (defn on-any [allow-privmsg event state-ref]
     (let [{:keys [
         channel
@@ -33,27 +38,28 @@
             (doseq [[c {:keys [users]}] @state-ref]
                 (if (some #{nick} users)
                     (on-any allow-privmsg (assoc event :channel c) state-ref)))
-            (if (= (= doing "PRIVMSG") allow-privmsg)
-                (dosync
-                    (if-let [channel-obj ((@irc :channels) channel)] (ref-set state-ref
-                        (assoc @state-ref channel
-                            (assoc (@state-ref channel)
-                                :users (sort (map first (channel-obj :users)))
-                                :topic (channel-obj :topic)))))
-                    (if channel
-                        (ref-set state-ref (assoc-in @state-ref [channel :recentlines]
-                            (vec (take 1000
-                                (concat (:recentlines (@state-ref channel))
-                                    [(into {} (filter val {
-                                        :nick nick
-                                        :newnick new-nick
-                                        :doing doing
-                                        :message message
-                                        :target target
-                                        :reason reason
-                                        :isaction action?
-                                        :topic topic
-                                    }))])))))))))))
+                (if (= (= doing "PRIVMSG") allow-privmsg)
+                    (let [channel (fix-channel channel)]
+                        (dosync
+                            (if-let [channel-obj ((@irc :channels) channel)] (ref-set state-ref
+                                (assoc @state-ref channel
+                                    (assoc (@state-ref channel)
+                                        :users (sort (map first (channel-obj :users)))
+                                        :topic (channel-obj :topic)))))
+                            (if channel
+                                (ref-set state-ref (assoc-in @state-ref [channel :recentlines]
+                                    (vec (take 1000
+                                        (concat (:recentlines (@state-ref channel))
+                                            [(into {} (filter val {
+                                                :nick nick
+                                                :newnick new-nick
+                                                :doing doing
+                                                :message message
+                                                :target target
+                                                :reason reason
+                                                :isaction action?
+                                                :topic topic
+                                            }))]))))))))))))
 
 (defn web-handler [{uri :uri} state-ref]
     (condp = uri
