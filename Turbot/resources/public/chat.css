@@ -1,21 +1,19 @@
-body {
+body, html {
     font-family: verdana, sans-serif;
     background: #ffffff url("gradient.png") repeat-x top;
+    height: 90%;
 }
 
-#channelname {
-    background-color: #fdfdfd;
-    border: 1px solid #999999;
-    width: 70%;
-    margin: 0px;
-    padding: 0px 2em;
+#channelname  h1{
+       font-size:1.4em;
 }
 #channeltopic {
-    background-color: #fdfdfd;
-    border: 1px solid #999999;
-    width: 70%;
-    margin: 0px;
-    padding: 0px 2em;
+   width:70%;
+}
+
+#main{
+    position:relative;
+    height: 80%;
 }
 
 #chatlog {
@@ -44,12 +42,17 @@ body {
 
 #userlist {
     position: absolute;
-    top: 2%;
+    top: 0;
     right: 2%;
     width: 15%;
     padding: 1.5em;
     background-color: #fdfdfd;
     border: 2px solid #999999;
+}
+
+#userlist h2{
+    font-size:1.2em;
+    margin: 0;
 }
 
 #userlist ul {

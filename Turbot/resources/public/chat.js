@@ -3,15 +3,19 @@ function tick() {
         var channel = "#" + $.query.get('channel');
         var data = d[channel];
 
-        $('#channelname').text(channel);
-        $('#channeltopic').text(data['topic']);
+        $('title').text(channel);
 
-        $('#userlist').html('<ul/>');
+        $('#channelname').empty();
+        $('<h1/>').text(channel).appendTo($('#channelname'));
+        $('#channeltopic').empty();
+        $('<p/>').text(data['topic']).appendTo($('#channeltopic'));
+
+        $('#userlist ul').remove();
+        var userlistul = $('<ul/>');
         $.each(data.users, function(i, user) {
-            var userList = $('#userlist ul');
-            $(userlist).append('<li/>')
-            $(userlist).find('li').last().text(user);
+            $('<li/>').text(user).appendTo(userlistul);
         });
+        userlistul.appendTo($('#userlist'));
 
         $('#chatlog').empty();
         $.each(data.recentlines, function(i, line) {
