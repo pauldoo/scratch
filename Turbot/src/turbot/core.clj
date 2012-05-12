@@ -9,23 +9,47 @@
         [irclj.core]
         [ring.adapter.jetty :only [run-jetty]]
         [ring.util.response :only [response redirect]]
+        [ring.util.json-response :only [json-response]]
         [ring.middleware.resource :only [wrap-resource]]
     )
 )
 
 (def empty-state {
-    :recent-lines []
+    :recentlines []
+    :users []
 })
 
-(defn on-message [{:keys [nick channel message irc]} state-ref]
-    (dosync (ref-set state-ref (assoc @state-ref
-        :recent-lines (take-last 1000
-                (concat (:recent-lines @state-ref) [(str nick ": " message)]))))))
+(defn on-any [allow-privmsg {:keys [
+    channel
+    irc
+    nick
+    new-nick
+    doing
+    message
+    target
+    reason
+    action?]} state-ref]
+    (if (= (= doing "PRIVMSG") allow-privmsg)
+        (dosync
+            (if-let [channel-obj ((@irc :channels) channel)] (ref-set state-ref (assoc @state-ref
+                :users (sort (map first (channel-obj :users))))))
+            (ref-set state-ref (assoc @state-ref
+                    :recentlines (take 1000
+                        (concat (:recentlines @state-ref)
+                            [(into {} (filter val {
+                                :nick nick
+                                :newnick new-nick
+                                :doing doing
+                                :message message
+                                :target target
+                                :reason reason
+                                :isaction action?
+                            }))])))))))
 
 (defn web-handler [{uri :uri} state-ref]
     (condp = uri
-        "/chat" (response (apply str (map #(str % "\n") (:recent-lines @state-ref))))
-        (redirect "/index.html")))
+        "/chat.json" (json-response @state-ref)
+        "/" (redirect "/chat.html")))
 
 (defn -main
     [& args]
@@ -38,7 +62,6 @@
             [server s "IRC server address." "localhost"]
         ]
         (let [state-ref (ref empty-state)] (do
-            (println channel nick server)
             (future (run-jetty (wrap-resource
                 #(web-handler % state-ref) "public") {:port 3000}))
             (connect
@@ -46,7 +69,10 @@
                     :name nick
                     :server server
                     :fnmap {
-                        :on-message #(on-message % state-ref)
+                        :on-message (fn [e]
+                            (on-any true e state-ref))
+                        :on-any (fn [e]
+                            (on-any false e state-ref))
                     }
                 })
                 :channels [channel])

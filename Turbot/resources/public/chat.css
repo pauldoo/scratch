@@ -1,0 +1,42 @@
+body {
+    font-family: verdana, sans-serif;
+    background: #ffffff url("gradient.png") repeat-x top;
+}
+
+#chatlog {
+    background-color: #fdfdfd;
+    border: 1px solid #999999;
+    width: 70%;
+    padding: 2em;
+    height: 90%;
+    overflow: scroll;
+}
+
+#chatlog .first {
+    display:block;
+    float:left;
+    margin: 0 3px 0 -10px;
+}
+#chatlog .nick {
+  font-weight: bold;
+}
+#chatlog .action {
+    font-style: italic;
+}
+#chatlog p {
+    margin: 2px 0px;
+}
+
+#userlist {
+    position: absolute;
+    top: 2%;
+    right: 2%;
+    width: 15%;
+    padding: 1.5em;
+    background-color: #fdfdfd;
+    border: 2px solid #999999;
+}
+
+#userlist ul {
+    margin: 0px;
+}
