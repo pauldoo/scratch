@@ -12,6 +12,7 @@
         [ring.util.json-response :only [json-response]]
         [ring.middleware.file-info :only [wrap-file-info]]
         [ring.middleware.resource :only [wrap-resource]]
+        [ring.middleware.file :only [wrap-file]]
     )
 )
 
@@ -79,7 +80,7 @@
             channels
         ]
         (let [state-ref (ref empty-state)] (do
-            (future (run-jetty (wrap-file-info (wrap-resource
+            (future (run-jetty (wrap-file-info (wrap-file
                 #(web-handler % state-ref) "public")) {:port 3000}))
             (connect
                 (create-irc {
