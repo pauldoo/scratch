@@ -25,16 +25,18 @@ body, html {
     overflow: scroll;
 }
 
-#chatlog .first {
-    display:block;
-    float:left;
-    margin: 0 3px 0 -10px;
-}
 #chatlog .nick {
   font-weight: bold;
 }
 #chatlog .action {
     font-style: italic;
+}
+#chatlog .timestamp {
+    display: block;
+    float:left;
+    margin: 0 10px 0 -10px;
+    font-weight: lighter;
+    color: #999999;
 }
 #chatlog p {
     margin: 2px 0px;

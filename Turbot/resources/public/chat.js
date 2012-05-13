@@ -25,8 +25,9 @@ function tick() {
                 $('<span>').text(line.message).appendTo(p);
                 if (line.isaction) {
                     p.addClass("action");
+                    p.find(".nick").append("&nbsp;");
                 } else {
-                    p.find(".nick").append(":");
+                    p.find(".nick").append(":&nbsp;");
                 }
             } else if (line.doing == 'NICK') {
                 p.addClass("action");
@@ -62,6 +63,8 @@ function tick() {
             }
 
             if (p.children().length > 0) {
+                var timestamp = new Date(line.timestamp);
+                $('<span class="timestamp"/>').text(timestamp.toLocaleTimeString()).appendTo(p);
                 p.appendTo($('#chatlog'));
             }
         });
