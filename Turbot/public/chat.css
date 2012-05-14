@@ -2,13 +2,14 @@ body, html {
     font-family: verdana, sans-serif;
     background: #ffffff url("gradient.png") repeat-x top;
     height: 90%;
+    padding: 0;
 }
 
-#channelname  h1{
-       font-size:1.4em;
+#channelname h1{
+  font-size: 48pt;
 }
 #channeltopic {
-   width:70%;
+   display: inline;
 }
 
 #main{
@@ -19,10 +20,12 @@ body, html {
 #chatlog {
     background-color: #fdfdfd;
     border: 1px solid #999999;
-    width: 70%;
+    width: 90%;
     padding: 2em;
-    height: 80%;
-    overflow: scroll;
+    height: 100%;
+    overflow-x: none;
+    overflow-y: scroll;
+    font-size: 18pt;
 }
 
 #chatlog .nick {
@@ -33,6 +36,7 @@ body, html {
 }
 #chatlog .timestamp {
     display: block;
+    clear:left;
     float:left;
     margin: 0 10px 0 -10px;
     font-weight: lighter;

@@ -5,10 +5,8 @@ function tick() {
 
         $('title').text(channel);
 
-        $('#channelname').empty();
-        $('<h1/>').text(channel).appendTo($('#channelname'));
-        $('#channeltopic').empty();
-        $('<p/>').text(data['topic']).appendTo($('#channeltopic'));
+        $('#channelname').text(channel);
+        $('#channeltopic').text(data['topic']);
 
         $('#userlist ul').remove();
         var userlistul = $('<ul/>');
@@ -68,7 +66,7 @@ function tick() {
                 p.appendTo($('#chatlog'));
             }
         });
-        $('#chatlog').scrollTo( 'max' );
+        $('#chatlog').scrollTo( {top:'100%', left:0}, 800 );
     });
 
     tock();

@@ -81,7 +81,7 @@
         ]
         (let [state-ref (ref empty-state)] (do
             (future (run-jetty (wrap-file-info (wrap-file
-                #(web-handler % state-ref) "public")) {:port 3000}))
+                #(web-handler % state-ref) "public")) {:port 8000}))
             (connect
                 (create-irc {
                     :name nick
