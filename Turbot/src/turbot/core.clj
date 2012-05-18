@@ -49,7 +49,7 @@
                                         :topic (channel-obj :topic)))))
                             (if channel
                                 (ref-set state-ref (assoc-in @state-ref [channel :recentlines]
-                                    (vec (take 1000
+                                    (vec (take-last 1000
                                         (concat (:recentlines (@state-ref channel))
                                             [(into {} (filter val {
                                                 :nick nick
