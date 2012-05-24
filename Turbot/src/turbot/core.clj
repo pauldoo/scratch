@@ -10,9 +10,8 @@
         [ring.adapter.jetty :only [run-jetty]]
         [ring.util.response :only [response redirect]]
         [ring.util.json-response :only [json-response]]
-        [ring.middleware.file-info :only [wrap-file-info]]
+        [ring.middleware.content-type :only [wrap-content-type]]
         [ring.middleware.resource :only [wrap-resource]]
-        [ring.middleware.file :only [wrap-file]]
     )
 )
 
@@ -49,7 +48,7 @@
                                         :topic (channel-obj :topic)))))
                             (if channel
                                 (ref-set state-ref (assoc-in @state-ref [channel :recentlines]
-                                    (vec (take 1000
+                                    (vec (take-last 1000
                                         (concat (:recentlines (@state-ref channel))
                                             [(into {} (filter val {
                                                 :nick nick
@@ -80,7 +79,7 @@
             channels
         ]
         (let [state-ref (ref empty-state)] (do
-            (future (run-jetty (wrap-file-info (wrap-file
+            (future (run-jetty (wrap-content-type (wrap-resource
                 #(web-handler % state-ref) "public")) {:port 8000}))
             (connect
                 (create-irc {
