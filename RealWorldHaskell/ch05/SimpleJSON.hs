@@ -1,13 +1,4 @@
-module SimpleJSON (
-        JValue(..),
-        getString,
-        getInt,
-        getDouble,
-        getBool,
-        getObject,
-        getArray,
-        isNull
-) where
+module SimpleJSON where
 
 data JValue =
         JString String |
