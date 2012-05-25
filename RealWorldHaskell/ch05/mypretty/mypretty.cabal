@@ -1,0 +1,15 @@
+Name: mypretty
+Version: 0.1
+Synopsis: Pretty printing library with JSON support
+Description:
+  An exercise from "Real World Haskell".
+Author: Paul Richards
+Maintainer: paul.richards@gmail.com
+Cabal-Version: >= 1.2
+library
+  Exposed-Modules:
+    Prettify
+    PrettyJSON
+    SimpleJSON
+  Build-Depends:
+    base >= 2.0, haskell98 >= 1.0
