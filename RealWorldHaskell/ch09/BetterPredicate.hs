@@ -46,14 +46,39 @@ sizeP _ _ Nothing _ = -1
 equalP :: (Eq a) => InfoP a -> a -> InfoP Bool
 equalP f k w x y z = f w x y z == k
 
--- betterFind (sizeP `equalP` 2312) "."
+
+liftP2 :: (a -> b -> c) -> InfoP a -> InfoP b -> InfoP c
+liftP2 q f g w x y z = f w x y z `q` g w x y z
+andP = liftP2 (&&)
+orP = liftP2 (||)
+
+constP :: a -> InfoP a
+constP k _ _ _ _ = k
 
 liftP :: (a -> b -> c) -> InfoP a -> b -> InfoP c
-liftP q f k w x y z = f w x y z `q` k
+liftP q f k = liftP2 q f (constP k)
 
 greaterP, lesserP :: (Ord a) => InfoP a -> a -> InfoP Bool
 greaterP = liftP (>)
 lesserP = liftP (<)
 
+-- betterFind (sizeP `equalP` 2312) "."
+
+
 -- betterFind (sizeP `lesserP` 2048)
+
+liftPath :: (FilePath -> a) -> InfoP a
+liftPath f w _ _ _  = f w
+
+myTest2 = (liftPath takeExtension `equalP` ".cpp") `andP` (sizeP `greaterP` (128 * 1024))
+
+(==?) = equalP
+(&&?) = andP
+(>?) = greaterP
+
+infix 4 ==?
+infixr 3 &&?
+infix 4 >?
+
+myTest4 = liftPath takeExtension ==? ".cpp" &&? sizeP >? (128 * 1024)
 
