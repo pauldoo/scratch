@@ -15,19 +15,49 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  -->
 <html>
 <head>
-<title>Juliaset MPR</title>
+<title>Juliaset "MPR"</title>
 <script type="application/x-javascript" src="jquery-1.7.2.min.js"></script>
 <script type="application/x-javascript" src="juliampr.js"></script>
 <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
  <div style="text-align: center">
-  <canvas id="canvasAB"></canvas>
-  <canvas id="canvasAC"></canvas>
-  <canvas id="canvasAD"></canvas>
-  <canvas id="canvasCB"></canvas>
-  <canvas id="canvasDB"></canvas>
-  <canvas id="canvasCD"></canvas>
+
+  <div class="canvasWrapper">
+   <canvas id="canvasAB"></canvas>
+   <div class="A horizontal"></div>
+   <div class="B vertical"></div>
+  </div>
+
+  <div class="canvasWrapper">
+   <canvas id="canvasAC"></canvas>
+   <div class="A horizontal"></div>
+   <div class="C vertical"></div>
+  </div>
+
+  <div class="canvasWrapper">
+   <canvas id="canvasAD"></canvas>
+   <div class="A horizontal"></div>
+   <div class="D vertical"></div>
+  </div>
+
+  <div class="canvasWrapper">
+   <canvas id="canvasCB"></canvas>
+   <div class="C horizontal"></div>
+   <div class="B vertical"></div>
+  </div>
+
+  <div class="canvasWrapper">
+   <canvas id="canvasDB"></canvas>
+   <div class="D horizontal"></div>
+   <div class="B vertical"></div>
+  </div>
+
+  <div class="canvasWrapper">
+   <canvas id="canvasCD"></canvas>
+   <div class="C horizontal"></div>
+   <div class="D vertical"></div>
+  </div>
  </div>
  <p id="center"'></p>
 </body>

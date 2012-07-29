@@ -14,10 +14,53 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 canvas {
- width: 30%;
- height: 45%;
+ width: 100%;
+ height: 100%;
  border-width: 1px;
  border-style: solid;
- border-color: red;
- display: inline;
+ border-color: white;
+}
+
+.canvasWrapper {
+ width: 30%;
+ height: 45%;
+ float: left;
+ position: relative;
+}
+
+.canvasWrapper div {
+ position: absolute;
+}
+
+.canvasWrapper .horizontal {
+ top: 49.5%;
+ height: 1%;
+ left: 0%;
+ width: 100%;
+ z-index: 1000;
+}
+
+.canvasWrapper .vertical {
+ top: 0%;
+ height: 100%;
+ left: 49.5%;
+ width: 1%;
+ z-index: 1000;
+}
+
+.canvasWrapper .A {
+ background-color: red;
+ opacity: 0.5;
+}
+.canvasWrapper .B {
+ background-color: green;
+ opacity: 0.5;
+}
+.canvasWrapper .C {
+ background-color: blue;
+ opacity: 0.5;
+}
+.canvasWrapper .D {
+ background-color: yellow;
+ opacity: 0.5;
 }
