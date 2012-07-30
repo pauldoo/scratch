@@ -63,10 +63,10 @@ function initGL(canvas) {
 // center + x * axisX + y * axisY
 function mult(center, x, axisX, y, axisY) {
     return [ //
-            center[0] + x * axisX[0] + y * axisY[0], //
-            center[1] + x * axisX[1] + y * axisY[1], //
-            center[2] + x * axisX[2] + y * axisY[2], //
-            center[3] + x * axisX[3] + y * axisY[3] ];
+    center[0] + x * axisX[0] + y * axisY[0], //
+    center[1] + x * axisX[1] + y * axisY[1], //
+    center[2] + x * axisX[2] + y * axisY[2], //
+    center[3] + x * axisX[3] + y * axisY[3] ];
 }
 
 function attachToCanvas(canvas, axisX, axisY, center) {
@@ -127,10 +127,10 @@ function attachToCanvas(canvas, axisX, axisY, center) {
         var volumePositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, volumePositionBuffer);
         var vertices = [].concat( //
-                         mult(center.get(), 1.0, axisX, -1.0, axisY), //
-                         mult(center.get(), -1.0, axisX, -1.0, axisY), //
-                         mult(center.get(), 1.0, axisX, 1.0, axisY), //
-                         mult(center.get(), -1.0, axisX, 1.0, axisY) );
+        mult(center.get(), 1.0, axisX, -1.0, axisY), //
+        mult(center.get(), -1.0, axisX, -1.0, axisY), //
+        mult(center.get(), 1.0, axisX, 1.0, axisY), //
+        mult(center.get(), -1.0, axisX, 1.0, axisY));
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices),
                 gl.STATIC_DRAW);
         gl.vertexAttribPointer(aVolumePosition, 4, gl.FLOAT, false, 0, 0);
@@ -153,63 +153,87 @@ function attachToCanvas(canvas, axisX, axisY, center) {
         initShaders(function() {
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
             gl.clearDepth(1.0);
+
+            center.register(redraw);
             redraw();
         });
     }
 
     webGLStart();
-    $(window).resize(redraw);
-    center.register(redraw);
-    
+
     var oldPos = null;
     $(canvas).mousedown(function(e) {
-        oldPos = [e.pageX, e.pageY];
+        oldPos = [ e.pageX, e.pageY ];
     });
-        
-    $(canvas).mousemove(function(e) {
-        if (oldPos) {
-            var newPos = [e.pageX, e.pageY];
-            var delta = [newPos[0] - oldPos[0], newPos[1] - oldPos[1]];
-            oldPos = newPos;
-            
-            var scaleX = -2.0 / canvas.offsetWidth;
-            var scaleY = 2.0 / canvas.offsetHeight;
-            var oldC = center.get();
-            var newC = mult(oldC, delta[0] * scaleX, axisX, delta[1] * scaleY, axisY);
-            center.set(newC);
-        }
-    });
-        
+
+    $(canvas)
+            .mousemove(
+                    function(e) {
+                        if (oldPos) {
+                            var newPos = [ e.pageX, e.pageY ];
+                            var delta = [ newPos[0] - oldPos[0],
+                                    newPos[1] - oldPos[1] ];
+                            oldPos = newPos;
+
+                            var scaleX = -2.0 / canvas.offsetWidth;
+                            var scaleY = 2.0 / canvas.offsetHeight;
+                            var oldC = center.get();
+                            var newC = mult(oldC, delta[0] * scaleX, axisX,
+                                    delta[1] * scaleY, axisY);
+                            center.set(newC);
+                        }
+                    });
+
     $(canvas).mouseup(function(e) {
         oldPos = null;
     });
 }
 
-$(document).ready(function() {
+$(document).ready(
+        function() {
 
-    var value = [0.0, 0.0, 0.0, 0.0];
-    var redrawFns = [];
+            var redrawFns = [];
+            function redrawAll() {
+                $(redrawFns).each(function(idx, fn) {
+                    fn();
+                });
+            }
 
-    var center = {
-        get: function() {
-            return value;
-        },
-        set: function(newValue) {
-            value = newValue;
-            $("#center").text(value);
-            $(redrawFns).each(function (idx, fn){
-                fn();
+            var center = {
+                get : function() {
+                    var a = window.location.hash.match(/a=([^\/]*)/);
+                    var b = window.location.hash.match(/b=([^\/]*)/);
+                    var c = window.location.hash.match(/c=([^\/]*)/);
+                    var d = window.location.hash.match(/d=([^\/]*)/);
+
+                    return [ //
+                    a ? parseFloat(a[1]) : 0.0, //
+                    b ? parseFloat(b[1]) : 0.0, //
+                    c ? parseFloat(c[1]) : 0.0, //
+                    d ? parseFloat(d[1]) : 0.0 ];
+                },
+                set : function(newValue) {
+                    var newHash = //
+                    "a=" + newValue[0] + "/" + "b=" + newValue[1] + "/" + "c="
+                            + newValue[2] + "/" + "d=" + newValue[3];
+                    window.location.hash = newHash;
+                    // redraw will be triggered by the hash changing..
+                },
+                register : function(fn) {
+                    redrawFns.push(fn);
+                }
+            };
+
+            $("canvas").each(function(idx, elem) {
+                var id = $(elem).attr('id');
+                var axisX = lookupAxis(id[id.length - 2]);
+                var axisY = lookupAxis(id[id.length - 1]);
+                attachToCanvas(elem, axisX, axisY, center);
             });
-        },
-        register: function(fn) {
-            redrawFns.push(fn);
-        }
-    };
-    
-    $("canvas").each(function(idx, elem) {
-        var id = $(elem).attr('id');
-        var axisX = lookupAxis(id[id.length - 2]);
-        var axisY = lookupAxis(id[id.length - 1]);
-        attachToCanvas(elem, axisX, axisY, center);
-    });
-});
+
+            $(window).resize(redrawAll);
+
+            $(window).bind('hashchange', function() {
+                redrawAll();
+            });
+        });
