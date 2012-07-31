@@ -73,6 +73,7 @@ function attachToCanvas(canvas, axisX, axisY, center) {
     var gl;
     var aVertexPosition;
     var aVolumePosition;
+    var maximized = false;
 
     function webGLStart() {
         gl = initGL(canvas);
@@ -120,14 +121,20 @@ function attachToCanvas(canvas, axisX, axisY, center) {
         });
     }
 
+    function currentScales() {
+        return {
+            x : Math.max(1.0, canvas.width / canvas.height),
+            y : Math.max(1.0, canvas.height / canvas.width)
+        };
+    }
+
     function redraw() {
         canvas.width = Math.round(canvas.clientWidth * supersample);
         canvas.height = Math.round(canvas.clientHeight * supersample);
         gl.viewport(0, 0, canvas.width, canvas.height);
+        var scales = currentScales();
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        var scaleX = Math.max(1.0, canvas.width / canvas.height);
-        var scaleY = Math.max(1.0, canvas.height / canvas.width);
 
         // Vertex positions in screen space
         var vertexPositionBuffer = gl.createBuffer();
@@ -141,10 +148,10 @@ function attachToCanvas(canvas, axisX, axisY, center) {
         var volumePositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, volumePositionBuffer);
         var vertices = [].concat( //
-        mult(center.get(), scaleX, axisX, -scaleY, axisY), //
-        mult(center.get(), -scaleX, axisX, -scaleY, axisY), //
-        mult(center.get(), scaleX, axisX, scaleY, axisY), //
-        mult(center.get(), -scaleX, axisX, scaleY, axisY));
+        mult(center.get(), scales.x, axisX, -scales.y, axisY), //
+        mult(center.get(), -scales.x, axisX, -scales.y, axisY), //
+        mult(center.get(), scales.x, axisX, scales.y, axisY), //
+        mult(center.get(), -scales.x, axisX, scales.y, axisY));
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices),
                 gl.STATIC_DRAW);
         gl.vertexAttribPointer(aVolumePosition, 4, gl.FLOAT, false, 0, 0);
@@ -171,8 +178,11 @@ function attachToCanvas(canvas, axisX, axisY, center) {
                                     newPos[1] - oldPos[1] ];
                             oldPos = newPos;
 
-                            var scaleX = -2.0 / canvas.offsetWidth;
-                            var scaleY = 2.0 / canvas.offsetHeight;
+                            var screenScales = currentScales();
+                            var scaleX = -2.0 * screenScales.x
+                                    / canvas.offsetWidth;
+                            var scaleY = 2.0 * screenScales.y
+                                    / canvas.offsetHeight;
                             var oldC = center.get();
                             var newC = mult(oldC, delta[0] * scaleX, axisX,
                                     delta[1] * scaleY, axisY);
@@ -183,18 +193,24 @@ function attachToCanvas(canvas, axisX, axisY, center) {
     $(canvas).mouseup(function(e) {
         oldPos = null;
     });
+
+    $(canvas).parent().find(".maximize-button").click(function(e) {
+        e.preventDefault();
+        if (maximized) {
+            $(canvas).parent().removeClass('maximized');
+            center.redrawAll();
+        } else {
+            $(canvas).parent().addClass('maximized');
+            redraw();
+        }
+        maximized = !maximized;
+    });
 }
 
 $(document).ready(
         function() {
 
             var redrawFns = [];
-            function redrawAll() {
-                $(redrawFns).each(function(idx, fn) {
-                    fn();
-                });
-            }
-
             var center = {
                 get : function() {
                     var a = window.location.hash.match(/a=([^\/]*)/);
@@ -217,6 +233,11 @@ $(document).ready(
                 },
                 register : function(fn) {
                     redrawFns.push(fn);
+                },
+                redrawAll : function() {
+                    $(redrawFns).each(function(idx, fn) {
+                        fn();
+                    });
                 }
             };
 
@@ -227,9 +248,6 @@ $(document).ready(
                 attachToCanvas(elem, axisX, axisY, center);
             });
 
-            $(window).resize(redrawAll);
-
-            $(window).bind('hashchange', function() {
-                redrawAll();
-            });
+            $(window).resize(center.redrawAll);
+            $(window).bind('hashchange', center.redrawAll);
         });
