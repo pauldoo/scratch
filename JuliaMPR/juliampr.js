@@ -74,7 +74,8 @@ function attachToCanvas(canvas, axisX, axisY, center) {
     var aVertexPosition;
     var aVolumePosition;
 
-    function initShaders(callback) {
+    function webGLStart() {
+        gl = initGL(canvas);
         var vertexShader = null;
         var fragmentShader = null;
 
@@ -99,24 +100,36 @@ function attachToCanvas(canvas, axisX, axisY, center) {
                         "aVolumePosition");
                 gl.enableVertexAttribArray(aVolumePosition);
 
-                callback();
+                gl.clearColor(0.0, 0.0, 0.0, 1.0);
+                gl.clearDepth(1.0);
+
+                center.register(redraw);
+                redraw();
             }
         };
 
-        asyncGetShader(gl, "fragment.glsl", gl.FRAGMENT_SHADER,
-                function(shader) {
-                    fragmentShader = shader;
-                    areWeDone();
-                });
-        asyncGetShader(gl, "vertex.glsl", gl.VERTEX_SHADER, function(shader) {
+        asyncGetShader(gl, "fragment.glsl", gl.FRAGMENT_SHADER, //
+        function(shader) {
+            fragmentShader = shader;
+            areWeDone();
+        });
+        asyncGetShader(gl, "vertex.glsl", gl.VERTEX_SHADER, //
+        function(shader) {
             vertexShader = shader;
             areWeDone();
         });
     }
 
-    function draw() {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    function redraw() {
+        canvas.width = Math.round(canvas.clientWidth * supersample);
+        canvas.height = Math.round(canvas.clientHeight * supersample);
+        gl.viewport(0, 0, canvas.width, canvas.height);
 
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        var scaleX = Math.max(1.0, canvas.width / canvas.height);
+        var scaleY = Math.max(1.0, canvas.height / canvas.width);
+
+        // Vertex positions in screen space
         var vertexPositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
         var vertices = [ 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0 ];
@@ -124,13 +137,14 @@ function attachToCanvas(canvas, axisX, axisY, center) {
                 gl.STATIC_DRAW);
         gl.vertexAttribPointer(aVertexPosition, 2, gl.FLOAT, false, 0, 0);
 
+        // Vertex positions in volume space
         var volumePositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, volumePositionBuffer);
         var vertices = [].concat( //
-        mult(center.get(), 1.0, axisX, -1.0, axisY), //
-        mult(center.get(), -1.0, axisX, -1.0, axisY), //
-        mult(center.get(), 1.0, axisX, 1.0, axisY), //
-        mult(center.get(), -1.0, axisX, 1.0, axisY));
+        mult(center.get(), scaleX, axisX, -scaleY, axisY), //
+        mult(center.get(), -scaleX, axisX, -scaleY, axisY), //
+        mult(center.get(), scaleX, axisX, scaleY, axisY), //
+        mult(center.get(), -scaleX, axisX, scaleY, axisY));
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices),
                 gl.STATIC_DRAW);
         gl.vertexAttribPointer(aVolumePosition, 4, gl.FLOAT, false, 0, 0);
@@ -139,24 +153,6 @@ function attachToCanvas(canvas, axisX, axisY, center) {
 
         gl.deleteBuffer(vertexPositionBuffer);
         gl.deleteBuffer(volumePositionBuffer);
-    }
-
-    function redraw() {
-        canvas.width = Math.round(canvas.offsetWidth * supersample);
-        canvas.height = Math.round(canvas.offsetHeight * supersample);
-        gl.viewport(0, 0, canvas.width, canvas.height);
-        draw();
-    }
-
-    function webGLStart() {
-        gl = initGL(canvas);
-        initShaders(function() {
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.clearDepth(1.0);
-
-            center.register(redraw);
-            redraw();
-        });
     }
 
     webGLStart();
