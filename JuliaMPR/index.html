@@ -15,7 +15,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  -->
 <html>
 <head>
-<title>Juliaset "MPR"</title>
+<title>Julia set "MPR"</title>
 <script type="application/x-javascript" src="jquery-1.7.2.min.js"></script>
 <script type="application/x-javascript" src="juliampr.js"></script>
 <link rel="stylesheet" type="text/css" href="style.css" />
@@ -64,25 +64,55 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    <div class="C horizontal"></div>
    <div class="D vertical"></div>
   </div>
-
-  <div class="endOfCanvases"></div>
  </div>
 
- <p id="center"'></p>
+ <div class='blurb'>
+  <h1>Julia set "MPR"</h1>
+  <p>
+   The set of all 2D Julia set images form a 4D volume. This page lets
+   you browse this 4D volume using interactive orthogonal 2D planes. In
+   4 dimensions there are 6 (<em>4 choose 2</em>) orthogonal 2D planes,
+   so there are 6 views. The image centers track the same coordinate in
+   4D and update together.
+  </p>
 
- <p>TODO before release:
- <ul>
-  <li>Blurb on how to use it (include screenshot for non WebGL
-   users).</li>
-  <li>Handle lost context (?)</li>
-  <li>Zoom tool.</li>
- </ul>
+  <p>Drag any of the images to pan the center of view and see all
+   the other planes update. Click the "Big!" button to maximize the
+   current plane for a closer look. The URL stores the 4D volume
+   position, and can be shared like a bookmark.</p>
 
- TODO:
- <ul>
-  <li>Expose settings for maximum iterations, and supersampling.</li>
- </ul>
- </p>
+  <p>In the top-left view you initially see the Mandelbrot set on
+   the AB plane. In the bottom right you see a Julia set on the CD
+   plane. By dragging just the Mandelbrot image you'll see the various
+   Julia sets in the bottom right. The interactions between other pairs
+   of planes are less intuitive but still interesting.</p>
+
+  <p>The axes on each image are colour coded so that each major axis
+   in 4D is consistently coloured on each image. For instance the green
+   axis which you see above is always the same axis from the 4D Juliaset
+   volume.</p>
+
+  <h2>Requirements</h2>
+  <p>You need a browser with WebGL support to view this page
+   properly. If it's not working for you then here's a screenshot so you
+   can see what you're missing:</p>
+  <img src="screenshot.png" />
+
+  <p>TODO:
+  <ul>
+   <li>Expose settings for maximum iterations, and supersampling.</li>
+   <li>Fix occasional corrupted image (lost context?).</li>
+   <li>Zoom tool.</li>
+  </ul>
+  </p>
+
+  <p>
+   Written by Paul Richards (<a href="http://twitter.com/pauldoo/">@pauldoo</a>)<br>
+   Code is here: <a
+    href="http://github.com/pauldoo/scratch/tree/master/JuliaMPR">http://github.com/pauldoo/scratch/tree/master/JuliaMPR</a><br />
+   <a href="http://www.pauldoo.com/">http://www.pauldoo.com/</a>
+  </p>
+ </div>
 </body>
 </html>
 
