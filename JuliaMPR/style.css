@@ -13,16 +13,15 @@ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
 ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
-
 body {
  font-family: verdana, sans-serif;
 }
 
 canvas {
  width: 100%;
- height: 100%; border-width : 1px;
+ height: 100%;
+ border-width: 1px;
  border-style: solid;
- border-width: 1px; border-style : solid;
  border-color: white;
 }
 
@@ -32,8 +31,8 @@ canvas {
 }
 
 .canvasWrapper {
- width: 33%;
- height: 49%;
+ width: 33.3%;
+ height: 47.5%;
  float: left;
  position: relative;
 }
@@ -71,15 +70,16 @@ canvas {
  position: absolute;
  bottom: 20px;
  right: 20px;
- text-decoration: none; z-index : 1000;
+ text-decoration: none;
+ z-index: 1000;
  display: block;
  padding: 5px 15px;
  color: #000000;
  background-color: #e5e5e5;
  border-radius: 7px;
- box-shadow: 0 -1px 1px #666, /*top external shadow*/  
-   inset 0 -1px 1px rgba(0, 0, 0, 0.5), /*bottom internal shadow*/  
-   inset 0 1px 1px rgba(255, 255, 255, 0.8);
+ box-shadow: 0 -1px 1px #666, /*top external shadow*/   
+    inset 0 -1px 1px rgba(0, 0, 0, 0.5), /*bottom internal shadow*/   
+    inset 0 1px 1px rgba(255, 255, 255, 0.8);
  z-index: 1000; /*top internal highlight*/
 }
 
@@ -102,4 +102,12 @@ canvas {
 div.blurb {
  padding-left: 10%;
  padding-right: 10%;
+ padding-top: 0;
+ margin-top: 0;
+}
+
+p#arrows {
+ text-align: center;
+ font-weight: bold;
+ color: red;
 }
