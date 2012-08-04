@@ -47,19 +47,6 @@ function lookupAxis(letter) {
     }
 }
 
-function initGL(canvas) {
-    var gl;
-    try {
-        gl = canvas.getContext("experimental-webgl");
-    } catch (e) {
-        alert("error: " + e);
-    }
-    if (!gl) {
-        alert("Failed to initialise WebGL");
-    }
-    return gl;
-}
-
 // center + x * axisX + y * axisY
 function mult(center, x, axisX, y, axisY) {
     return [ //
@@ -76,7 +63,10 @@ function attachToCanvas(canvas, axisX, axisY, center) {
     var maximized = false;
 
     function webGLStart() {
-        gl = initGL(canvas);
+        gl = WebGLUtils.setupWebGL(canvas);
+        if (gl == null) {
+            return;
+        }
         var vertexShader = null;
         var fragmentShader = null;
 
@@ -87,18 +77,20 @@ function attachToCanvas(canvas, axisX, axisY, center) {
                 gl.attachShader(shaderProgram, fragmentShader);
                 gl.linkProgram(shaderProgram);
 
-                if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-                    alert("Could not initialise shaders");
+                var linked = gl.getProgramParameter(shaderProgram, gl.LINK_STATUS);
+                if (!linked) {
+                    var error = gl.getProgramInfoLog(shaderProgram);
+                    alert("Error in program linking: " + error);
+                    return;
                 }
 
                 gl.useProgram(shaderProgram);
 
                 aVertexPosition = gl.getAttribLocation(shaderProgram,
                         "aVertexPosition");
-                gl.enableVertexAttribArray(aVertexPosition);
-
                 aVolumePosition = gl.getAttribLocation(shaderProgram,
                         "aVolumePosition");
+                gl.enableVertexAttribArray(aVertexPosition);
                 gl.enableVertexAttribArray(aVolumePosition);
 
                 gl.clearColor(0.0, 0.0, 0.0, 1.0);

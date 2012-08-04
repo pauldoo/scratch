@@ -14,6 +14,8 @@ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */  
   
+#version 100
+  
 attribute vec2 aVertexPosition;
 attribute vec4 aVolumePosition;
 
