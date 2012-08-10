@@ -28,7 +28,6 @@
     :n-grams (sorted-set)
 })
 
-
 (defn make-canonicalizer [] {
     :whm (new java.util.WeakHashMap)
     :lock (new java.lang.Object)})
@@ -51,6 +50,10 @@
 
 (def canon (let [c (make-canonicalizer)]
     (fn [v] (canonical-get c v))))
+(defn canon-ngram [v]
+    {:pre [(= prefix-length (count v))]}
+    (let [[a b c] v]
+        (canon [a b c])))
 
 (defn split-sentence-to-words [sentence] (map canon (re-seq word-pattern sentence)))
 
@@ -123,7 +126,7 @@
         (let [[prefix remainder] (split-at prefix-length words)]
             (recur
                 (update-transition
-                    (canon (vec prefix))
+                    (canon-ngram prefix)
                     (first remainder)
                     table)
                 (rest words)))
@@ -132,7 +135,7 @@
     (if (>= (count words) prefix-length)
         (let [[prefix remainder] (split-at prefix-length words)]
             (recur
-                (conj ngrams (canon (vec prefix)))
+                (conj ngrams (canon-ngram prefix))
                 (rest words)))
         ngrams))
 
@@ -260,6 +263,19 @@
 
 ; End YOUTUBE!
 
+(defn memory-stat []
+    (let [
+        r (Runtime/getRuntime)
+        total (.totalMemory r)
+        free (.freeMemory r)
+        used (- total free)
+        to-mb (fn [b] (Math/round (double (/ b (* 1024 1024)))))
+        ]
+        (str
+            "Total: " (to-mb total) " MiB" " - "
+            "Used: " (to-mb used) " MiB" " - "
+            "Free: " (to-mb free) " MiB")))
+
 (defn on-message [{:keys [nick channel message irc]} state-ref]
     (log-sentence! message)
     (update-state! message state-ref)
@@ -276,13 +292,7 @@
             (pick-random-youtube-comment)))
     (if (.startsWith message "!memory")
         (send-message irc channel
-            (let [
-                r (Runtime/getRuntime)
-                free (.freeMemory r)
-                total (.totalMemory r)
-                to-mb (fn [b] (Math/round (double (/ b (* 1024 1024)))))
-                ]
-                (str "Total: " (to-mb total) " MiB" " - " "Free: " (to-mb free) " MiB"))))
+            (memory-stat)))
 )
 
 (defn -main
@@ -307,7 +317,10 @@
                 })
                 :channels [channel])
             (time (with-open [in (reader corpus-file)]
-                (dorun (map #(update-state! % state-ref) (line-seq in)))))))))
+                (dorun (map #(update-state! % state-ref) (line-seq in)))))
+            (System/gc)
+            (println (memory-stat))
+))))
 
 
 
