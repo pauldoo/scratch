@@ -34,21 +34,12 @@
             r)))
 
 (def empty-state {
-    :forwardtable {}
-    :backwardtable {}
-    :n-grams (sorted-set-by compare-mixed-seqs)
+    :forwardtable (sorted-map-by compare-mixed-seqs)
+    :backwardtable (sorted-map-by compare-mixed-seqs)
 })
 
 (defn value-or-default [value default]
     (if (nil? value) default value))
-
-(defn canon [v all]
-    {
-        :pre [v (sorted? all)]
-        :post [(= % v)]
-    }
-    (let [r (subseq all >= v <= v)]
-        (value-or-default (first r) v)))
 
 (defn ngram [v]
     {:pre [(= prefix-length (count v))]}
@@ -83,30 +74,32 @@
 (defn extend-vec [v e n] (vec (concat v (take (- n (count v)) (repeat e)))))
 (defn append-null [s] (join (concat (seq s) [(char 0)])))
 
-(defn generate-sentence [state keywords]
+(defn select-ngrams [forward-table keywords]
+    "Uses the forwards-production table as a source of ngrams, and
+    filters them to those containing a keyword.  Returns all ngrams if
+    filtering would result in an empty result."
     {
-        :pre [(or (empty? keywords) (sorted? (:n-grams state)))]
+        :pre [(sorted? forward-table)]
     }
-    (if (empty? keywords)
+    (let [filtered-grams
+        (apply concat (map
+            (fn [k]
+                (keys (subseq forward-table
+                    >= (extend-vec [k] "" prefix-length)
+                    < (extend-vec [(append-null k)] "" prefix-length))))
+            keywords))]
+        (if (empty? filtered-grams)
+            (keys forward-table)
+            filtered-grams)))
+
+(defn generate-sentence [state keywords]
+    (let [starting-ngrams (seq (select-ngrams (:forwardtable state) keywords))]
         (remove keyword? (map first
             (apply max-key #(count (filter true? (map second %)))
                 (take retries (repeatedly #(sentence-from-seed
-                    (rand-nth (seq (:n-grams state)))
+                    (rand-nth starting-ngrams)
                     (:backwardtable state)
-                    (:forwardtable state)))))))
-        (let [filtered-grams
-                (apply concat
-                    (map
-                        (fn [k]
-                            (subseq (:n-grams state)
-                                >= (extend-vec [k] "" prefix-length)
-                                < (extend-vec [(append-null k)] "" prefix-length)))
-                        keywords))]
-            (if (empty? filtered-grams)
-                (generate-sentence state [])
-                (generate-sentence
-                    (assoc state :n-grams filtered-grams)
-                    [])))))
+                    (:forwardtable state)))))))))
 
 (defn update-count [m c]
     (assoc m
@@ -118,37 +111,26 @@
         (update-count
             (value-or-default (t prefix) {})
             c)))
-(defn update-table [table words ngrams]
+(defn update-table [table words]
     (if (> (count words) prefix-length)
         (let [[prefix remainder] (split-at prefix-length words)]
             (recur
                 (update-transition
-                    (canon (ngram prefix) ngrams)
+                    (ngram prefix)
                     (first remainder)
                     table)
-                (rest words)
-                ngrams))
-        table))
-(defn update-ngrams [ngrams words]
-    (if (>= (count words) prefix-length)
-        (let [[prefix remainder] (split-at prefix-length words)]
-            (recur
-                (conj ngrams (canon (ngram prefix) ngrams))
                 (rest words)))
-        ngrams))
+        table))
 
 (defn update-state [message state]
     (let [
         words (concat [:begin] (split-sentence-to-words message) [:end])
-        new-ngrams (update-ngrams (:n-grams state) words)
         ]
         (assoc state
             :forwardtable
-                (update-table (:forwardtable state) words new-ngrams)
+                (update-table (:forwardtable state) words)
             :backwardtable
-                (update-table (:backwardtable state) (reverse words) new-ngrams)
-            :n-grams
-                new-ngrams
+                (update-table (:backwardtable state) (reverse words))
                 )))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
