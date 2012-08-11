@@ -23,14 +23,18 @@
 (def prefix-length 3)
 (def retries 3)
 
-(defn compare-mixed-seqs [[a & as] [b & bs]]
-    "Can compare sequences containing keyword or strings"
+(defn compare-mixed [a b]
+    "Can compare strings with keywords"
     (let [r (compare (keyword? a) (keyword? b))]
         (if (zero? r)
-            (let [r (compare a b)]
-                (if (and (zero? r) (not (and (empty? as) (empty? bs))))
-                    (recur as bs)
-                    r))
+            (compare a b)
+            r)))
+
+(defn compare-mixed-seqs [[a & as] [b & bs]]
+    "Can compare sequences containing keyword or strings"
+    (let [r (compare-mixed a b)]
+        (if (and (zero? r) (not (and (empty? as) (empty? bs))))
+            (recur as bs)
             r)))
 
 (def empty-state {
