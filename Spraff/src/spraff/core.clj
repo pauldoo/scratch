@@ -23,40 +23,38 @@
 (def prefix-length 3)
 (def retries 3)
 
+(defn compare-mixed-seqs [[a & as] [b & bs]]
+    "Can compare sequences containing keyword or strings"
+    (let [r (compare (keyword? a) (keyword? b))]
+        (if (zero? r)
+            (let [r (compare a b)]
+                (if (and (zero? r) (not (and (empty? as) (empty? bs))))
+                    (recur as bs)
+                    r))
+            r)))
+
 (def empty-state {
     :forwardtable {}
     :backwardtable {}
-    :n-grams (sorted-set)
+    :n-grams (sorted-set-by compare-mixed-seqs)
 })
 
-(defn make-canonicalizer [] {
-    :whm (new java.util.WeakHashMap)
-    :lock (new java.lang.Object)})
+(defn value-or-default [value default]
+    (if (nil? value) default value))
 
-(defn canonical-get [c v]
+(defn canon [v all]
     {
-        :pre [v]
-        :post [% (= v %)]
+        :pre [v (sorted? all)]
+        :post [(= % v)]
     }
-    (let [^java.util.WeakHashMap whm (:whm c)]
-        (locking (:lock c)
-            (if-let [result
-                (if-let [^java.lang.ref.WeakReference wr (.get whm v)]
-                    (if-let [ret (.get wr)]
-                        ret))]
-                result
-                (do
-                    (.put whm v (new java.lang.ref.WeakReference v))
-                    (canonical-get c v) )))))
+    (let [r (subseq all >= v <= v)]
+        (value-or-default (first r) v)))
 
-(def canon (let [c (make-canonicalizer)]
-    (fn [v] (canonical-get c v))))
-(defn canon-ngram [v]
+(defn ngram [v]
     {:pre [(= prefix-length (count v))]}
-    (let [[a b c] v]
-        (canon (tuple a b c))))
+    (let [[a b c] v] (tuple a b c)))
 
-(defn split-sentence-to-words [sentence] (map canon (re-seq word-pattern sentence)))
+(defn split-sentence-to-words [sentence] (map #(.intern %) (re-seq word-pattern sentence)))
 
 (defn select [c i]
     (let [[word weight] (first c)]
@@ -110,8 +108,6 @@
                     (assoc state :n-grams filtered-grams)
                     [])))))
 
-(defn value-or-default [value default]
-    (if (nil? value) default value))
 (defn update-count [m c]
     (assoc m
         c
@@ -122,33 +118,38 @@
         (update-count
             (value-or-default (t prefix) {})
             c)))
-(defn update-table [table words]
+(defn update-table [table words ngrams]
     (if (> (count words) prefix-length)
         (let [[prefix remainder] (split-at prefix-length words)]
             (recur
                 (update-transition
-                    (canon-ngram prefix)
+                    (canon (ngram prefix) ngrams)
                     (first remainder)
                     table)
-                (rest words)))
+                (rest words)
+                ngrams))
         table))
 (defn update-ngrams [ngrams words]
     (if (>= (count words) prefix-length)
         (let [[prefix remainder] (split-at prefix-length words)]
             (recur
-                (conj ngrams (canon-ngram prefix))
+                (conj ngrams (canon (ngram prefix) ngrams))
                 (rest words)))
         ngrams))
 
 (defn update-state [message state]
-    (let [words (concat [:begin] (split-sentence-to-words message) [:end])]
+    (let [
+        words (concat [:begin] (split-sentence-to-words message) [:end])
+        new-ngrams (update-ngrams (:n-grams state) words)
+        ]
         (assoc state
             :forwardtable
-                (update-table (:forwardtable state) words)
+                (update-table (:forwardtable state) words new-ngrams)
             :backwardtable
-                (update-table (:backwardtable state) (reverse words))
+                (update-table (:backwardtable state) (reverse words) new-ngrams)
             :n-grams
-                (update-ngrams (:n-grams state) (remove keyword? words)))))
+                new-ngrams
+                )))
 (defn log-sentence! [message]
     (with-open [out (writer corpus-file :append true)]
         (.write out (str message "\n"))))
