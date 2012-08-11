@@ -320,7 +320,6 @@
                 :channels [channel])
             (time (with-open [in (reader corpus-file)]
                 (dorun (map #(update-state! % state-ref) (line-seq in)))))
-            (System/gc)
             (println (memory-stat))
 ))))
 
