@@ -14,6 +14,7 @@
         [clojure.xml]
         [clojure.string :only [join]]
         [irclj.core]
+        [tuples [core :only [tuple]]]
     )
 )
 
@@ -53,7 +54,7 @@
 (defn canon-ngram [v]
     {:pre [(= prefix-length (count v))]}
     (let [[a b c] v]
-        (canon [a b c])))
+        (canon (tuple a b c))))
 
 (defn split-sentence-to-words [sentence] (map canon (re-seq word-pattern sentence)))
 
