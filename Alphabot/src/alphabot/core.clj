@@ -34,7 +34,10 @@
                     ls)))
         (take 2
             (filter
-                (fn [t] (= (:tag t) :pod))
+                (fn [t] (and
+                        (= (:tag t) :pod)
+                        (not (empty? (get-all-plaintext-lines t)))
+                        ))
                 (:content xmldoc)))))
 
 (defn make-query-url [query appid]
