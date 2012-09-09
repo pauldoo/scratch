@@ -25,20 +25,63 @@
         (mapcat get-all-plaintext-lines (:content o))
         (re-seq #".+" o)))
 
-(defn get-results [xmldoc]
+(defn extract-nested-errors [xmldoc parent-tag child-tag]
+    (filter
+        (fn [t] (= (:tag t) child-tag))
+        (mapcat
+            (fn [t] (:content t))
+            (filter
+                (fn [t] (= (:tag t) parent-tag))
+                (:content xmldoc)))))
+
+(defn extract-didyoumeans [xmldoc]
+    (mapcat
+        (fn [t] (let [[l & ls] (:content t)]
+            (concat
+                [(str "Did you mean: " l)]
+                ls)))
+        (extract-nested-errors xmldoc :didyoumeans :didyoumean)))
+
+(defn extract-tips [xmldoc]
+    (map
+        (fn [t] (str "Tip: " (:text (:attrs t))))
+        (extract-nested-errors xmldoc :tips :tip)))
+
+(defn extract-top-level-errors [xmldoc parent-tag attrs]
     (mapcat
         (fn [t]
-            (let [[l & ls] (get-all-plaintext-lines t)]
-                (concat
-                    [(str (:title (:attrs t)) ": " l)]
-                    ls)))
-        (take 2
-            (filter
-                (fn [t] (and
-                        (= (:tag t) :pod)
-                        (not (empty? (get-all-plaintext-lines t)))
-                        ))
-                (:content xmldoc)))))
+            (map (fn [a] (a (:attrs t))) attrs))
+        (filter (fn [t] (= (:tag t) parent-tag))
+            (:content xmldoc))))
+
+(defn extract-languagemsg [xmldoc]
+    (extract-top-level-errors xmldoc :languagemsg [:other :english]))
+
+(defn extract-futuretopic [xmldoc]
+    (extract-top-level-errors xmldoc :futuretopic [:topic :msg]))
+
+(defn get-results [xmldoc query]
+    (if (= (:success (:attrs xmldoc)) "true")
+        (mapcat
+            (fn [t]
+                (let [[l & ls] (get-all-plaintext-lines t)]
+                    (concat
+                        [(str (:title (:attrs t)) ": " l)]
+                        ls)))
+            (take 2
+                (filter
+                    (fn [t] (and
+                            (= (:tag t) :pod)
+                            (not (empty? (get-all-plaintext-lines t)))
+                            ))
+                    (:content xmldoc))))
+        (concat
+            [(str "Something went wrong, try the website for a better debug: http://www.wolframalpha.com/input/?i=" (url-encode query))]
+            (extract-languagemsg xmldoc)
+            (extract-futuretopic xmldoc)
+            (extract-tips xmldoc)
+            (extract-didyoumeans xmldoc)
+)))
 
 (defn make-query-url [query appid]
     (str "http://api.wolframalpha.com/v2/query?input=" (url-encode query) "&appid=" (url-encode appid)))
@@ -47,7 +90,7 @@
     (let [
         query-url (make-query-url query appid)
         response-xml (clojure.xml/parse query-url)
-        result (get-results response-xml)
+        result (get-results response-xml query)
         ]
         (println query)
         (println query-url)
