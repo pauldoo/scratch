@@ -83,12 +83,12 @@
             (extract-didyoumeans xmldoc)
 )))
 
-(defn make-query-url [query appid]
-    (str "http://api.wolframalpha.com/v2/query?input=" (url-encode query) "&appid=" (url-encode appid)))
+(defn make-query-url [query appid latlong]
+    (str "http://api.wolframalpha.com/v2/query?input=" (url-encode query) "&appid=" (url-encode appid) "&latlong=" (url-encode latlong)))
 
-(defn ask-wolfram [query appid]
+(defn ask-wolfram [query appid latlong]
     (let [
-        query-url (make-query-url query appid)
+        query-url (make-query-url query appid latlong)
         response-xml (clojure.xml/parse query-url)
         result (get-results response-xml query)
         ]
@@ -112,9 +112,9 @@
             "Free: " (to-mb free) " MiB")))
 
 (def alpha-command "!alpha ")
-(defn on-message [{:keys [nick channel message irc]} wolfram-appid]
+(defn on-message [{:keys [nick channel message irc]} wolfram-appid latlong]
     (if (.startsWith message alpha-command)
-        (let [results (ask-wolfram (.substring message (count alpha-command)) wolfram-appid)]
+        (let [results (ask-wolfram (.substring message (count alpha-command)) wolfram-appid latlong)]
             (doseq [line results]
                 (send-message irc channel line))))
     (if (.startsWith message "!memory")
@@ -126,21 +126,22 @@
     [& args]
     (with-command-line
         args
-        "Arguments: -channel #mychannel -nick botnick -server irc.server.com -appname wolfram-app-name -appid wolfram-app-id"
+        "Arguments: -channel #mychannel -nick botnick -server irc.server.com -appname wolfram-app-name -appid wolfram-app-id -latlong <latitude>,<longitude>"
         [
             [channel c "IRC Channel to join." "#alphabottest"]
             [nick n "Bot's IRC nick." "alphabot"]
             [server s "IRC server address." "localhost"]
             [appid i "Application ID for Wolfram Alpha API." ""]
+            [latlong l "Latitude and longitude for queries requiring location (i.e 40.42,-3.71)." ""]
         ]
         (do
-            (println channel nick server appid)
+            (println channel nick server appid latlong)
             (connect
                 (create-irc {
                     :name nick
                     :server server
                     :fnmap {
-                        :on-message #(on-message % appid)
+                        :on-message #(on-message % appid latlong)
                     }
                 })
                 :channels [channel])
