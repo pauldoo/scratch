@@ -14,6 +14,8 @@
     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+// Small shell wrapper to keep Mac OS X awake until child process finishes.
+
 #include <CoreServices/CoreServices.h>
 #include <iostream>
 
