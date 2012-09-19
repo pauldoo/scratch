@@ -272,6 +272,8 @@
             (join (take 450 (join " " (generate-sentence
                 @state-ref
                 (set (remove #(.contains % (:name @irc)) (split-sentence-to-words message)))))))))
+    (if (= message "\\o/")
+        (send-message irc channel "\\ӧ/"))
     (if (.startsWith message "!burrito")
         (send-message irc channel
             (generate-burrito)))
