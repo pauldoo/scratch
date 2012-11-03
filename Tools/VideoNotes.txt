@@ -15,8 +15,8 @@ mp4creator -optimize test.mp4
 ffmpeg -i foobar.avi -deinterlace -vcodec libx264 -vpre hq -acodec libfaac -b 5000k -ab 192k test.mp4
 
 # Covert using fixed quality VBR: http://ffmpeg.org/trac/ffmpeg/wiki/x264EncodingGuide
-# Fast encode, decent quality
-ffmpeg -i foobar.vob -filter:v yadif -s 768x576 -c:v libx264 -profile:v high -preset fast -crf 23 -c:a libfaac -ab 128k test.mp4
+# Slow encode, default quality
+ffmpeg -i foobar.vob -filter:v yadif -s 768x576 -c:v libx264 -profile:v high -preset slow -crf 23 -c:a libfaac -ab 128k test.mp4
 # Slower encode, high quality
 ffmpeg -i foobar.vob -filter:v yadif -s 768x576 -c:v libx264 -profile:v high -preset slow -crf 20 -c:a libfaac -ab 192k test.mp4
 # See also: http://en.wikibooks.org/wiki/FFMPEG_An_Intermediate_Guide
