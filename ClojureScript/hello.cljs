@@ -381,6 +381,8 @@
                     (dom/createDom "a" (.strobj {"href" "http://techmeetup.co.uk"}) "TechMeetup")
                     (dom/createTextNode ".")
                 )
+                (dom/createDom "div" {}
+                    (dom/createTextNode "Doesn't perform well in all browsers, so try Chrome if it seems sluggish."))
                 canvas
                 (dom/createDom "div" {}
                     (dom/createDom "a" (.strobj {"href" "http://pauldoo.com/"}) "http://pauldoo.com/"))
