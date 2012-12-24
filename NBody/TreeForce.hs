@@ -1,12 +1,13 @@
 module TreeForce(treeForceFn) where
 import Data.List(sortBy)
+import Debug.Trace(trace, traceShow)
 import State
-import Debug.Trace(traceShow)
+import Constants
 
 treeForceFn :: (Star -> StarTree -> Vec3) -> [Star] -> Star -> Vec3
 treeForceFn pairForce otherstars =
     let
-        startree = buildTree otherstars
+        startree = trace ("Building tree with " ++ (show (length otherstars)) ++ " stars") (buildTree otherstars)
     in
         \star ->
             let
@@ -17,13 +18,13 @@ treeForceFn pairForce otherstars =
                     if
                         (bounds node) `vecContains` (location star) ||
                         (vecLength (pairForce star node) * (diameter node)) /
-                            ((mass star) * (distance star node)) >= 0.1
+                            ((mass star) * (distance star node)) >= treeForceAccuracy
                     then
                         concatMap relevantNodes [(leafA node), (leafB node)]
                     else
                         [node]
             in
-                -- traceShow (length nodes)
+                -- trace (show (length nodes))
                     (foldl vecAdd (Vec3 0.0 0.0 0.0) (map (pairForce star) nodes))
 
 diameter :: StarTree -> Double

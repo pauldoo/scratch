@@ -1,11 +1,10 @@
-import Data.IORef
-import Graphics.Rendering.OpenGL
-import Graphics.UI.GLUT
-
 import State
 import Simulation
 import Display
-
+import Data.IORef
+import Constants
+import Graphics.Rendering.OpenGL
+import Graphics.UI.GLUT
 
 main :: IO ()
 main = do
@@ -38,8 +37,4 @@ idle state = do
 keyboardMouse key state modifiers position =
     return ()
 
-timestep :: Double
-timestep = 0.01
-
-updatesPerFrame = 1
 
