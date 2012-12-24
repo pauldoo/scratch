@@ -10,10 +10,16 @@ import Display
 main :: IO ()
 main = do
     (progname,_) <- getArgsAndInitialize
-    initialDisplayMode $= [WithDepthBuffer, DoubleBuffered]
+
+    initialDisplayMode $= [WithDepthBuffer, DoubleBuffered, Multisampling]
     createWindow "Hello World"
+    multisample $= Enabled
+    pointSmooth $= Enabled
+    hint PointSmooth $= Nicest
+
     reshapeCallback $= Just reshape
     depthFunc $= Just Less
+
     keyboardMouseCallback $= Just keyboardMouse
     state <- newIORef initialState
     displayCallback $= (display state)
@@ -33,7 +39,7 @@ keyboardMouse key state modifiers position =
     return ()
 
 timestep :: Double
-timestep = 0.001
+timestep = 0.01
 
 updatesPerFrame = 1
 
