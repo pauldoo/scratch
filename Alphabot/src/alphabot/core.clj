@@ -117,6 +117,10 @@
         (let [results (ask-wolfram (.substring message (count alpha-command)) wolfram-appid latlong)]
             (doseq [line results]
                 (send-message irc channel line))))
+    (if (= message "\\o/")
+        (send-message irc channel "\\ӧ/"))
+    (if (= message "!goteam")
+        (send-message irc channel "GO TEAM!"))
     (if (.startsWith message "!memory")
         (send-message irc channel
             (memory-stat)))
