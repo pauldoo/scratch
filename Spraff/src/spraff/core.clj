@@ -274,6 +274,8 @@
                 (set (remove #(.contains % (:name @irc)) (split-sentence-to-words message)))))))))
     (if (= message "\\o/")
         (send-message irc channel "\\ӧ/"))
+    (if (= message "!goteam")
+        (send-message irc channel "GO TEAM!"))
     (if (.startsWith message "!burrito")
         (send-message irc channel
             (generate-burrito)))
