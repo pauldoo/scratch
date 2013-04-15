@@ -1,12 +1,40 @@
+import static java.lang.Double.NEGATIVE_INFINITY;
+import static java.lang.Double.POSITIVE_INFINITY;
 import static java.lang.Math.exp;
 import static java.lang.Math.log;
 import static org.apache.commons.lang3.Validate.isTrue;
 import static org.apache.commons.math3.special.Gamma.logGamma;
 
+import java.util.List;
+
+import org.apache.commons.lang3.Validate;
+
 public class Percentiles {
+	public static double[] confidenceIntervalValues(final double p,
+			final List<Double> y) {
+		final double[] indices = confidenceIntervalIndices(p, y.size());
+		return new double[] { //
+		lookupValue(indices[0], y), //
+				lookupValue(indices[1], y) };
+	}
+
+	private static double lookupValue(final double d, List<Double> y) {
+		Validate.isTrue(-1.0 <= d && d <= y.size());
+		final int indexA = (int) Math.floor(d);
+		final int indexB = indexA + 1;
+		final double w = d - indexA;
+
+		final double valueA = (indexA == -1) ? NEGATIVE_INFINITY : y
+				.get(indexA);
+		final double valueB = (indexB == y.size()) ? POSITIVE_INFINITY : y
+				.get(indexB);
+
+		return (1.0 - w) * valueA + w * valueB;
+	}
+
 	// Returns the index interval for the 95% confidence interval of a
 	// percentile
-	public static double[] confidenceInterval(final double p, final int n) {
+	public static double[] confidenceIntervalIndices(final double p, final int n) {
 		isTrue(0 < n);
 		isTrue(0.0 < p && p < 1.0);
 		final double target = (1.0 - 0.95) / 2.0;
