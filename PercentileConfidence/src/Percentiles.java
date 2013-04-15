@@ -7,6 +7,8 @@ public class Percentiles {
 	// Returns the index interval for the 95% confidence interval of a
 	// percentile
 	public static double[] confidenceInterval(final double p, final int n) {
+		isTrue(0 < n);
+		isTrue(0.0 < p && p < 1.0);
 		final double target = (1.0 - 0.95) / 2.0;
 
 		return new double[] { //
@@ -17,7 +19,7 @@ public class Percentiles {
 	private static double accumulateToTarget(final int n, final double p,
 			final double target) {
 		isTrue(0.0 <= target && target <= 1.0);
-		isTrue(0.0 <= p && p <= 1.0);
+		isTrue(0.0 < p && p < 1.0);
 
 		if (target > 0.5) {
 			return (n - 1) - accumulateToTarget(n, 1.0 - p, 1.0 - target);
@@ -40,7 +42,7 @@ public class Percentiles {
 
 	public static double binomialMass(final int n, final int k, final double p) {
 		isTrue(0 <= k && k <= n);
-		isTrue(0.0 <= p && p <= 1.0);
+		isTrue(0.0 < p && p < 1.0);
 		final double logResult = logChoose(n, k) + //
 				k * log(p) + //
 				(n - k) * log(1 - p);
