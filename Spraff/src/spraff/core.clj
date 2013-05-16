@@ -12,7 +12,7 @@
         [clojure.contrib.command-line]
         [clojure.java.io]
         [clojure.xml]
-        [clojure.string :only [join]]
+        [clojure.string :only [join split]]
         [irclj.core]
         [tuples [core :only [tuple]]]
     )
@@ -291,26 +291,29 @@
     [& args]
     (with-command-line
         args
-        "Arguments: -channel #mychannel -nick botnick -server irc.server.com"
+        "Arguments: -channels #mychannel,#myotherchannel -nick botnick -server irc.server.com"
         [
-            [channel c "IRC Channel to join." "#sprafftest"]
+            [channels c "Comma seperated list of IRC channels to join." "#sprafftest"]
             [nick n "Bot's IRC nick." "spraffbot"]
             [server s "IRC server address." "localhost"]
         ]
-        (let [state-ref (ref empty-state)] (do
-            (println channel nick server)
-            (connect
-                (create-irc {
-                    :name nick
-                    :server server
-                    :fnmap {
-                        :on-message #(on-message % state-ref)
-                    }
-                })
-                :channels [channel])
-            (time (with-open [in (reader corpus-file)]
-                (dorun (map #(update-state! % state-ref) (line-seq in)))))
-            (println (memory-stat))
+        (let [
+            channels (split channels #",")
+            state-ref (ref empty-state)]
+            (do
+                (println channels nick server)
+                (connect
+                    (create-irc {
+                        :name nick
+                        :server server
+                        :fnmap {
+                            :on-message #(on-message % state-ref)
+                        }
+                    })
+                    :channels channels)
+                (time (with-open [in (reader corpus-file)]
+                    (dorun (map #(update-state! % state-ref) (line-seq in)))))
+                (println (memory-stat))
 ))))
 
 
