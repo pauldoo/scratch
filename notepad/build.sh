@@ -1,3 +1,3 @@
 #!/bin/sh
 
-mvn package
+exec mvn package
