@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset='utf-8'>
+        <title>Swirls</title>
+        <script src="jquery-2.0.2.min.js"></script>
+        <script src="three.min.js"></script>
+        <script src="swirls.js"></script>
+        <style>
+            div#container canvas { background: #888; }
+        </style>
+    </head>
+
+    <body>
+        <p>Just messing about with WebGL fragment shaders.  Years ago I made something similar to this
+        that took minutes to render a single frame.  Kinda neat my browser can do it in realtime these days.</p>
+        <p>Not working on your machine?  Check out <a href="http://youtu.be/iJxUOKpI0Lg">this youtube</a>.</p>
+        <div id='container'></div>
+    </body>
+    
+    <script type="x-shader/x-vertex" id="vertexshader">
+        void main()
+        {
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        }
+    </script>
+    <script type="x-shader/x-fragment" id="fragmentshader">
+        const int MAX_SPOTS = 50;
+        uniform int spotCount;
+        uniform vec2 spotPositions[MAX_SPOTS];
+        uniform float spotMass;
+
+        vec3 hue(float h)
+        {
+            h = mod(h * 6.0, 6.0);
+            vec3 color;
+            if (0.0 <= h && h < 1.0) {
+                color = vec3( 1.0, h, 0.0 );
+            } else if (1.0 <= h && h < 2.0) {
+                color = vec3( 2.0 - h, 1.0, 0.0 );
+            } else if (2.0 <= h && h < 3.0) {
+                color = vec3( 0.0, 1.0, h - 2.0 );
+            } else if (3.0 <= h && h < 4.0) {
+                color = vec3( 0.0, 4.0 - h, 1.0 );
+            } else if (4.0 <= h && h < 5.0) {
+                color = vec3( h - 4.0, 0.0, 1.0 );
+            } else if (5.0 <= h && h < 6.0) {
+                color = vec3( 1.0, 0.0, 6.0 - h );
+            }
+            return color;
+        }
+
+        void main()
+        {
+            float pi = 4.0 * atan(1.0);
+            vec2 force = vec2(0.0, 0.0);
+            vec2 pixCoord = gl_FragCoord.xy;
+
+            for (int i = 0; i < MAX_SPOTS && i < spotCount; i++) {
+                vec2 d = spotPositions[i] - pixCoord;
+                float l = length(d);
+                d = d / l;
+
+                float m = spotMass;
+                float f = m / (l*l);
+                force = force + f * d;
+            }
+
+            float a = atan(force.y, force.x) / (2.0 * pi);
+            float k = length(force) + 0.01;
+            float i = mod(sqrt(1.0/k) + a, 1.0);
+            gl_FragColor = vec4(hue(a) * i, 1.0);
+        }
+    </script>    
+</html>
