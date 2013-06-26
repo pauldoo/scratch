@@ -15,6 +15,10 @@
         <p>Just messing about with WebGL fragment shaders.  Years ago I made something similar to this
         that took minutes to render a single frame.  Kinda neat my browser can do it in realtime these days.</p>
         <p>Not working on your machine?  Check out <a href="http://youtu.be/iJxUOKpI0Lg">this youtube</a>.</p>
+        <form action="">
+          <input type="radio" name="mode" value="1" checked>Swirls<br>
+          <input type="radio" name="mode" value="2">Checker
+        </form>
         <div id='container'></div>
     </body>
     
@@ -29,6 +33,7 @@
         uniform int spotCount;
         uniform vec2 spotPositions[MAX_SPOTS];
         uniform float spotMass;
+        uniform int colorMode;
 
         vec3 hue(float h)
         {
@@ -67,9 +72,19 @@
             }
 
             float a = atan(force.y, force.x) / (2.0 * pi);
-            float k = length(force) + 0.01;
-            float i = mod(sqrt(1.0/k) + a, 1.0);
-            gl_FragColor = vec4(hue(a) * i, 1.0);
+            float k = length(force);
+            float b = sqrt(1.0/(k + 0.01));
+
+            if (colorMode == 1) {
+                float i = mod(b + a, 1.0);
+                gl_FragColor = vec4(hue(a) * i, 1.0);
+            } else if (colorMode == 2) {
+                if ((mod(a * 4.0, 1.0) < 0.5) == (mod(b * 1.0, 1.0) < 0.5)) { 
+                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+                } else {
+                    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+                }
+            }
         }
-    </script>    
+    </script>        
 </html>

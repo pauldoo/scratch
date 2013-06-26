@@ -26,6 +26,10 @@ $(document).ready(
             var spotCount = 25;
 
             var uniforms = {
+                colorMode : {
+                    type : 'i',
+                    value : 0
+                },
                 spotCount : {
                     type : 'i',
                     value : spotCount
@@ -62,6 +66,8 @@ $(document).ready(
                 var t = 20 + ((new Date().getTime() - baseTime) / 1000.0)
                         * speed;
 
+                uniforms.colorMode.value = $('input:radio[name=mode]:checked')
+                        .val();
                 for ( var i = 0; i < spotCount; i++) {
                     uniforms.spotPositions.value[i] = new THREE.Vector2(Math
                             .cos(t * somePrimes[i])
