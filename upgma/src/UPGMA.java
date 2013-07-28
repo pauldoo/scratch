@@ -11,6 +11,7 @@ import java.util.Set;
 
 /// Unweighted Pair Group Method with Arithmetic Mean
 /// aka Hierarchical average link clustering
+/// http://en.wikipedia.org/wiki/UPGMA
 public final class UPGMA {
 
     public static interface DistanceFunction<T> {
