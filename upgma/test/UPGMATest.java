@@ -15,61 +15,60 @@ import java.util.Set;
 
 import junit.framework.Assert;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class UPGMATest {
     @Test
     public void emptyInput() {
-        final UPGMA.DistanceFunction<Object> distanceFn = new FixedDistance<Object>(4.0);
-        final Set<Set<Object>> clusters = UPGMA.<Object> cluster(setOf(), 1.0, distanceFn);
+        final DistanceFunction<Object> distanceFn = new FixedDistance<Object>(4.0);
+        final Set<Set<Object>> clusters = UPGMAOld.<Object> cluster(setOf(), 1.0, distanceFn);
 
         Assert.assertEquals(setOf(), clusters);
     }
 
     @Test
     public void singleValueInput() {
-        final UPGMA.DistanceFunction<String> distanceFn = new FixedDistance<String>(4.0);
-        final Set<Set<String>> clusters = UPGMA.cluster(setOf("A"), 1.0, distanceFn);
+        final DistanceFunction<String> distanceFn = new FixedDistance<String>(4.0);
+        final Set<Set<String>> clusters = UPGMAOld.cluster(setOf("A"), 1.0, distanceFn);
 
         Assert.assertEquals(setOf(setOf("A")), clusters);
     }
 
     @Test
     public void nothingLinks() {
-        final UPGMA.DistanceFunction<String> distanceFn = new FixedDistance<String>(4.0);
-        final Set<Set<String>> clusters = UPGMA.cluster(setOf("A", "B", "C", "D"), 1.0, distanceFn);
+        final DistanceFunction<String> distanceFn = new FixedDistance<String>(4.0);
+        final Set<Set<String>> clusters = UPGMAOld.cluster(setOf("A", "B", "C", "D"), 1.0, distanceFn);
 
         Assert.assertEquals(setOf(setOf("A"), setOf("B"), setOf("C"), setOf("D")), clusters);
     }
 
     @Test
     public void everythingLinks() {
-        final UPGMA.DistanceFunction<String> distanceFn = new FixedDistance<String>(4.0);
-        final Set<Set<String>> clusters = UPGMA.cluster(setOf("A", "B", "C", "D"), 10.0, distanceFn);
+        final DistanceFunction<String> distanceFn = new FixedDistance<String>(4.0);
+        final Set<Set<String>> clusters = UPGMAOld.cluster(setOf("A", "B", "C", "D"), 10.0, distanceFn);
 
         Assert.assertEquals(setOf(setOf("A", "B", "C", "D")), clusters);
     }
 
     @Test
     public void someItemsLinked() {
-        final UPGMA.DistanceFunction<Double> distanceFn = new DoubleDistance();
-        final Set<Set<Double>> clusters = UPGMA.cluster(setOf(1.0, 2.0, 11.0, 12.0), 2.0, distanceFn);
+        final DistanceFunction<Double> distanceFn = new DoubleDistance();
+        final Set<Set<Double>> clusters = UPGMAOld.cluster(setOf(1.0, 2.0, 11.0, 12.0), 2.0, distanceFn);
 
         Assert.assertEquals(setOf(setOf(1.0, 2.0), setOf(11.0, 12.0)), clusters);
     }
 
     @Test
     public void itemsClusterInHierarchyHighThreshold() {
-        final UPGMA.DistanceFunction<Double> distanceFn = new DoubleDistance();
-        final Set<Set<Double>> clusters = UPGMA.cluster(setOf(1.0, 2.0, 4.0, 5.0), 5.0, distanceFn);
+        final DistanceFunction<Double> distanceFn = new DoubleDistance();
+        final Set<Set<Double>> clusters = UPGMAOld.cluster(setOf(1.0, 2.0, 4.0, 5.0), 5.0, distanceFn);
         Assert.assertEquals(setOf(setOf(1.0, 2.0, 4.0, 5.0)), clusters);
     }
 
     @Test
     public void itemsClusterInHierarchyLowThreshold() {
-        final UPGMA.DistanceFunction<Double> distanceFn = new DoubleDistance();
-        final Set<Set<Double>> clusters = UPGMA.cluster(setOf(1.0, 2.0, 4.0, 5.0), 2.0, distanceFn);
+        final DistanceFunction<Double> distanceFn = new DoubleDistance();
+        final Set<Set<Double>> clusters = UPGMAOld.cluster(setOf(1.0, 2.0, 4.0, 5.0), 2.0, distanceFn);
         Assert.assertEquals(setOf(setOf(1.0, 2.0), setOf(4.0, 5.0)), clusters);
     }
 
@@ -106,7 +105,7 @@ public class UPGMATest {
         distances.get("dog").put("moth", 28.0);
         distances.get("dog").put("monkey", 12.0);
 
-        final UPGMA.DistanceFunction<String> distanceFn = new UPGMA.DistanceFunction<String>() {
+        final DistanceFunction<String> distanceFn = new DistanceFunction<String>() {
             @Override
             public double distance(final String a, final String b) {
                 if (distances.get(a).containsKey(b)) {
@@ -157,29 +156,35 @@ public class UPGMATest {
                 setOf("turtle", "chicken", "man", "monkey", "dog", "tuna", "moth")));
     }
 
-    private void testClusteringToThreshold(final UPGMA.DistanceFunction<String> distanceFn,
-            final Set<String> allValues, final double threshold, final Set<Set<String>> expected) {
+    private void testClusteringToThreshold(final DistanceFunction<String> distanceFn, final Set<String> allValues,
+            final double threshold, final Set<Set<String>> expected) {
 
-        final Set<Set<String>> clusters = UPGMA.cluster(allValues, threshold + 0.1, distanceFn);
+        final Set<Set<String>> clusters = UPGMA2.cluster(allValues, threshold + 0.1, distanceFn);
         Assert.assertEquals(expected, clusters);
     }
 
     @Test
-    @Ignore
+    // @Ignore
     public void scaleTest() throws FileNotFoundException, UnsupportedEncodingException {
         final Collection<Double> values = new ArrayList<Double>();
-        final UPGMA.DistanceFunction<Double> distanceFn = new DoubleDistance();
+        final DistanceFunction<Double> distanceFn = new DoubleDistance();
 
         final PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(new File(
-                "/tmp/scale.csv")), "UTF-8"), false);
-        for (int i = 0; i <= 600; i++) {
+                "/tmp/scale.csv")), "UTF-8"), true);
+        for (int i = 1; i <= 650; i++) {
             values.add(Math.random());
 
-            final long start = System.currentTimeMillis();
-            UPGMA.cluster(values, 10.0, distanceFn);
-            final long end = System.currentTimeMillis();
+            final long start1 = System.currentTimeMillis();
+            if (i <= 400) {
+                UPGMAOld.cluster(values, 10.0, distanceFn);
+            }
+            final long end1 = System.currentTimeMillis();
 
-            writer.println(i + "," + (end - start));
+            final long start2 = System.currentTimeMillis();
+            UPGMA2.cluster(values, 10.0, distanceFn);
+            final long end2 = System.currentTimeMillis();
+
+            writer.println(i + "," + (end1 - start1) + "," + (end2 - start2));
         }
         writer.close();
     }
@@ -189,7 +194,7 @@ public class UPGMATest {
         return Collections.unmodifiableSet(new HashSet<T>(Arrays.asList(args)));
     }
 
-    private static class FixedDistance<T> implements UPGMA.DistanceFunction<T> {
+    private static class FixedDistance<T> implements DistanceFunction<T> {
 
         private final double distance;
 
@@ -205,7 +210,7 @@ public class UPGMATest {
 
     }
 
-    private static class DoubleDistance implements UPGMA.DistanceFunction<Double> {
+    private static class DoubleDistance implements DistanceFunction<Double> {
         @Override
         public double distance(final Double a, final Double b) {
             return Math.abs(a - b);

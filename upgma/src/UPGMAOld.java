@@ -12,11 +12,7 @@ import java.util.Set;
 /// Unweighted Pair Group Method with Arithmetic Mean
 /// aka Hierarchical average link clustering
 /// http://en.wikipedia.org/wiki/UPGMA
-public final class UPGMA {
-
-    public static interface DistanceFunction<T> {
-        public double distance(T a, T b);
-    }
+public final class UPGMAOld {
 
     public static <T> Set<Set<T>> cluster(final Collection<T> values, final double distanceThreshold,
             final DistanceFunction<T> distanceFn) {
@@ -137,7 +133,7 @@ public final class UPGMA {
     }
 
     // Private c'tor non-createable
-    private UPGMA() {
+    private UPGMAOld() {
     };
 
     private static final class ProposedMergeComparator<T> implements Comparator<Pair<T>> {
