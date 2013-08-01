@@ -35,7 +35,7 @@ public final class UPGMA {
     }
 
     public static <T> Set<Set<T>> dendogramToClusters(final Dendogram<T> clustering, final double distanceThreshold) {
-        final ThresholdingDendogramVisitor<T> visitor = new ThresholdingDendogramVisitor<>(distanceThreshold);
+        final ThresholdingDendogramVisitor<T> visitor = new ThresholdingDendogramVisitor<T>(distanceThreshold);
         clustering.preOrderVisit(visitor);
         return visitor.result();
     }
@@ -45,6 +45,8 @@ public final class UPGMA {
      * equally minimal UPGMA solutions, will return one arbitrarily. The
      * arbitrary choice will be deterministic based on the iterator ordering of
      * the input values.
+     * 
+     * Calls the distance function exactly "N*(N-1)/2" times.
      * 
      * O(N^2)
      */
