@@ -15,7 +15,6 @@
  */
 package upgma;
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,6 +22,10 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Unweighted Pair Group Method with Arithmetic Mean (UPGMA) aka Hierarchical
+ * average link clustering http://en.wikipedia.org/wiki/UPGMA
+ */
 public final class UPGMA {
 
     public static <T> Set<Set<T>> cluster(final Collection<T> values, final double distanceThreshold,
@@ -108,8 +111,9 @@ public final class UPGMA {
         computeDistancesToNewCluster(distanceCache, clusters, newCluster);
     }
 
-    private static <T> void computeDistancesToNewCluster(final Map<Dendogram<T>, Map<Dendogram<T>, Double>> distanceCache,
-            final Set<Dendogram<T>> clusters, final Pair<T> newCluster) {
+    private static <T> void computeDistancesToNewCluster(
+            final Map<Dendogram<T>, Map<Dendogram<T>, Double>> distanceCache, final Set<Dendogram<T>> clusters,
+            final Pair<T> newCluster) {
         distanceCache.put(newCluster, new HashMap<Dendogram<T>, Double>());
         for (final Dendogram<T> otherCluster : clusters) {
             final Double distanceValue = //
