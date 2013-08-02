@@ -15,7 +15,6 @@
  */
 package upgma;
 
-import static java.lang.System.identityHashCode;
 
 public final class Leaf<T> extends Dendogram<T> {
     public final T value;
@@ -23,18 +22,6 @@ public final class Leaf<T> extends Dendogram<T> {
     public Leaf(final T value) {
         super(1);
         this.value = value;
-    }
-
-    @Override
-    // Reference equality
-    public boolean equals(final Object obj) {
-        return this == obj;
-    }
-
-    @Override
-    // Reference equality
-    public final int hashCode() {
-        return identityHashCode(this);
     }
 
     @Override

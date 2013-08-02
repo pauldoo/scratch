@@ -15,7 +15,6 @@
  */
 package upgma;
 
-import static java.lang.System.identityHashCode;
 
 public final class Pair<T> extends Dendogram<T> {
     public final Dendogram<T> childA;
@@ -27,22 +26,6 @@ public final class Pair<T> extends Dendogram<T> {
         this.childA = childA;
         this.childB = childB;
         this.averageLinkDistanceBetweenChildren = averageLinkDistanceBetweenChildren;
-    }
-
-    @Override
-    // Shallow equality (are children identical references?)
-    public boolean equals(final Object obj) {
-        @SuppressWarnings("unchecked")
-        final Pair<T> other = (Pair<T>) obj;
-
-        return (this == other) || //
-                (this.childA == other.childA && this.childB == other.childB);
-    }
-
-    @Override
-    // Shallow equality (are children identical references?)
-    public int hashCode() {
-        return identityHashCode(childA) + identityHashCode(childB) * 31;
     }
 
     @Override

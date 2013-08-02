@@ -27,8 +27,14 @@ public abstract class Dendogram<T> {
     public abstract void preOrderVisit(ClusterVisitor<T> visitor);
 
     @Override
-    abstract public int hashCode();
+    // UPGMA implementation only requires reference equality.
+    public final int hashCode() {
+        return System.identityHashCode(this);
+    }
 
     @Override
-    abstract public boolean equals(Object obj);
+    // UPGMA implementation only requires reference equality.
+    public final boolean equals(final Object obj) {
+        return this == obj;
+    }
 }
