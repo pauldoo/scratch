@@ -1,7 +1,6 @@
 package com.pauldoo.spraffbot.irc
 
 import java.net.InetSocketAddress
-
 import akka.actor.Actor
 import akka.actor.ActorLogging
 import akka.actor.Deploy
@@ -13,6 +12,7 @@ import akka.io.TcpPipelineHandler
 import akka.io.TcpPipelineHandler.Init
 import akka.io.TcpPipelineHandler.WithinActorContext
 import akka.io.TcpReadWriteAdapter
+import akka.actor.ActorRef
 
 object IrcConnection {
   def props(): Props =
@@ -41,10 +41,10 @@ class IrcConnection(remote: InetSocketAddress) extends Actor with ActorLogging {
 
       connection ! Tcp.Register(pipeline);
 
-      pipeline ! init.Command(IrcMessage(None, "NICK", List("spraffbot"), None));
-      pipeline ! init.Command(IrcMessage(None, "USER", List("spraffbot", "0", "*"), Some("Sir Spraff")));
-
-      context become connectedReceive(init)
+      val send = sendMessage(pipeline, init)_;
+      send(IrcMessage(None, "NICK", List("spraffbot")));
+      send(IrcMessage(None, "USER", List("spraffbot", "0", "*", "Sir Spraff")));
+      context become connectedReceive(init, send)
     }
     case k => {
       log.info("Recieved something else")
@@ -53,9 +53,24 @@ class IrcConnection(remote: InetSocketAddress) extends Actor with ActorLogging {
 
   }
 
-  def connectedReceive(init: Init[WithinActorContext, IrcMessage, IrcMessage]): Receive = {
+  def sendMessage(pipeline: ActorRef, init: Init[WithinActorContext, IrcMessage, IrcMessage])(message: IrcMessage): Unit = {
+    log.info(s"> ${message}")
+    pipeline ! init.Command(message)
+  }
+
+  def connectedReceive(init: Init[WithinActorContext, IrcMessage, IrcMessage], send: IrcMessage => Unit): Receive = {
     case init.Event(data) => {
       log.info(s"< ${data}")
+
+      data.command match {
+        case "PING" => {
+          val server = data.params.head;
+          send(IrcMessage(None, "PONG", List(server)));
+        }
+        case _ => {
+
+        }
+      }
     }
     case _: Tcp.ConnectionClosed => {
       log.info("Connection closed")

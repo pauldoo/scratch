@@ -16,7 +16,7 @@ object IrcMessageParser extends RegexParsers {
         val prefix_ = prefix.map(_ match { case (":" ~ p ~ " ") => p })
         val params_ = params.map(_ match { case (" " ~ p) => p })
         val trailing_ = trailing.map(_ match { case (" :" ~ t) => t })
-        new IrcMessage(prefix_, command, params_, trailing_);
+        new IrcMessage(prefix_, command, (params_.map(Some(_)) :+ trailing_) flatten);
       }
   }
 

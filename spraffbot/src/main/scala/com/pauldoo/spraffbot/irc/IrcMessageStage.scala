@@ -12,8 +12,8 @@ class IrcMessageStage extends SymmetricPipelineStage[PipelineContext, IrcMessage
       val segments: Seq[Option[String]] =
         msg.prefix.map(":" + _) ::
           Some(msg.command) ::
-          (msg.params.map(Some(_)) :+
-            msg.trailing.map(":" + _));
+          (msg.params.dropRight(1).map(Some(_)) :+
+            msg.params.lastOption.map(":" + _));
       val message = segments.flatten.mkString(" ")
       ctx.singleCommand(message);
     }
