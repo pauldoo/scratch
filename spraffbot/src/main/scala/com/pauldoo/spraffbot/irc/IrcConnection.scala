@@ -15,18 +15,24 @@ import akka.io.TcpReadWriteAdapter
 import akka.actor.ActorRef
 
 object IrcConnection {
-  def props(): Props =
-    Props(classOf[IrcConnection], new InetSocketAddress("localhost", 6667));
+  def props(app: ActorRef): Props =
+    Props(classOf[IrcConnection], new InetSocketAddress("localhost", 6667), app);
 }
 
-class IrcConnection(remote: InetSocketAddress) extends Actor with ActorLogging {
+class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with ActorLogging {
+
+  val handlers: List[ActorRef] = List(
+    context.actorOf(Ping.props, "ping"),
+    context.actorOf(Privmsg.props(app), "privmsg"));
 
   {
     import context.system
     IO(Tcp) ! Tcp.Connect(remote);
   }
 
-  def receive = {
+  def receive = unconnectedReceive;
+
+  def unconnectedReceive: Receive = {
     case c @ Tcp.Connected(remote, local) => {
       log.info("Connected!");
       val connection = sender;
@@ -44,13 +50,13 @@ class IrcConnection(remote: InetSocketAddress) extends Actor with ActorLogging {
       val send = sendMessage(pipeline, init)_;
       send(IrcMessage(None, "NICK", List("spraffbot")));
       send(IrcMessage(None, "USER", List("spraffbot", "0", "*", "Sir Spraff")));
+      send(IrcMessage(None, "JOIN", List("#sprafftest")));
       context become connectedReceive(init, send)
     }
     case k => {
       log.info("Recieved something else")
       log.info(k.toString)
     }
-
   }
 
   def sendMessage(pipeline: ActorRef, init: Init[WithinActorContext, IrcMessage, IrcMessage])(message: IrcMessage): Unit = {
@@ -61,20 +67,15 @@ class IrcConnection(remote: InetSocketAddress) extends Actor with ActorLogging {
   def connectedReceive(init: Init[WithinActorContext, IrcMessage, IrcMessage], send: IrcMessage => Unit): Receive = {
     case init.Event(data) => {
       log.info(s"< ${data}")
-
-      data.command match {
-        case "PING" => {
-          val server = data.params.head;
-          send(IrcMessage(None, "PONG", List(server)));
-        }
-        case _ => {
-
-        }
-      }
+      // TODO: replace with a pub-sub thing.
+      for (h <- handlers) h ! data
     }
     case _: Tcp.ConnectionClosed => {
       log.info("Connection closed")
       context stop self
+    }
+    case message: IrcMessage => {
+      send(message)
     }
   }
 }
