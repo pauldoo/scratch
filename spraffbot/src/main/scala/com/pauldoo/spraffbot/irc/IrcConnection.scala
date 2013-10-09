@@ -53,10 +53,6 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
       send(IrcMessage(None, "JOIN", List("#sprafftest")));
       context become connectedReceive(init, send)
     }
-    case k => {
-      log.info("Recieved something else")
-      log.info(k.toString)
-    }
   }
 
   def sendMessage(pipeline: ActorRef, init: Init[WithinActorContext, IrcMessage, IrcMessage])(message: IrcMessage): Unit = {
