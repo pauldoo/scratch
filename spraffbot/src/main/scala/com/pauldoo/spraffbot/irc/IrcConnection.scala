@@ -33,7 +33,7 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
   def receive = unconnectedReceive;
 
   def unconnectedReceive: Receive = {
-    case c @ Tcp.Connected(remote, local) => {
+    case Tcp.Connected(remote, local) => {
       log.info("Connected!");
       val connection = sender;
 

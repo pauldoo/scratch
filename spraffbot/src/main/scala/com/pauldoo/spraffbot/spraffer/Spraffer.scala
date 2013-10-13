@@ -1,11 +1,11 @@
-package spraffer
+package com.pauldoo.spraffbot.spraffer
 
 import akka.actor.Props
 import java.io.File
 import akka.actor.Actor
 import akka.actor.ActorLogging
-import akka.actor.ActorRef
 import scala.concurrent.Future
+import akka.actor.actorRef2Scala
 
 object Spraffer {
   def props(corpusFile: File): Props =
@@ -14,11 +14,14 @@ object Spraffer {
 
 class Spraffer(corpusFile: File) extends Actor with ActorLogging {
 
+  val languageModel = context.actorOf(LanguageModel.props, "languageModel");
+
+  
   {
     import context.dispatcher
     Future {
       for (line <- scala.io.Source.fromFile(corpusFile).getLines)
-        self ! line
+        languageModel ! LanguageModel.ConsumeSentence(line)
     }
   }
 
