@@ -6,6 +6,7 @@ import akka.actor.Actor
 import akka.actor.ActorLogging
 import scala.concurrent.Future
 import akka.actor.actorRef2Scala
+import scala.io.Codec
 
 object Spraffer {
   def props(corpusFile: File): Props =
@@ -20,8 +21,14 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
   {
     import context.dispatcher
     Future {
-      for (line <- scala.io.Source.fromFile(corpusFile).getLines)
+      log.info("loading corpus")
+      try {
+      for (line <- scala.io.Source.fromFile(corpusFile)(Codec.UTF8).getLines)
         languageModel ! LanguageModel.ConsumeSentence(line)
+      } catch {
+        case e:Exception => log.error(e, "Failed to load corpus");
+      }
+      log.info("corpus loaded")
     }
   }
 
