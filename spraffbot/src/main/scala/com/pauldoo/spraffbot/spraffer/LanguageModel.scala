@@ -5,6 +5,12 @@ import akka.actor.Actor
 import akka.actor.Props
 import com.pauldoo.spraffbot.spraffer.LanguageModel.ConsumeSentence
 import scala.collection.immutable.SortedMap
+import com.pauldoo.spraffbot.spraffer.LanguageModel.GenerateSentence
+import scala.language.implicitConversions
+import scala.util.Random
+import scala.annotation.tailrec
+import com.pauldoo.spraffbot.spraffer.LanguageModel.GeneratedSentece
+import scala.collection.SeqLike
 
 trait SentenceTypes {
   // Productions to the "none" token denote reaching the end of a sentence
@@ -15,6 +21,8 @@ trait SentenceTypes {
   type BackwardWords = WordTable;
   type Productions = SortedMap[SubSentence, Pair[ForwardWords, BackwardWords]];
   val prefixLength = 3;
+
+  implicit def stringToToken(s: String): Token = Some(s);
 }
 
 object LanguageModel extends SentenceTypes {
@@ -70,20 +78,94 @@ object LanguageModel extends SentenceTypes {
     groups.foldLeft[Productions](ngrams)(consumeGroup _)
   }
 
+  def splitSentenceIntoWords(sentence: String): Seq[String] =
+    sentence.split("\\s+").map(_.intern)
+
   def splitSentenceIntoTokens(sentence: String): Seq[Token] =
-    (None +: sentence.split("\\s+").map(_.intern).map(Option(_)) :+ None);
+    (List(None) ++ splitSentenceIntoWords(sentence).map(Option(_)) ++ List(None, None, None));
+
+  private def randomWeightedPick[T](n: Iterable[Tuple2[T, Int]], random: Random): T = {
+    require(n.isEmpty == false);
+    @tailrec
+    def weightedPick[T](n: Iterable[Tuple2[T, Int]], r: Int): T = {
+      require(n.isEmpty == false);
+      if (r < n.head._2) {
+        n.head._1
+      } else {
+        weightedPick(n.tail, r - n.head._2)
+      }
+    }
+
+    val totalCount: Int = n.map(_._2).reduce(_ + _);
+    val randomSelection = random.nextInt(totalCount);
+    weightedPick(n, randomSelection)
+  }
+
+  private def selectSeed(ngrams: Productions, keywords: Seq[String], random: Random): SubSentence = {
+    val candidates: Seq[Tuple2[SubSentence, Int]] = keywords.flatMap(word => {
+      val begin = new SubSentence(word, None, None);
+      val end = new SubSentence(word + "\0", None, None);
+      ngrams.range(begin, end).mapValues((v: Pair[ForwardWords, BackwardWords]) => { v._1.values.reduce(_ + _) });
+    });
+    randomWeightedPick(candidates, random)
+  }
+
+  private def generateFromSeed(seed: SubSentence, ngrams: Productions, random: Random): String = {
+    require(seed._1.isDefined);
+    def forward(k: SubSentence): Token = {
+      randomWeightedPick(ngrams.get(k).get._1, random)
+    }
+    def backward(k: SubSentence): Token = {
+      randomWeightedPick(ngrams.get(k).get._2, random)
+    }
+
+    def genForward(k: SubSentence): List[String] = {
+      forward(k) match {
+        case None => List.empty;
+        case Some(word) => word +: genForward(new SubSentence(k._2, k._3, word));
+      }
+    }
+    def genBackward(k: SubSentence): List[String] = {
+      backward(k) match {
+        case None => List.empty;
+        case Some(word) => genBackward(new SubSentence(word, k._1, k._2)) :+ word;
+      }
+    }
+
+    val prefix: List[String] = genBackward(seed);
+    val suffix: List[String] = {
+      if (seed._2.isDefined && seed._3.isDefined) {
+        genForward(seed);
+      } else {
+        List.empty
+      }
+    };
+
+    val middle: List[String] = List(seed._1.get) ++ seed._2.toList ++ seed._3.toList;
+
+    (prefix ++ middle ++ suffix).reduce(_ + " " + _)
+  }
+
+  def generateSentence(ngrams: Productions, keywords: Seq[String], random: Random): String = {
+    val seedNgram = selectSeed(ngrams, keywords, random);
+    generateFromSeed(seedNgram, ngrams, random)
+  }
 
 }
 
 class LanguageModel extends Actor with ActorLogging with SentenceTypes {
 
-  var ngrams: SortedMap[SubSentence, Pair[ForwardWords, BackwardWords]] = SortedMap.empty;
+  var ngrams: Productions = SortedMap.empty;
+  val random: Random = new Random();
 
   def receive: Receive = {
     case ConsumeSentence(sentence) => {
       ngrams = LanguageModel.consumeSentence(ngrams, LanguageModel.splitSentenceIntoTokens(sentence));
+    }
 
-      ngrams.map(k => println(k));
+    case GenerateSentence(prompt) => {
+      val sentence: String = LanguageModel.generateSentence(ngrams, LanguageModel.splitSentenceIntoWords(prompt), random);
+      sender ! new GeneratedSentece(sentence);
     }
   }
 

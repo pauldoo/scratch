@@ -17,16 +17,15 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
 
   val languageModel = context.actorOf(LanguageModel.props, "languageModel");
 
-  
   {
     import context.dispatcher
     Future {
       log.info("loading corpus")
       try {
-      for (line <- scala.io.Source.fromFile(corpusFile)(Codec.UTF8).getLines)
-        languageModel ! LanguageModel.ConsumeSentence(line)
+        for (line <- scala.io.Source.fromFile(corpusFile)(Codec.UTF8).getLines)
+          languageModel ! LanguageModel.ConsumeSentence(line)
       } catch {
-        case e:Exception => log.error(e, "Failed to load corpus");
+        case e: Exception => log.error(e, "Failed to load corpus");
       }
       log.info("corpus loaded")
     }

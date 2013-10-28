@@ -1,6 +1,7 @@
 package com.pauldoo.spraffbot.irc
 
 import scala.util.parsing.combinator.RegexParsers
+import scala.language.postfixOps
 
 object IrcMessageParser extends RegexParsers {
   override val skipWhitespace = false;

@@ -15,8 +15,8 @@
   </licenses>
 
   <properties>
-    <maven.compiler.source>1.6</maven.compiler.source>
-    <maven.compiler.target>1.6</maven.compiler.target>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
     <encoding>UTF-8</encoding>
     <scala.tools.version>2.10</scala.tools.version>
     <scala.version>2.10.0</scala.version>
@@ -52,6 +52,12 @@
       <groupId>com.typesafe.akka</groupId>
       <artifactId>akka-actor_2.10</artifactId>
       <version>2.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.typesafe.akka</groupId>
+      <artifactId>akka-testkit_2.10</artifactId>
+      <version>2.2.0</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
