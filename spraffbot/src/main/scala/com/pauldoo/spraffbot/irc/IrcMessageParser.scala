@@ -11,17 +11,17 @@ object IrcMessageParser extends RegexParsers {
   def param: Parser[String] = """[^:][\S]*""".r
   def trailing: Parser[String] = """.*""".r
 
-  def message: Parser[IrcMessage] = (":" ~ prefix ~ " ").? ~ command ~ (" " ~ param).* ~ (" :" ~ trailing).? ^^ {
+  def message: Parser[IrcProtocolMessage] = (":" ~ prefix ~ " ").? ~ command ~ (" " ~ param).* ~ (" :" ~ trailing).? ^^ {
     case prefix ~ command ~ params ~ trailing =>
       {
         val prefix_ = prefix.map(_ match { case (":" ~ p ~ " ") => p })
         val params_ = params.map(_ match { case (" " ~ p) => p })
         val trailing_ = trailing.map(_ match { case (" :" ~ t) => t })
-        new IrcMessage(prefix_, command, (params_.map(Some(_)) :+ trailing_) flatten);
+        new IrcProtocolMessage(prefix_, command, (params_.map(Some(_)) :+ trailing_) flatten);
       }
   }
 
-  def apply(input: String): IrcMessage = {
+  def apply(input: String): IrcProtocolMessage = {
     parseAll(message, input) match {
       case Success(result, _) => result
       case _ => throw new IllegalArgumentException(

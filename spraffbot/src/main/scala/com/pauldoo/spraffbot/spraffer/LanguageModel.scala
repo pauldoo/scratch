@@ -3,13 +3,10 @@ package com.pauldoo.spraffbot.spraffer
 import akka.actor.ActorLogging
 import akka.actor.Actor
 import akka.actor.Props
-import com.pauldoo.spraffbot.spraffer.LanguageModel.ConsumeSentence
 import scala.collection.immutable.SortedMap
-import com.pauldoo.spraffbot.spraffer.LanguageModel.GenerateSentence
 import scala.language.implicitConversions
 import scala.util.Random
 import scala.annotation.tailrec
-import com.pauldoo.spraffbot.spraffer.LanguageModel.GeneratedSentece
 import scala.collection.SeqLike
 
 trait SentenceTypes {
@@ -28,15 +25,6 @@ trait SentenceTypes {
 object LanguageModel extends SentenceTypes {
   def props: Props =
     Props(classOf[LanguageModel]);
-
-  abstract class Message();
-
-  case class ConsumeSentence(
-    val sentence: String) extends Message;
-  case class GenerateSentence(
-    val prompt: String) extends Message;
-  case class GeneratedSentece(
-    val sentence: String) extends Message;
 
   def addForwardProduction(
     ngrams: Productions,
@@ -154,6 +142,7 @@ object LanguageModel extends SentenceTypes {
 }
 
 class LanguageModel extends Actor with ActorLogging with SentenceTypes {
+  log.info("Creating language model.")
 
   var ngrams: Productions = SortedMap.empty;
   val random: Random = new Random();
@@ -164,6 +153,7 @@ class LanguageModel extends Actor with ActorLogging with SentenceTypes {
     }
 
     case GenerateSentence(prompt) => {
+      log.info(s"Generating from prompt: ${prompt}")
       val sentence: String = LanguageModel.generateSentence(ngrams, LanguageModel.splitSentenceIntoWords(prompt), random);
       sender ! new GeneratedSentece(sentence);
     }

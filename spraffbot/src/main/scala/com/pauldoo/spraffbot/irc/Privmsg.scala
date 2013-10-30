@@ -12,7 +12,7 @@ object Privmsg {
 
 class Privmsg(app: ActorRef) extends Actor with ActorLogging {
   def receive: Receive = {
-    case msg: IrcMessage => {
+    case msg: IrcProtocolMessage => {
       msg.command match {
         case "PRIVMSG" => {
           require(msg.params.length == 2)

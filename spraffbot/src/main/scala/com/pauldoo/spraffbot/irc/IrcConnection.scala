@@ -13,6 +13,7 @@ import akka.io.TcpPipelineHandler.Init
 import akka.io.TcpPipelineHandler.WithinActorContext
 import akka.io.TcpReadWriteAdapter
 import akka.actor.ActorRef
+import com.pauldoo.spraffbot.SpraffBot
 
 object IrcConnection {
   def props(app: ActorRef): Props =
@@ -21,9 +22,10 @@ object IrcConnection {
 
 class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with ActorLogging {
 
-  val handlers: List[ActorRef] = List(
-    context.actorOf(Ping.props, "ping"),
-    context.actorOf(Privmsg.props(app), "privmsg"));
+  private val handlers: List[ActorRef] =
+    List(
+      context.actorOf(Ping.props, "ping"),
+      context.actorOf(Privmsg.props(app), "privmsg"));
 
   {
     import context.system
@@ -48,19 +50,21 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
       connection ! Tcp.Register(pipeline);
 
       val send = sendMessage(pipeline, init)_;
-      send(IrcMessage(None, "NICK", List("spraffbot")));
-      send(IrcMessage(None, "USER", List("spraffbot", "0", "*", "Sir Spraff")));
-      send(IrcMessage(None, "JOIN", List("#sprafftest")));
-      context become connectedReceive(init, send)
+      context become connectedReceive(init, send);
+      self ! IrcProtocolMessage(None, "NICK", List(SpraffBot.username));
+      self ! IrcProtocolMessage(None, "USER", List(SpraffBot.username, "0", "*", "Sir Spraff"));
+      self ! IrcProtocolMessage(None, "JOIN", List("#sprafftest"));
     }
   }
 
-  def sendMessage(pipeline: ActorRef, init: Init[WithinActorContext, IrcMessage, IrcMessage])(message: IrcMessage): Unit = {
+  def sendMessage(pipeline: ActorRef, init: Init[WithinActorContext, IrcProtocolMessage, IrcProtocolMessage])(message: IrcProtocolMessage): Unit = {
     log.info(s"> ${message}")
     pipeline ! init.Command(message)
   }
 
-  def connectedReceive(init: Init[WithinActorContext, IrcMessage, IrcMessage], send: IrcMessage => Unit): Receive = {
+  def connectedReceive( //
+    init: Init[WithinActorContext, IrcProtocolMessage, IrcProtocolMessage], //
+    send: IrcProtocolMessage => Unit): Receive = {
     case init.Event(data) => {
       log.info(s"< ${data}")
       // TODO: replace with a pub-sub thing.
@@ -70,7 +74,7 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
       log.info("Connection closed")
       context stop self
     }
-    case message: IrcMessage => {
+    case message: IrcProtocolMessage => {
       send(message)
     }
   }

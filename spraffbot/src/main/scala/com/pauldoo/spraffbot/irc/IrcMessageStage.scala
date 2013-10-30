@@ -5,10 +5,10 @@ import akka.io.PipelineContext
 import akka.io.SymmetricPipePair
 import scala.util.parsing.combinator.RegexParsers
 
-class IrcMessageStage extends SymmetricPipelineStage[PipelineContext, IrcMessage, String] {
+class IrcMessageStage extends SymmetricPipelineStage[PipelineContext, IrcProtocolMessage, String] {
 
-  def apply(ctx: PipelineContext) = new SymmetricPipePair[IrcMessage, String] {
-    override val commandPipeline = { msg: IrcMessage =>
+  def apply(ctx: PipelineContext) = new SymmetricPipePair[IrcProtocolMessage, String] {
+    override val commandPipeline = { msg: IrcProtocolMessage =>
       val segments: Seq[Option[String]] =
         msg.prefix.map(":" + _) ::
           Some(msg.command) ::

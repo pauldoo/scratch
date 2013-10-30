@@ -1,6 +1,6 @@
 package com.pauldoo.spraffbot.irc
 
-// Someone saying something in a channel or private message
+// Incoming message said in a channel or private message
 case class IrcUtterance(
   val from: IrcUser,
   val to: IrcDestination,
@@ -10,3 +10,5 @@ case class IrcUtterance(
 case class IrcDestination(target: String) {}
 
 case class IrcUser(user: String) {}
+
+case class IrcContext(me: IrcUser) {}

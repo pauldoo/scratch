@@ -4,9 +4,6 @@ import org.scalatest.Assertions
 import akka.testkit.TestActorRef
 import akka.actor.ActorSystem
 import org.junit.Test
-import com.pauldoo.spraffbot.spraffer.LanguageModel.ConsumeSentence
-import com.pauldoo.spraffbot.spraffer.LanguageModel.GenerateSentence
-import com.pauldoo.spraffbot.spraffer.LanguageModel.GeneratedSentece
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._

@@ -11,12 +11,12 @@ object Ping {
 
 class Ping extends Actor with ActorLogging {
   def receive: Receive = {
-    case msg: IrcMessage => {
+    case msg: IrcProtocolMessage => {
       msg.command match {
         case "PING" => {
           log.info("Received Ping, sending Pong.");
           val server = msg.params.head;
-          sender ! IrcMessage(None, "PONG", List(server));
+          sender ! IrcProtocolMessage(None, "PONG", List(server));
         }
         case _ => {
         }
