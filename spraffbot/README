@@ -1,0 +1,12 @@
+Maven cheatsheet:
+
+$ mvn compile
+
+$ mvn test
+
+# Build a jar file inside target/, and copy all runtime deps to target/dependency/
+$ mvn package
+
+# Run with:
+$ java -cp "target/*:target/dependency/*" akka.Main com.pauldoo.spraffbot.SpraffBot
+

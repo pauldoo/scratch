@@ -15,6 +15,7 @@ object SpraffBot {
   val randomResponseRate = 1.0 / 100;
 }
 
+// TODO: Add handler for '\o/' messages
 class SpraffBot extends Actor with ActorLogging {
   val connection = context.actorOf(IrcConnection.props(self), "irc");
   val handlers: List[ActorRef] = List(
