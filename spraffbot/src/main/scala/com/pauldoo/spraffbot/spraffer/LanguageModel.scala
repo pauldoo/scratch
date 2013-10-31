@@ -8,6 +8,7 @@ import scala.language.implicitConversions
 import scala.util.Random
 import scala.annotation.tailrec
 import scala.collection.SeqLike
+import com.pauldoo.spraffbot.SpraffBot
 
 trait SentenceTypes {
   // Productions to the "none" token denote reaching the end of a sentence
@@ -153,7 +154,9 @@ class LanguageModel extends Actor with ActorLogging with SentenceTypes {
 
   def receive: Receive = {
     case ConsumeSentence(sentence) => {
-      ngrams = LanguageModel.consumeSentence(ngrams, LanguageModel.splitSentenceIntoTokens(sentence));
+      if (!sentence.contains(SpraffBot.username)) {
+        ngrams = LanguageModel.consumeSentence(ngrams, LanguageModel.splitSentenceIntoTokens(sentence));
+      }
     }
 
     case GenerateSentence(prompt) => {
