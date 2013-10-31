@@ -15,6 +15,7 @@ import scala.language.postfixOps
 import com.pauldoo.spraffbot.irc.SayMessage
 import com.pauldoo.spraffbot.SpraffBot
 import scala.util.Random
+import com.pauldoo.spraffbot.irc.IrcDestination
 
 object Spraffer {
   def props(corpusFile: File): Props =
@@ -51,7 +52,10 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
       if (u.message.contains(SpraffBot.username) || issueRandomReply) {
         implicit val timeout: Timeout = Timeout(1 minute);
         val f: Future[GeneratedSentece] = (languageModel ? (new GenerateSentence(u.message))).mapTo[GeneratedSentece];
-        f.map(s => new SayMessage(u.to, s.sentence)) pipeTo sender;
+        
+        val replyDestination : IrcDestination = if (u.to.target.startsWith("#")) u.to else IrcDestination(u.from.user);
+        
+        f.map(s => new SayMessage(replyDestination, s.sentence)) pipeTo sender;
       }
       
       languageModel ! new ConsumeSentence(u.message);
