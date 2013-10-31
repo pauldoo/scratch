@@ -89,13 +89,17 @@ object LanguageModel extends SentenceTypes {
     weightedPick(n, randomSelection)
   }
 
-  private def selectSeed(ngrams: Productions, keywords: Seq[String], random: Random): SubSentence = {
+  private def selectSeed(ngrams: Productions, keywords: Seq[String], random: Random): Option[SubSentence] = {
     val candidates: Seq[Tuple2[SubSentence, Int]] = keywords.flatMap(word => {
       val begin = new SubSentence(word, None, None);
       val end = new SubSentence(word + "\0", None, None);
       ngrams.range(begin, end).mapValues((v: Pair[ForwardWords, BackwardWords]) => { v._1.values.reduce(_ + _) });
     });
-    randomWeightedPick(candidates, random)
+    if (candidates.isEmpty) {
+      None
+    } else {
+      Some(randomWeightedPick(candidates, random))
+    }
   }
 
   private def generateFromSeed(seed: SubSentence, ngrams: Productions, random: Random): String = {
@@ -134,9 +138,9 @@ object LanguageModel extends SentenceTypes {
     (prefix ++ middle ++ suffix).reduce(_ + " " + _)
   }
 
-  def generateSentence(ngrams: Productions, keywords: Seq[String], random: Random): String = {
-    val seedNgram = selectSeed(ngrams, keywords, random);
-    generateFromSeed(seedNgram, ngrams, random)
+  def generateSentence(ngrams: Productions, keywords: Seq[String], random: Random): Option[String] = {
+    selectSeed(ngrams, keywords, random)
+      .map(seed => generateFromSeed(seed, ngrams, random));
   }
 
 }
@@ -154,8 +158,8 @@ class LanguageModel extends Actor with ActorLogging with SentenceTypes {
 
     case GenerateSentence(prompt) => {
       log.info(s"Generating from prompt: ${prompt}")
-      val sentence: String = LanguageModel.generateSentence(ngrams, LanguageModel.splitSentenceIntoWords(prompt), random);
-      sender ! new GeneratedSentece(sentence);
+      val sentence: Option[String] = LanguageModel.generateSentence(ngrams, LanguageModel.splitSentenceIntoWords(prompt), random);
+      sender ! new GeneratedSentece(sentence.getOrElse("I don't know about those things, why don't you teach me?"));
     }
   }
 

@@ -14,13 +14,15 @@ import akka.io.TcpPipelineHandler.WithinActorContext
 import akka.io.TcpReadWriteAdapter
 import akka.actor.ActorRef
 import com.pauldoo.spraffbot.SpraffBot
+import scala.concurrent.Future
 
 object IrcConnection {
   def props(app: ActorRef): Props =
-    Props(classOf[IrcConnection], new InetSocketAddress("localhost", 6667), app);
+    Props(classOf[IrcConnection], SpraffBot.ircServer, app);
 }
 
 class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with ActorLogging {
+  import context._
 
   private val handlers: List[ActorRef] =
     List(
@@ -28,7 +30,6 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
       context.actorOf(Privmsg.props(app), "privmsg"));
 
   {
-    import context.system
     IO(Tcp) ! Tcp.Connect(remote);
   }
 
@@ -51,9 +52,14 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
 
       val send = sendMessage(pipeline, init)_;
       context become connectedReceive(init, send);
-      self ! IrcProtocolMessage(None, "NICK", List(SpraffBot.username));
-      self ! IrcProtocolMessage(None, "USER", List(SpraffBot.username, "0", "*", "Sir Spraff"));
-      self ! IrcProtocolMessage(None, "JOIN", List("#sprafftest"));
+      
+      // TODO: Why does this step need to be delayed?
+      Future {
+        Thread.sleep(2000);
+        self ! IrcProtocolMessage(None, "NICK", List(SpraffBot.username));
+        self ! IrcProtocolMessage(None, "USER", List(SpraffBot.username, "0", "*", "Sir Spraff"));
+        self ! IrcProtocolMessage(None, "JOIN", List(SpraffBot.ircChannel));
+      }
     }
   }
 
