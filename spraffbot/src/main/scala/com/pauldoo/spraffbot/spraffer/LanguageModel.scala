@@ -73,43 +73,61 @@ object LanguageModel extends SentenceTypes {
   def splitSentenceIntoTokens(sentence: String): Seq[Token] =
     (List(None) ++ splitSentenceIntoWords(sentence).map(Option(_)) ++ List(None, None, None));
 
-  private def randomWeightedPick[T](n: Iterable[Tuple2[T, Int]], random: Random): T = {
+  private def randomWeightedPick[T](n: Iterable[Tuple2[T, Double]], random: Random): T = {
     require(n.isEmpty == false);
     @tailrec
-    def weightedPick[T](n: Iterable[Tuple2[T, Int]], r: Int): T = {
+    def weightedPick[T](n: Iterable[Tuple2[T, Double]], r: Double): T = {
       require(n.isEmpty == false);
-      if (r < n.head._2) {
+      if (r < n.head._2 || n.tail.isEmpty) {
         n.head._1
       } else {
         weightedPick(n.tail, r - n.head._2)
       }
     }
 
-    val totalCount: Int = n.map(_._2).reduce(_ + _);
-    val randomSelection = random.nextInt(totalCount);
+    val totalWeight: Double = n.map(_._2).reduce(_ + _);
+    val randomSelection = random.nextDouble() * totalWeight;
     weightedPick(n, randomSelection)
   }
-
+  
+  private def toDoubleMap[T, W](n: Iterable[Tuple2[T, W]])(implicit num: Numeric[W]) : Iterable[Tuple2[T, Double]] =
+    n.map(p => (p._1, num.toDouble(p._2)))
+  
   private def selectSeed(ngrams: Productions, keywords: Seq[String], random: Random): Option[SubSentence] = {
-    val candidates: Seq[Tuple2[SubSentence, Int]] = keywords.flatMap(word => {
+    def productionsForWord(word:String):Productions = {
       val begin = new SubSentence(word, None, None);
       val end = new SubSentence(word + "\0", None, None);
-      ngrams.range(begin, end).mapValues((v: Pair[ForwardWords, BackwardWords]) => { v._1.values.reduce(_ + _) });
-    });
-    if (candidates.isEmpty) {
+      ngrams.range(begin, end)      
+    };
+    
+    def popularityOfWord(word: String) :Int = {
+      productionsForWord(word).values.flatMap(_._1.values).foldLeft(0)(_+_)
+    }
+
+    val keywordWeights: Seq[Tuple2[String, Double]] = keywords.map(word => {
+      val popularity = popularityOfWord(word);
+      if (popularity > 0) 
+      	Some((word, 1.0 / popularity))
+  	  else
+      	None 
+    }).flatten;
+    
+    if (keywordWeights.isEmpty) {
       None
     } else {
-      Some(randomWeightedPick(candidates, random))
+      val keyword: String = randomWeightedPick(keywordWeights, random);
+	  val candidateSeeds: Iterable[Tuple2[SubSentence, Double]] = productionsForWord(keyword).mapValues(_._1.values.reduce(_ + _) + 0.0);
+      Some(randomWeightedPick(candidateSeeds, random))
     }
   }
 
   private def generateFromSeed(seed: SubSentence, ngrams: Productions, random: Random): String = {
     require(seed._1.isDefined);
     def forward(k: SubSentence): Token = {
-      randomWeightedPick(ngrams.get(k).get._1, random)
+      randomWeightedPick(toDoubleMap(ngrams.get(k).get._1), random)
     }
     def backward(k: SubSentence): Token = {
-      randomWeightedPick(ngrams.get(k).get._2, random)
+      randomWeightedPick(toDoubleMap(ngrams.get(k).get._2), random)
     }
 
     def genForward(k: SubSentence): List[String] = {
