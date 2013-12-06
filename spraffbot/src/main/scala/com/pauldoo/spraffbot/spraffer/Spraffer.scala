@@ -46,21 +46,20 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
 
   def receive: Receive = {
     case u: IrcUtterance => {
-  	  corpusWriter ! u.message;
+      corpusWriter ! u.message;
 
-      val issueRandomReply = (random.nextDouble < SpraffBot.randomResponseRate); 
+      val issueRandomReply = (random.nextDouble < SpraffBot.randomResponseRate);
       if (u.message.contains(SpraffBot.username) || issueRandomReply) {
         implicit val timeout: Timeout = Timeout(1 minute);
         val f: Future[GeneratedSentece] = (languageModel ? (new GenerateSentence(u.message))).mapTo[GeneratedSentece];
-        
-        val replyDestination : IrcDestination = if (u.to.target.startsWith("#")) u.to else IrcDestination(u.from.user);
-        
-        f.map(s => new SayMessage(replyDestination, s.sentence)) pipeTo sender;
+
+        f.map(s => new SayMessage(u.replyDestination, s.sentence)) pipeTo sender;
       }
-      
+
       languageModel ! new ConsumeSentence(u.message);
     }
     case s: String => {
+      // TODO: remove this case?
       log.info(s);
     }
   }

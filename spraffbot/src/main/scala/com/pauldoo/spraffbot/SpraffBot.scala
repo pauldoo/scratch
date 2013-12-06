@@ -10,6 +10,7 @@ import java.io.File
 import com.pauldoo.spraffbot.irc.IrcProtocolMessage
 import com.pauldoo.spraffbot.irc.SayMessage
 import java.net.InetSocketAddress
+import com.pauldoo.spraffbot.toys.Cheer
 
 object SpraffBot {
   val username: String = "spraffbot";
@@ -21,8 +22,9 @@ object SpraffBot {
 // TODO: Add handler for '\o/' messages
 class SpraffBot extends Actor with ActorLogging {
   val connection = context.actorOf(IrcConnection.props(self), "irc");
-  val handlers: List[ActorRef] = List(
-    context.actorOf(Spraffer.props(new File("corpus.txt")), "spraffer"));
+  val handlers: List[ActorRef] = List( //
+    context.actorOf(Spraffer.props(new File("corpus.txt")), "spraffer"),
+    context.actorOf(Cheer.props()));
 
   def receive = {
     case k: IrcUtterance => {
