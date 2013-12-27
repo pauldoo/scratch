@@ -9,13 +9,14 @@
 namespace {
     const std::vector<std::pair<double, double> > createApproximateCurve();
 
-    const int width = 2048;
-    const int height = 2048;
+    const int width = 1536*2;
+    const int height = width;
     const int maxColorValue = 255;
-    const double minX = -1.5;
-    const double minY = -1.7;
-    const double maxX = 1.5;
-    const double maxY = 1.3;
+    const double scale = 1.2;
+    const double minX = -1.5 * scale;
+    const double minY = -1.7 * scale;
+    const double maxX = 1.5 * scale;
+    const double maxY = 1.3 * scale;
     const double centerX = 0.0;
     const double centerY = 0.3;
     const std::complex<double> juliaC = std::complex<double>(1.0, 0.3);
