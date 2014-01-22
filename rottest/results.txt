@@ -1,0 +1,20 @@
+c++ -Wall -Ofast -o foobar-clang.s -S main.cpp
+c++ -Wall -Ofast -o foobar-clang main.cpp
+g++ -Wall -Ofast -o foobar-gcc.s -S main.cpp
+g++ -Wall -Ofast -o foobar-gcc main.cpp
+sysctl -n machdep.cpu.brand_string
+Intel(R) Core(TM) i5 CPU       M 520  @ 2.40GHz
+./foobar-clang
+232.593M tests/sec
+Found the value: 1
+277.207M tests/sec
+Found the value: 1
+293.368M tests/sec
+Found the value: 1
+./foobar-gcc
+232.211M tests/sec
+Found the value: 1
+278.063M tests/sec
+Found the value: 1
+295.214M tests/sec
+Found the value: 1
