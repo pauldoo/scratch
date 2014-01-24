@@ -17,7 +17,7 @@ class Cheer extends Actor with ActorLogging {
   def receive: Receive = {
     case u: IrcUtterance => {
       if (u.message.contains("\\o/")) {
-        sender ! SayMessage(u.replyDestination, "\\ö/")
+        sender ! SayMessage(u.replyDestination, "🙌")
       }
     }
   }
