@@ -182,7 +182,7 @@ namespace {
             ImageType intermediate(finalWidth * supersample, finalHeight * supersample);
         
             for (int ix = 0; ix < intermediate.width; ix++) {
-                const  double r = rescale(ix + 0.5, 0, intermediate.width, 2.5, 4.0);
+                const  double r = rescale(ix + 0.5, 0, intermediate.width, 2.8, 4.0);
                 renderSlice(ix, r, &intermediate);
             }
             expose(&intermediate);
