@@ -32,7 +32,7 @@
             return primeSeive(natsFrom(2));
         }
 
-        var primeFactors = function(n, minPower) {
+        var primeFactors = function(n) {
             if (n == 0) {
                 return 0;
             }
@@ -48,10 +48,8 @@
                     n = n / primes.val;
                 }
 
-                if (pow >= minPower) {
-                    if (pow >= 2) {
-                        pow = primeFactors(pow, minPower);
-                    }
+                if (pow >= 1) {
+                    pow = primeFactors(pow);
                     result.push([primes.val, pow]);
                 }
                 primes = primes.next();
@@ -63,8 +61,14 @@
             if ($.isArray(p)) {
                 var result = "";
                 $.each(p, function(i, v) {
-                        var fragment = v[0].toString() + "^{"  + primeFactorsToTex(v[1]) + "}";
-                        result = result + "{" + fragment + "}";
+                        var fragment = v[0].toString();
+                        if (v[1] != 1) {
+                            fragment = fragment+ "^{"  + primeFactorsToTex(v[1]) + "}";
+                        }
+                        if (result != "") {
+                            result = result + "\\cdot";
+                        }
+                        result = result + " {" + fragment + "}";
                 });
                 return result;
             } else {
@@ -74,12 +78,11 @@
 
         var start = function() {
 
-            var counter = 0;
+            var counter = 1000;
 
             var tick = function() {
-                var text1 = primeFactorsToTex(primeFactors(counter, 1));
-                var text0 = primeFactorsToTex(primeFactors(counter, 0));
-                var row = "<tr id='" + counter + "'><td>\\(" + counter + "\\)</td><td>\\(" + text1 + "\\)</td><td>\\(" + text0 + "\\)</td></tr>";
+                var text1 = primeFactorsToTex(primeFactors(counter));
+                var row = "<tr id='" + counter + "'><td>\\(" + counter + "\\)</td><td>\\(" + text1 + "\\)</td></tr>";
                 $("table").append(row);
                 MathJax.Hub.Queue(["Typeset",MathJax.Hub,counter.toString()]);
                 counter = counter + 1;
