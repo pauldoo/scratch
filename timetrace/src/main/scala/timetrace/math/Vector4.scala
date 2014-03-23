@@ -1,6 +1,6 @@
 package timetrace.math
 
-sealed case class Vector4(val x: Double, val y: Double, val z: Double, val t: Double) {
+sealed case class Vector4(val x: Double, val y: Double, val z: Double, val t: Double) extends VectorN[Vector4] {
 
   override def toString(): String = s"[$x, $y, $z, $t]"
 
@@ -17,5 +17,14 @@ sealed case class Vector4(val x: Double, val y: Double, val z: Double, val t: Do
     this.y + that.y,
     this.z + that.z,
     this.t + that.t)
+
+  def normalize(): Vector4 = {
+    val mag = magnitude()
+
+    new Vector4(x / mag, y / mag, z / mag, t / mag) {
+      override val normalize = this
+      override def isNormalized() = true
+    }
+  }
 
 }

@@ -10,12 +10,13 @@ import timetrace.RayTest
 import timetrace.Ray
 import timetrace.RayHit
 import timetrace.Generators
+import timetrace.RayTest
 
 object PlaneTest {
   val planes: Gen[Plane] = for (
     n <- Vector4Test.vector4s;
     o <- Generators.numbers
-  ) yield new Plane(n, o)
+  ) yield new Plane(n.normalize, o)
 }
 
 @RunWith(classOf[JUnitRunner])
@@ -25,9 +26,9 @@ class PlaneTest extends UnitSpec {
     forAll(PlaneTest.planes, RayTest.rays) {
       (plane: Plane, ray: Ray) =>
         {
-          val rh: RayHit = plane.intersect(ray)
+          val hitPoint: Vector4 = plane.intersect(ray).location
 
-          rh.location
+          (hitPoint dot plane.normal) should equal(plane.offset +- 1e-6)
         }
     }
   }

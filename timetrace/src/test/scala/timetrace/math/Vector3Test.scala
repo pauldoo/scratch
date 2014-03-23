@@ -12,6 +12,10 @@ object Vector3Test {
     y <- Generators.numbers;
     z <- Generators.numbers
   ) yield new Vector3(x, y, z)
+
+  val vector3sNormalized: Gen[Vector3] = for (
+    v <- vector3s
+  ) yield v.normalize
 }
 
 @RunWith(classOf[JUnitRunner])
@@ -44,6 +48,31 @@ class Vector3Test extends UnitSpec {
         v4.t should equal(1.0)
       }
     }
+  }
+
+  it should "have a working magnitude function" in {
+    forAll(Vector3Test.vector3s) { (v: Vector3) =>
+      {
+        v.magnitude should equal(Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z))
+      }
+    }
+  }
+
+  it should "have a working normalize function" in {
+    forAll(Vector3Test.vector3s) { (v: Vector3) =>
+      {
+        v.normalize.magnitude should equal(1.0 +- 1e-6)
+        v.normalize dot v should equal(v.magnitude +- 1e-6)
+      }
+    }
+  }
+
+  it should "be a no-op to normalize twice" in {
+    val initial = Vector3(1.0, 1.0, 1.0)
+    val once = initial.normalize
+    val twice = once.normalize
+
+    once should be theSameInstanceAs twice
   }
 
 }
