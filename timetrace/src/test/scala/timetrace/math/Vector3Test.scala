@@ -13,7 +13,7 @@ object Vector3Test {
     z <- Generators.numbers
   ) yield new Vector3(x, y, z)
 
-  val vector3sNormalized: Gen[Vector3] = for (
+  val vector3sNormalized: Gen[Vector3.Normalized] = for (
     v <- vector3s
   ) yield v.normalize
 }

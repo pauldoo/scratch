@@ -7,8 +7,7 @@ import timetrace.RayHit
 /**
  * Set of points x, satisfying x dot normal == offset
  */
-class Plane(val normal: Vector4, val offset: Double) extends Shape {
-  assume(normal.isNormalized)
+class Plane(val normal: Vector4.Normalized, val offset: Double) extends Shape {
 
   override def toString = s"Plane($normal, $offset)"
 
