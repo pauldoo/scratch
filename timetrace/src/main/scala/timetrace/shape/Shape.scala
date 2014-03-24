@@ -5,5 +5,5 @@ import timetrace.RayHit
 
 trait Shape {
 
-  def intersect(ray: Ray): RayHit
+  def intersect(ray: Ray): Option[RayHit]
 }

@@ -12,9 +12,13 @@ class Plane(val normal: Vector4, val offset: Double) extends Shape {
 
   override def toString = s"Plane($normal, $offset)"
 
-  def intersect(ray: Ray): RayHit = {
+  def intersect(ray: Ray): Option[RayHit] = {
     val t = (offset - (ray.start dot normal)) / (ray.direction.to4 dot normal)
-    return new RayHit(ray, t)
+
+    if (t > 0 && java.lang.Double.isFinite(t))
+      Some(new RayHit(ray, t))
+    else
+      None
   }
 
 }
