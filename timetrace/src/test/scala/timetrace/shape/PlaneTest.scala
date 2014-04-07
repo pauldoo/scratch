@@ -12,10 +12,11 @@ import timetrace.RayHit
 import timetrace.Generators
 import timetrace.RayTest
 import timetrace.math.Vector3
+import timetrace.math.Vector3Test
 
 object PlaneTest {
   val planes: Gen[Plane] = for (
-    n <- Vector4Test.vector4s;
+    n <- Vector3Test.vector3s;
     o <- Generators.numbers
   ) yield new Plane(n.normalize, o)
 }
@@ -27,13 +28,14 @@ class PlaneTest extends UnitSpec {
     forAll(PlaneTest.planes, RayTest.rays) {
       (plane: Plane, ray: Ray) =>
         {
-          val currentSide = Math.signum((ray.start dot plane.normal) - plane.offset)
-          val eventualSide = Math.signum(ray.direction.to4 dot plane.normal)
+          val currentSide = Math.signum((ray.start.truncateTo3 dot plane.normal) - plane.offset)
+          val eventualSide = Math.signum(ray.direction dot plane.normal)
 
-          val rayHit: Option[RayHit] = plane.intersect(ray)
+          val rayHit: Option[ShapeHit] = plane.intersect(ray)
 
           if (currentSide != eventualSide) {
-            (rayHit.get.location dot plane.normal) should equal(plane.offset +- 1e-6)
+            val location = ray.march(rayHit.get.t)
+            (location.truncateTo3 dot plane.normal) should equal(plane.offset +- 1e-6)
           } else {
             rayHit should not be ('defined)
           }
@@ -42,7 +44,7 @@ class PlaneTest extends UnitSpec {
   }
 
   it should "fail to intersect when rays are parallel" in {
-    val plane = new Plane(Vector4(1.0, 0.0, 0.0, 0.0).normalize, 0.0)
+    val plane = new Plane(Vector3(1.0, 0.0, 0.0).normalize, 0.0)
     val ray = Ray(Vector4(1.0, 0.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0).normalize)
 
     val rayHit = plane.intersect(ray)

@@ -14,6 +14,8 @@ sealed case class Vector4(val x: Double, val y: Double, val z: Double, val t: Do
 
   override def toString(): String = s"[$x, $y, $z, $t]"
 
+  def truncateTo3(): Vector3 = new Vector3(x, y, z)
+
   def dot(that: Vector4): Double = (
     this.x * that.x +
     this.y * that.y +

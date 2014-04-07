@@ -8,4 +8,6 @@ trait VectorN[Self] {
   def isNormalized() = false
 
   def dot(that: Self): Double
+
+  def *(s: Double): Self
 }

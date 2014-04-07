@@ -1,11 +1,14 @@
 package timetrace
 
 import timetrace.math.Vector4
+import timetrace.material.Material
+import timetrace.shape.ShapeHit
 
-sealed case class RayHit(val ray: Ray, val t: Double) {
-  assume(t > 0)
+sealed case class RayHit(
+  val ray: Ray,
+  val shapeHit: ShapeHit,
+  val material: Material) {
 
-  def location: Vector4 = {
-    ray.start + ray.direction.to4() * t;
-  }
+  val location: Vector4 = ray.march(shapeHit.t)
+
 }

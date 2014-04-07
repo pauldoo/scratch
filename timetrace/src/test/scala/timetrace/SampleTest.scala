@@ -18,4 +18,8 @@ class SampleTest extends UnitSpec {
     }
   }
 
+  "some other numbers" should "be appoximately equal" in {
+    5.0 should equal(4.0 +- 2.0)
+  }
+
 }
