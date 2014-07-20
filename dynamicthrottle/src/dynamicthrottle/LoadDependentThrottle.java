@@ -7,25 +7,17 @@ import java.lang.management.OperatingSystemMXBean;
 import java.util.Random;
 
 public class LoadDependentThrottle {
-    private static final double DEFAULT_ACCEPTABLE_BASELINE_LOAD_MULTIPLE = 1.0;
-    private static final double DEFAULT_AGGRESSION = 1.0;
 
     private final OperatingSystemMXBean osBean;
     private final Random random;
-    double acceptableBaselineLoadMultiple;
-    private final double aggression;
 
     public static LoadDependentThrottle createDefaultLoadDependentThrottle() {
-        return new LoadDependentThrottle(getOperatingSystemMXBean(), DEFAULT_ACCEPTABLE_BASELINE_LOAD_MULTIPLE,
-                DEFAULT_AGGRESSION);
+        return new LoadDependentThrottle(getOperatingSystemMXBean());
     }
 
-    public LoadDependentThrottle(final OperatingSystemMXBean osBean, final double acceptableBaselineLoadMultiple,
-            final double aggression) {
+    public LoadDependentThrottle(final OperatingSystemMXBean osBean) {
         this.osBean = osBean;
         this.random = new Random();
-        this.acceptableBaselineLoadMultiple = acceptableBaselineLoadMultiple;
-        this.aggression = aggression;
     }
 
     public boolean shouldProceedWithWork() {
@@ -39,10 +31,11 @@ public class LoadDependentThrottle {
         final double systemLoadAverage = osBean.getSystemLoadAverage();
         final int availableProcessors = osBean.getAvailableProcessors();
         final double loadMultiple = systemLoadAverage / availableProcessors;
-        final double overloadMultiple = max(0.0, (loadMultiple - acceptableBaselineLoadMultiple));
-        final double resultingProbability = Math.exp(-overloadMultiple * aggression);
-        System.out.println(String.format("%f %d %f %f %f", //
-                systemLoadAverage, availableProcessors, loadMultiple, overloadMultiple, resultingProbability));
+        final double resultingProbability = 1.0 / max(1.0, loadMultiple);
+        // final double resultingProbability = 1.0 / max(1.0, exp(loadMultiple -
+        // 1));
+        System.out.println(String.format("%f %d %f %f", //
+                systemLoadAverage, availableProcessors, loadMultiple, resultingProbability));
         return resultingProbability;
     }
 
@@ -50,13 +43,14 @@ public class LoadDependentThrottle {
         try {
             long delayInMs = 1000;
             while (!shouldProceedWithWork()) {
-                System.out.println(String.format("Backing off for %dms", delayInMs));
-                Thread.sleep(delayInMs);
+                final double r = (random.nextDouble() * 2.0 + 2.0) / 3.0;
+                final long sleep = (long) (delayInMs * r);
+                System.out.println(String.format("Backing off for %dms (%d)", sleep, delayInMs));
+                Thread.sleep(sleep);
                 delayInMs = delayInMs * 2;
             }
         } catch (final InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
-
 }
