@@ -1,0 +1,1 @@
+sbt package && ~/Programs/spark-1.1.0/bin/spark-submit --class "SimpleApp" --master spark://jam.lan:7077 target/scala-2.10/simple-project_2.10-1.0.jar
