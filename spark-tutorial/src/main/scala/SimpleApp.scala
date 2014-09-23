@@ -23,7 +23,7 @@ object SimpleApp {
         (w, 1)
       }) //
       .reduceByKey(_ + _)
-    wordCountsData.cache()
+    wordCountsData.persist
     val wordCounts: List[(String, Int)] = wordCountsData.collect.toList
     println(s"Wordcounts: $wordCounts")
     println(s"Foobar: $foobar")
