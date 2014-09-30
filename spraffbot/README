@@ -13,3 +13,7 @@ $ sbt package
 # Run with:
 $ sbt 'runMain akka.Main com.pauldoo.spraffbot.SpraffBot
 
+
+TODO:
+* Fix SSL.  Upgrade to Akka 2.3.x, and use apache camel for IRC protocol implementation?
+
