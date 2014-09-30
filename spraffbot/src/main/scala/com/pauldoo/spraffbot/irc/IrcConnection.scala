@@ -15,6 +15,9 @@ import akka.io.TcpReadWriteAdapter
 import akka.actor.ActorRef
 import com.pauldoo.spraffbot.SpraffBot
 import scala.concurrent.Future
+import javax.net.ssl.SSLEngine
+import javax.net.ssl.SSLContext
+import akka.io.SslTlsSupport
 
 object IrcConnection {
   def props(app: ActorRef): Props =
@@ -35,6 +38,12 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
 
   def receive = unconnectedReceive;
 
+  private val sslEngine: SSLEngine = {
+    val engine = SSLContext.getDefault.createSSLEngine()
+    engine.setUseClientMode(true)
+    engine
+  }
+
   def unconnectedReceive: Receive = {
     case Tcp.Connected(remote, local) => {
       log.info("Connected!");
@@ -43,7 +52,8 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
       val init = TcpPipelineHandler.withLogger(log,
         new IrcMessageStage() >>
           new BreakIntoLinesStage() >>
-          new TcpReadWriteAdapter());
+          new TcpReadWriteAdapter() >>
+          new SslTlsSupport(sslEngine));
 
       val pipeline = context.actorOf(TcpPipelineHandler.props(
         init, connection, self).withDeploy(Deploy.local))
@@ -52,7 +62,7 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
 
       val send = sendMessage(pipeline, init)_;
       context become connectedReceive(init, send);
-      
+
       // TODO: Why does this step need to be delayed?
       Future {
         Thread.sleep(2000);

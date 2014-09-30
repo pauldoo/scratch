@@ -16,7 +16,7 @@ import com.pauldoo.spraffbot.toys.Memory
 object SpraffBot {
   val username: String = "spraffbot";
   val randomResponseRate = 1.0 / 100;
-  val ircServer = new InetSocketAddress("localhost", 6667);
+  val ircServer = new InetSocketAddress("chat.freenode.net", 6697);
   val ircChannel = "#sprafftest";
 }
 

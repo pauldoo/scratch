@@ -11,5 +11,5 @@ $ sbt test
 $ sbt package
 
 # Run with:
-$ java -cp "target/*:target/dependency/*" akka.Main com.pauldoo.spraffbot.SpraffBot
+$ sbt 'runMain akka.Main com.pauldoo.spraffbot.SpraffBot
 
