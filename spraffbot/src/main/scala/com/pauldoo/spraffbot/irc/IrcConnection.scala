@@ -41,6 +41,8 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
   private val sslEngine: SSLEngine = {
     val engine = SSLContext.getDefault.createSSLEngine()
     engine.setUseClientMode(true)
+    log.info(s"Supported SSL protocols: ${engine.getSupportedProtocols().toList}")
+    log.info(s"Enabled SSL protocols: ${engine.getEnabledProtocols().toList}")
     engine
   }
 
