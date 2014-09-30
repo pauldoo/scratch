@@ -3,8 +3,12 @@ package com.pauldoo.spraffbot.spraffer
 import org.scalatest.Assertions
 import org.junit.Test
 import scala.collection.immutable.SortedMap
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import com.pauldo.spraffbot.UnitSpec
 
-class TupleOrderingTest extends Assertions with SentenceTypes {
+@RunWith(classOf[JUnitRunner])
+class TupleOrderingTest extends UnitSpec with SentenceTypes {
   @Test
   def ordering() {
 

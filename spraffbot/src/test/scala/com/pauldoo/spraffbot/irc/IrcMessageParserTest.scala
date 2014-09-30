@@ -2,8 +2,12 @@ package com.pauldoo.spraffbot.irc
 
 import org.scalatest.Assertions
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import com.pauldo.spraffbot.UnitSpec
 
-class IrcMessageParserTest extends Assertions {
+@RunWith(classOf[JUnitRunner])
+class IrcMessageParserTest extends UnitSpec {
   @Test
   def fullExample() {
     val t = IrcMessageParser(":someprefix 999 foo bar baz :cheese strings");

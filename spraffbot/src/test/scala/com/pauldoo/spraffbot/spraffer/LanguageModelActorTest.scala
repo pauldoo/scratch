@@ -3,15 +3,19 @@ package com.pauldoo.spraffbot.spraffer
 import org.scalatest.Assertions
 import akka.testkit.TestActorRef
 import akka.actor.ActorSystem
-import org.junit.Test
 import akka.pattern.ask
 import akka.util.Timeout
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.concurrent._
 import scala.util.{ Try, Success }
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
+import com.pauldo.spraffbot.UnitSpec
+import org.junit.Test
 
-class LanguageModelActorTest extends Assertions {
+@RunWith(classOf[JUnitRunner])
+class LanguageModelActorTest extends UnitSpec {
   implicit lazy val system = ActorSystem()
   implicit val timeout: Timeout = 500 millis;
 
@@ -22,6 +26,7 @@ class LanguageModelActorTest extends Assertions {
       case Success(GeneratedSentece(response)) => {
         response
       }
+      case _ => ???
     }
   }
 
