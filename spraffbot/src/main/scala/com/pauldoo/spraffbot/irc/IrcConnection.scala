@@ -18,6 +18,7 @@ import scala.concurrent.Future
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLContext
 import akka.io.SslTlsSupport
+import akka.io.BackpressureBuffer
 
 object IrcConnection {
   def props(app: ActorRef): Props =
@@ -55,7 +56,9 @@ class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with
         new IrcMessageStage() >>
           new BreakIntoLinesStage() >>
           new TcpReadWriteAdapter() >>
-          new SslTlsSupport(sslEngine));
+          new SslTlsSupport(sslEngine) >>
+          new BackpressureBuffer(lowBytes = 1000000, highBytes = 2000000, maxBytes = 4000000) // Don't think this helps
+          );
 
       val pipeline = context.actorOf(TcpPipelineHandler.props(
         init, connection, self).withDeploy(Deploy.local))
