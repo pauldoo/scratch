@@ -12,45 +12,45 @@ import com.pauldoo.spraffbot.SpraffBot
 
 trait SentenceTypes {
   // Productions to the "none" token denote reaching the end of a sentence
-  type Token = Option[String];
-  type SubSentence = Tuple3[Token, Token, Token];
-  type WordTable = Map[Token, Int];
-  type ForwardWords = WordTable;
-  type BackwardWords = WordTable;
-  type Productions = SortedMap[SubSentence, Pair[ForwardWords, BackwardWords]];
-  val prefixLength = 3;
+  type Token = Option[String]
+  type SubSentence = Tuple3[Token, Token, Token]
+  type WordTable = Map[Token, Int]
+  type ForwardWords = WordTable
+  type BackwardWords = WordTable
+  type Productions = SortedMap[SubSentence, Pair[ForwardWords, BackwardWords]]
+  val prefixLength = 3
 
-  implicit def stringToToken(s: String): Token = Some(s);
+  implicit def stringToToken(s: String): Token = Some(s)
 }
 
 object LanguageModel extends SentenceTypes {
   def props: Props =
-    Props(classOf[LanguageModel]);
+    Props(classOf[LanguageModel])
 
   def addForwardProduction(
     ngrams: Productions,
     group: Seq[Token]): Productions = {
 
-    require(group.length == prefixLength + 1);
-    val forwardGroup = new SubSentence(group(0), group(1), group(2));
-    val forwardWord: Token = group(3);
-    val tables: Pair[ForwardWords, BackwardWords] = ngrams.getOrElse(forwardGroup, (Map.empty, Map.empty));
-    val newCount: Int = tables._1.getOrElse(forwardWord, 0) + 1;
-    val newTables: Pair[ForwardWords, BackwardWords] = (tables._1 + ((forwardWord, newCount)), tables._2);
-    ngrams + ((forwardGroup, newTables));
+    require(group.length == prefixLength + 1)
+    val forwardGroup = new SubSentence(group(0), group(1), group(2))
+    val forwardWord: Token = group(3)
+    val tables: Pair[ForwardWords, BackwardWords] = ngrams.getOrElse(forwardGroup, (Map.empty, Map.empty))
+    val newCount: Int = tables._1.getOrElse(forwardWord, 0) + 1
+    val newTables: Pair[ForwardWords, BackwardWords] = (tables._1 + ((forwardWord, newCount)), tables._2)
+    ngrams + ((forwardGroup, newTables))
   }
 
   def addBackwardProduction(
     ngrams: Productions,
     group: Seq[Token]): Productions = {
 
-    require(group.length == prefixLength + 1);
-    val backwardGroup = new SubSentence(group(1), group(2), group(3));
-    val backwardWord: Token = group(0);
-    val tables: Pair[ForwardWords, BackwardWords] = ngrams.getOrElse(backwardGroup, (Map.empty, Map.empty));
-    val newCount: Int = tables._2.getOrElse(backwardWord, 0) + 1;
-    val newTables: Pair[ForwardWords, BackwardWords] = (tables._1, tables._2 + ((backwardWord, newCount)));
-    ngrams + ((backwardGroup, newTables));
+    require(group.length == prefixLength + 1)
+    val backwardGroup = new SubSentence(group(1), group(2), group(3))
+    val backwardWord: Token = group(0)
+    val tables: Pair[ForwardWords, BackwardWords] = ngrams.getOrElse(backwardGroup, (Map.empty, Map.empty))
+    val newCount: Int = tables._2.getOrElse(backwardWord, 0) + 1
+    val newTables: Pair[ForwardWords, BackwardWords] = (tables._1, tables._2 + ((backwardWord, newCount)))
+    ngrams + ((backwardGroup, newTables))
   }
 
   def consumeGroup(
@@ -63,7 +63,7 @@ object LanguageModel extends SentenceTypes {
     ngrams: Productions,
     words: Seq[Token]): Productions = {
 
-    val groups: Seq[Seq[Token]] = words.sliding(prefixLength + 1).toSeq;
+    val groups: Seq[Seq[Token]] = words.sliding(prefixLength + 1).toSeq
     groups.foldLeft[Productions](ngrams)(consumeGroup _)
   }
 
@@ -71,13 +71,13 @@ object LanguageModel extends SentenceTypes {
     sentence.split("\\s+").map(_.intern)
 
   def splitSentenceIntoTokens(sentence: String): Seq[Token] =
-    (List(None) ++ splitSentenceIntoWords(sentence).map(Option(_)) ++ List(None, None, None));
+    (List(None) ++ splitSentenceIntoWords(sentence).map(Option(_)) ++ List(None, None, None))
 
   private def randomWeightedPick[T](n: Iterable[Tuple2[T, Double]], random: Random): T = {
-    require(n.isEmpty == false);
+    require(n.isEmpty == false)
     @tailrec
     def weightedPick[T](n: Iterable[Tuple2[T, Double]], r: Double): T = {
-      require(n.isEmpty == false);
+      require(n.isEmpty == false)
       if (r < n.head._2 || n.tail.isEmpty) {
         n.head._1
       } else {
@@ -85,44 +85,44 @@ object LanguageModel extends SentenceTypes {
       }
     }
 
-    val totalWeight: Double = n.map(_._2).reduce(_ + _);
-    val randomSelection = random.nextDouble() * totalWeight;
+    val totalWeight: Double = n.map(_._2).reduce(_ + _)
+    val randomSelection = random.nextDouble() * totalWeight
     weightedPick(n, randomSelection)
   }
-  
-  private def toDoubleMap[T, W](n: Iterable[Tuple2[T, W]])(implicit num: Numeric[W]) : Iterable[Tuple2[T, Double]] =
+
+  private def toDoubleMap[T, W](n: Iterable[Tuple2[T, W]])(implicit num: Numeric[W]): Iterable[Tuple2[T, Double]] =
     n.map(p => (p._1, num.toDouble(p._2)))
-  
+
   private def selectSeed(ngrams: Productions, keywords: Seq[String], random: Random): Option[SubSentence] = {
-    def productionsForWord(word:String):Productions = {
-      val begin = new SubSentence(word, None, None);
-      val end = new SubSentence(word + "\0", None, None);
-      ngrams.range(begin, end)      
-    };
-    
-    def popularityOfWord(word: String) :Int = {
-      productionsForWord(word).values.flatMap(_._1.values).foldLeft(0)(_+_)
+    def productionsForWord(word: String): Productions = {
+      val begin = new SubSentence(word, None, None)
+      val end = new SubSentence(word + "\0", None, None)
+      ngrams.range(begin, end)
+    }
+
+    def popularityOfWord(word: String): Int = {
+      productionsForWord(word).values.flatMap(_._1.values).foldLeft(0)(_ + _)
     }
 
     val keywordWeights: Seq[Tuple2[String, Double]] = keywords.map(word => {
-      val popularity = popularityOfWord(word);
-      if (popularity > 0) 
-      	Some((word, 1.0 / popularity))
-  	  else
-      	None 
-    }).flatten;
-    
+      val popularity = popularityOfWord(word)
+      if (popularity > 0)
+        Some((word, 1.0 / popularity))
+      else
+        None
+    }).flatten
+
     if (keywordWeights.isEmpty) {
       None
     } else {
-      val keyword: String = randomWeightedPick(keywordWeights, random);
-	  val candidateSeeds: Iterable[Tuple2[SubSentence, Double]] = productionsForWord(keyword).mapValues(_._1.values.reduce(_ + _) + 0.0);
+      val keyword: String = randomWeightedPick(keywordWeights, random)
+      val candidateSeeds: Iterable[Tuple2[SubSentence, Double]] = productionsForWord(keyword).mapValues(_._1.values.reduce(_ + _) + 0.0)
       Some(randomWeightedPick(candidateSeeds, random))
     }
   }
 
   private def generateFromSeed(seed: SubSentence, ngrams: Productions, random: Random): String = {
-    require(seed._1.isDefined);
+    require(seed._1.isDefined)
     def forward(k: SubSentence): Token = {
       randomWeightedPick(toDoubleMap(ngrams.get(k).get._1), random)
     }
@@ -132,34 +132,34 @@ object LanguageModel extends SentenceTypes {
 
     def genForward(k: SubSentence): List[String] = {
       forward(k) match {
-        case None => List.empty;
-        case Some(word) => word +: genForward(new SubSentence(k._2, k._3, word));
+        case None => List.empty
+        case Some(word) => word +: genForward(new SubSentence(k._2, k._3, word))
       }
     }
     def genBackward(k: SubSentence): List[String] = {
       backward(k) match {
-        case None => List.empty;
-        case Some(word) => genBackward(new SubSentence(word, k._1, k._2)) :+ word;
+        case None => List.empty
+        case Some(word) => genBackward(new SubSentence(word, k._1, k._2)) :+ word
       }
     }
 
-    val prefix: List[String] = genBackward(seed);
+    val prefix: List[String] = genBackward(seed)
     val suffix: List[String] = {
       if (seed._2.isDefined && seed._3.isDefined) {
-        genForward(seed);
+        genForward(seed)
       } else {
         List.empty
       }
-    };
+    }
 
-    val middle: List[String] = List(seed._1.get) ++ seed._2.toList ++ seed._3.toList;
+    val middle: List[String] = List(seed._1.get) ++ seed._2.toList ++ seed._3.toList
 
     (prefix ++ middle ++ suffix).reduce(_ + " " + _)
   }
 
   def generateSentence(ngrams: Productions, keywords: Seq[String], random: Random): Option[String] = {
     selectSeed(ngrams, keywords, random)
-      .map(seed => generateFromSeed(seed, ngrams, random));
+      .map(seed => generateFromSeed(seed, ngrams, random))
   }
 
 }
@@ -167,20 +167,20 @@ object LanguageModel extends SentenceTypes {
 class LanguageModel extends Actor with ActorLogging with SentenceTypes {
   log.info("Creating language model.")
 
-  var ngrams: Productions = SortedMap.empty;
-  val random: Random = new Random();
+  var ngrams: Productions = SortedMap.empty
+  val random: Random = new Random()
 
   def receive: Receive = {
     case ConsumeSentence(sentence) => {
       if (!sentence.contains(SpraffBot.username)) {
-        ngrams = LanguageModel.consumeSentence(ngrams, LanguageModel.splitSentenceIntoTokens(sentence));
+        ngrams = LanguageModel.consumeSentence(ngrams, LanguageModel.splitSentenceIntoTokens(sentence))
       }
     }
 
     case GenerateSentence(prompt) => {
       log.info(s"Generating from prompt: ${prompt}")
-      val sentence: Option[String] = LanguageModel.generateSentence(ngrams, LanguageModel.splitSentenceIntoWords(prompt), random);
-      sender ! new GeneratedSentece(sentence.getOrElse("I don't know about those things, why don't you teach me?"));
+      val sentence: Option[String] = LanguageModel.generateSentence(ngrams, LanguageModel.splitSentenceIntoWords(prompt), random)
+      sender ! new GeneratedSentece(sentence.getOrElse("I don't know about those things, why don't you teach me?"))
     }
   }
 

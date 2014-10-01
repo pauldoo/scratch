@@ -19,7 +19,7 @@ import akka.camel.Producer
 
 object IrcConnection {
   def props(app: ActorRef): Props =
-    Props(classOf[IrcConnection], SpraffBot.ircServer, app);
+    Props(classOf[IrcConnection], SpraffBot.ircServer, app)
 }
 
 object IrcConsumer {

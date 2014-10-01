@@ -8,7 +8,7 @@ import com.pauldoo.spraffbot.irc.SayMessage
 
 object Memory {
   def props(): Props =
-    Props(classOf[Memory]);
+    Props(classOf[Memory])
 
 }
 

@@ -19,15 +19,15 @@ import com.pauldoo.spraffbot.irc.IrcDestination
 
 object Spraffer {
   def props(corpusFile: File): Props =
-    Props(classOf[Spraffer], corpusFile);
+    Props(classOf[Spraffer], corpusFile)
 }
 
 class Spraffer(corpusFile: File) extends Actor with ActorLogging {
   import context._
 
-  val languageModel = context.actorOf(LanguageModel.props, "languageModel");
-  val corpusWriter = context.actorOf(CorpusWriter.props(corpusFile), "corpusWriter");
-  val random: Random = new Random();
+  val languageModel = context.actorOf(LanguageModel.props, "languageModel")
+  val corpusWriter = context.actorOf(CorpusWriter.props(corpusFile), "corpusWriter")
+  val random: Random = new Random()
 
   // TODO: Move this into the CorpusWriter?
   {
@@ -38,7 +38,7 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
           languageModel ! ConsumeSentence(line)
         }
       } catch {
-        case e: Exception => log.error(e, "Failed to load corpus");
+        case e: Exception => log.error(e, "Failed to load corpus")
       }
       log.info("corpus loaded")
     }
@@ -46,17 +46,17 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
 
   def receive: Receive = {
     case u: IrcUtterance => {
-      corpusWriter ! u.message;
+      corpusWriter ! u.message
 
-      val issueRandomReply = (random.nextDouble < SpraffBot.randomResponseRate);
+      val issueRandomReply = (random.nextDouble < SpraffBot.randomResponseRate)
       if ((!u.isSentToChannel) || u.message.contains(SpraffBot.username) || issueRandomReply) {
-        implicit val timeout: Timeout = Timeout(1 minute);
-        val f: Future[GeneratedSentece] = (languageModel ? (new GenerateSentence(u.message))).mapTo[GeneratedSentece];
+        implicit val timeout: Timeout = Timeout(1 minute)
+        val f: Future[GeneratedSentece] = (languageModel ? (new GenerateSentence(u.message))).mapTo[GeneratedSentece]
 
-        f.map(s => new SayMessage(u.replyDestination, s.sentence)) pipeTo sender;
+        f.map(s => new SayMessage(u.replyDestination, s.sentence)) pipeTo sender
       }
 
-      languageModel ! new ConsumeSentence(u.message);
+      languageModel ! new ConsumeSentence(u.message)
     }
   }
 

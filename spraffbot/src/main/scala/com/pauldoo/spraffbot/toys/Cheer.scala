@@ -8,7 +8,7 @@ import com.pauldoo.spraffbot.irc.SayMessage
 
 object Cheer {
   def props(): Props =
-    Props(classOf[Cheer]);
+    Props(classOf[Cheer])
 }
 
 class Cheer extends Actor with ActorLogging {

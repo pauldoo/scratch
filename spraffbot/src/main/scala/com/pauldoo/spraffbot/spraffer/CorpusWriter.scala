@@ -9,13 +9,13 @@ import java.io.FileOutputStream
 
 object CorpusWriter {
   def props(corpusFile: File): Props =
-    Props(classOf[CorpusWriter], corpusFile);
+    Props(classOf[CorpusWriter], corpusFile)
 }
 
 class CorpusWriter(corpusFile: File) extends Actor with ActorLogging {
   def receive(): Receive = {
     case s: String => {
-      val writer = new OutputStreamWriter(new FileOutputStream(corpusFile, true), "UTF-8");
+      val writer = new OutputStreamWriter(new FileOutputStream(corpusFile, true), "UTF-8")
       try {
         writer.write(s + "\n")
       } finally {
