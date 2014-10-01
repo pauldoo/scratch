@@ -49,7 +49,7 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
       corpusWriter ! u.message;
 
       val issueRandomReply = (random.nextDouble < SpraffBot.randomResponseRate);
-      if (u.message.contains(SpraffBot.username) || issueRandomReply) {
+      if ((!u.isSentToChannel) || u.message.contains(SpraffBot.username) || issueRandomReply) {
         implicit val timeout: Timeout = Timeout(1 minute);
         val f: Future[GeneratedSentece] = (languageModel ? (new GenerateSentence(u.message))).mapTo[GeneratedSentece];
 
@@ -57,10 +57,6 @@ class Spraffer(corpusFile: File) extends Actor with ActorLogging {
       }
 
       languageModel ! new ConsumeSentence(u.message);
-    }
-    case s: String => {
-      // TODO: remove this case?
-      log.info(s);
     }
   }
 

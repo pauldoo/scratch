@@ -8,96 +8,70 @@ import akka.actor.Props
 import akka.actor.actorRef2Scala
 import akka.io.IO
 import akka.io.Tcp
-import akka.io.TcpPipelineHandler
-import akka.io.TcpPipelineHandler.Init
-import akka.io.TcpPipelineHandler.WithinActorContext
-import akka.io.TcpReadWriteAdapter
 import akka.actor.ActorRef
 import com.pauldoo.spraffbot.SpraffBot
 import scala.concurrent.Future
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLContext
-import akka.io.SslTlsSupport
-import akka.io.BackpressureBuffer
+import akka.camel.{ CamelMessage, Consumer }
+import akka.camel.Oneway
+import akka.camel.Producer
 
 object IrcConnection {
   def props(app: ActorRef): Props =
     Props(classOf[IrcConnection], SpraffBot.ircServer, app);
 }
 
-class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with ActorLogging {
-  import context._
+object IrcConsumer {
+  def props(endpointUri: String, app: ActorRef): Props =
+    Props(classOf[IrcConsumer], endpointUri, app)
+}
 
-  private val handlers: List[ActorRef] =
-    List(
-      context.actorOf(Ping.props, "ping"),
-      context.actorOf(Privmsg.props(app), "privmsg"));
+object IrcProducer {
+  def props(endpointUri: String): Props =
+    Props(classOf[IrcProducer], endpointUri)
+}
 
-  {
-    IO(Tcp) ! Tcp.Connect(remote);
-  }
+class IrcConsumer(val endpointUri: String, val app: ActorRef) extends Actor with ActorLogging with Consumer {
 
-  def receive = unconnectedReceive;
+  def receive: Receive = {
+    case msg: CamelMessage => {
+      val messageType = msg.headerAs[String]("irc.messageType").get
+      if (messageType == "PRIVMSG") {
+        val message: String = msg.bodyAs[String]
+        val target: String = msg.headerAs[String]("irc.target").get
+        val source: String = msg.headerAs[String]("irc.user.nick").get
 
-  private val sslEngine: SSLEngine = {
-    val engine = SSLContext.getDefault.createSSLEngine()
-    engine.setUseClientMode(true)
-    log.info(s"Supported SSL protocols: ${engine.getSupportedProtocols().toList}")
-    log.info(s"Enabled SSL protocols: ${engine.getEnabledProtocols().toList}")
-    engine
-  }
-
-  def unconnectedReceive: Receive = {
-    case Tcp.Connected(remote, local) => {
-      log.info("Connected!");
-      val connection = sender;
-
-      val init = TcpPipelineHandler.withLogger(log,
-        new IrcMessageStage() >>
-          new BreakIntoLinesStage() >>
-          new TcpReadWriteAdapter() >>
-          new SslTlsSupport(sslEngine) >>
-          new BackpressureBuffer(lowBytes = 1000000, highBytes = 2000000, maxBytes = 4000000) // Don't think this helps
-          );
-
-      val pipeline = context.actorOf(TcpPipelineHandler.props(
-        init, connection, self).withDeploy(Deploy.local))
-
-      connection ! Tcp.Register(pipeline);
-
-      val send = sendMessage(pipeline, init)_;
-      context become connectedReceive(init, send);
-
-      // TODO: Why does this step need to be delayed?
-      Future {
-        Thread.sleep(2000);
-        self ! IrcProtocolMessage(None, "NICK", List(SpraffBot.username));
-        self ! IrcProtocolMessage(None, "USER", List(SpraffBot.username, "0", "*", "Sir Spraff"));
-        self ! IrcProtocolMessage(None, "JOIN", List(SpraffBot.ircChannel));
+        app ! IrcUtterance(IrcUser(source), IrcDestination(target), message)
       }
     }
   }
+}
 
-  def sendMessage(pipeline: ActorRef, init: Init[WithinActorContext, IrcProtocolMessage, IrcProtocolMessage])(message: IrcProtocolMessage): Unit = {
-    log.info(s"> ${message}")
-    pipeline ! init.Command(message)
+class IrcProducer(val endpointUri: String) extends Producer with Oneway {
+}
+
+class IrcConnection(remote: InetSocketAddress, app: ActorRef) extends Actor with ActorLogging {
+  import context._
+
+  val endpointUri: String = {
+    import SpraffBot._
+    import SpraffBot.ircServer.{ getHostName, getPort }
+    s"ircs:${username}@${getHostName}:${getPort}/${ircChannels.reduce(_ + "," + _)}"
+  }
+  log.info(s"Endpoint: ${endpointUri}")
+
+  private val consumer: ActorRef =
+    context.actorOf(IrcConsumer.props(endpointUri, app), "inbound")
+
+  private val producer: ActorRef =
+    context.actorOf(IrcProducer.props(endpointUri), "outbound")
+
+  def receive: Receive = {
+    case msg: SayMessage => {
+      producer ! CamelMessage(msg.message, Map("irc.target" -> msg.to.target))
+    }
   }
 
-  def connectedReceive( //
-    init: Init[WithinActorContext, IrcProtocolMessage, IrcProtocolMessage], //
-    send: IrcProtocolMessage => Unit): Receive = {
-    case init.Event(data) => {
-      log.info(s"< ${data}")
-      // TODO: replace with a pub-sub thing.
-      for (h <- handlers) h ! data
-    }
-    case _: Tcp.ConnectionClosed => {
-      log.info("Connection closed")
-      context stop self
-    }
-    case message: IrcProtocolMessage => {
-      send(message)
-    }
-  }
 }
 

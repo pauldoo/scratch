@@ -7,13 +7,19 @@ $ sbt compile
 
 $ sbt test
 
-# Build a jar file inside target/, and copy all runtime deps to target/dependency/
+# Build a jar file inside target/, and copy all runtime deps to lib_managed
 $ sbt package
 
 # Run with:
-$ sbt 'runMain akka.Main com.pauldoo.spraffbot.SpraffBot
+$ java -cp target/scala-2.10/spraffbot_2.10-1.0.jar:`find lib_managed -name '*.jar' | tr '\n' ':'` akka.Main com.pauldoo.spraffbot.SpraffBot
 
 
 TODO:
 * Fix SSL.  Upgrade to Akka 2.3.x, and use apache camel for IRC protocol implementation?
 
+
+Channel message:
+CamelMessage(hello, Map(irc.user.servername -> pauldoo, irc.target -> #sprafftest, irc.messageType -> PRIVMSG, MessageExchangeId -> ID-jam-lan-57548-1412192617284-0-8, irc.user.username -> ~pauldoo, irc.user.host -> 44.222.200.146.dyn.plus.net, breadcrumbId -> ID-jam-lan-57548-1412192617284-0-7, irc.user.nick -> pauldoo))
+
+Private message:
+CamelMessage(hello, Map(irc.user.servername -> pauldoo, irc.target -> spraffbot, irc.messageType -> PRIVMSG, MessageExchangeId -> ID-jam-lan-57548-1412192617284-0-10, irc.user.username -> ~pauldoo, irc.user.host -> 44.222.200.146.dyn.plus.net, breadcrumbId -> ID-jam-lan-57548-1412192617284-0-9, irc.user.nick -> pauldoo))

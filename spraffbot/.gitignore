@@ -42,3 +42,4 @@ build.log
 
 /.cache
 /big.txt
+/lib_managed

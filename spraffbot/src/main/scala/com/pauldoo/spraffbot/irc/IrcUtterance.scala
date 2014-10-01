@@ -6,7 +6,9 @@ case class IrcUtterance(
   val to: IrcDestination,
   val message: String) {
 
-  def replyDestination: IrcDestination = to.target.startsWith("#") match {
+  def isSentToChannel: Boolean = to.target.startsWith("#")
+
+  def replyDestination: IrcDestination = isSentToChannel match {
     case true => to
     case false => IrcDestination(from.user)
   }

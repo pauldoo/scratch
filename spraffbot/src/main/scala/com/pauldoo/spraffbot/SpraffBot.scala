@@ -7,7 +7,6 @@ import com.pauldoo.spraffbot.irc.IrcUtterance
 import akka.actor.ActorRef
 import spraffer.Spraffer
 import java.io.File
-import com.pauldoo.spraffbot.irc.IrcProtocolMessage
 import com.pauldoo.spraffbot.irc.SayMessage
 import java.net.InetSocketAddress
 import com.pauldoo.spraffbot.toys.Cheer
@@ -17,7 +16,7 @@ object SpraffBot {
   val username: String = "spraffbot";
   val randomResponseRate = 1.0 / 100;
   val ircServer = new InetSocketAddress("chat.freenode.net", 6697);
-  val ircChannel = "#sprafftest";
+  val ircChannels = List("#sprafftest", "#sprafftest2");
 }
 
 // TODO: Add handler for '\o/' messages
@@ -35,7 +34,7 @@ class SpraffBot extends Actor with ActorLogging {
     }
     case k: SayMessage => {
       log.info(k.toString);
-      connection ! new IrcProtocolMessage(None, "PRIVMSG", List(k.to.target, k.message));
+      connection ! k
     }
   }
 }
