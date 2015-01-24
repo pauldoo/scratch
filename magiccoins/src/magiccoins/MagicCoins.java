@@ -22,7 +22,7 @@ public final class MagicCoins {
 
     public static void main(final String[] args) {
 
-        for (int numberOfCoins = 1; numberOfCoins <= 8; numberOfCoins *= 2) {
+        for (int numberOfCoins = 1; numberOfCoins <= 16; numberOfCoins *= 2) {
 
             System.out.println("Trying " + numberOfCoins + " coins");
             final long startTime = System.currentTimeMillis();
