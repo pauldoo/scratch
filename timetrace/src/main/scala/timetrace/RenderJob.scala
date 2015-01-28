@@ -11,6 +11,8 @@ case class RenderJob(
   val widthInPixels: Int,
   val heightInPixels: Int,
   val frameCount: Int,
-  val outputFolder: File) {
+  val outputFolder: File,
+  val exposure: Double,
+  val encodingGamma: Double) {
 
 }

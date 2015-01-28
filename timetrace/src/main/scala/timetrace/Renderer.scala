@@ -7,14 +7,17 @@ import org.apache.spark.SparkContext
 import timetrace.math.Vector4
 import org.apache.spark.rdd.RDD
 import timetrace.photon.Photon
-import timetrace.RenderJob
 import timetrace.light.Light
 import org.apache.spark.broadcast.Broadcast
+import java.awt.image.BufferedImage
+import javax.imageio.ImageIO
+import java.io.ByteArrayOutputStream
+import java.io.FileOutputStream
 
 object Renderer {
 
   def main(args: Array[String]): Unit = {
-    render(new RenderJob(null, null, 1.0, 1000000, 640, 480, 100, null));
+    render(new RenderJob(null, null, 1.0, 100000, 320, 240, 10, null, 1.0, 1.0 / 1.8));
   }
 
   def render(job: RenderJob): Unit = {
@@ -28,7 +31,17 @@ object Renderer {
 
       val frames: RDD[Frame] = sparkContext.parallelize(1 to job.frameCount).map(renderFrame(job, photonMap))
 
-      frames.saveAsObjectFile("var/frames")
+      //frames.saveAsObjectFile("var/frames")
+
+      val images: Iterator[(Int, Array[Byte])] = frames.map(convertToImageFile(job)).toLocalIterator
+
+      for (i <- images) {
+        val filename = s"var/frame_${i._1}.png"
+        println(s"Saving ${filename}")
+        val out = new FileOutputStream(filename)
+        out.write(i._2)
+        out.close()
+      }
 
     } finally {
       sparkContext.stop
@@ -45,10 +58,10 @@ object Renderer {
 
     val pixels = new Array[Color](job.widthInPixels * job.heightInPixels)
     for (i <- 0 until pixels.length) {
-      pixels(i) = Color.BLACK
+      pixels(i) = Color(0.0, 1.0, 0.0)
     }
 
-    new Frame(job.widthInPixels, job.heightInPixels, pixels)
+    new Frame(n, job.widthInPixels, job.heightInPixels, pixels)
   }
 
   def generatePhotonBatch(job: RenderJob)(n: Int): Seq[Photon] = {
@@ -57,5 +70,25 @@ object Renderer {
 
   def generatePhotonsFromSingleEmission(job: RenderJob): Seq[Photon] = {
     List(Photon(null, null, null))
+  }
+
+  def convertToImageFile(job: RenderJob)(frame: Frame): (Int, Array[Byte]) = {
+    val image = new BufferedImage(frame.width, frame.height, BufferedImage.TYPE_INT_ARGB);
+    def exposeAndGamma(v: Double): Int = {
+      val r: Double = Math.pow(1.0 - Math.exp(-v * job.exposure), job.encodingGamma) * 256;
+      Math.max(0, Math.min(Math.round(r).toInt, 255))
+    }
+    def colorToRgb(c: Color): Int = {
+      255 << 24 |
+        exposeAndGamma(c.red) << 16 |
+        exposeAndGamma(c.green) << 8 |
+        exposeAndGamma(c.blue)
+    }
+    for (y <- 0 until frame.height; x <- 0 until frame.width) {
+      image.setRGB(x, y, colorToRgb(frame.pixels(y * frame.width + x)))
+    }
+    val buffer = new ByteArrayOutputStream()
+    ImageIO.write(image, "png", buffer)
+    (frame.number, buffer.toByteArray())
   }
 }

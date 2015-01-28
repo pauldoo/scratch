@@ -7,6 +7,6 @@ object PhotonMap {
     new PhotonMap(photons)
 }
 
-class PhotonMap(val photons: Array[Photon]) {
+case class PhotonMap(val photons: Array[Photon]) {
 
 }
