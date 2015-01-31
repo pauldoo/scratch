@@ -17,7 +17,10 @@ import java.io.FileOutputStream
 object Renderer {
 
   def main(args: Array[String]): Unit = {
-    render(new RenderJob(null, null, 1.0, 100000, 320, 240, 10, null, 1.0, 1.0 / 1.8));
+    val camera :Camera = DefaultStillCamera
+    val scene = new Scene( //
+        List(StaticPointLight())
+    render(new RenderJob(null, camera, 1.0, 100000, 320, 240, 10, null, 1.0, 1.0 / 1.8));
   }
 
   def render(job: RenderJob): Unit = {
@@ -56,12 +59,22 @@ object Renderer {
   def renderFrame(job: RenderJob, photonMap: Broadcast[PhotonMap])(n: Int): Frame = {
     println(s"Rendering frame ${n}, found ${photonMap.value.photons.length} photons.")
 
-    val pixels = new Array[Color](job.widthInPixels * job.heightInPixels)
-    for (i <- 0 until pixels.length) {
-      pixels(i) = Color(0.0, 1.0, 0.0)
-    }
+    val raytracer: Raytrace = new Raytrace(job.scene)
+    val t: Double = n.toDouble / job.frameCount
 
-    new Frame(n, job.widthInPixels, job.heightInPixels, pixels)
+    val pixels: Seq[Color] =
+      for {
+        yi <- 0 until job.heightInPixels
+        y = yi.toDouble / (job.heightInPixels - 1)
+        xi <- 0 until job.widthInPixels
+        x = xi.toDouble / (job.widthInPixels - 1)
+        ray = job.camera.generateRay(x, y, t)
+      } yield {
+        raytracer.raytrace(ray)
+      }
+
+    val pixelsArray: Array[Color] = pixels.toArray
+    new Frame(n, job.widthInPixels, job.heightInPixels, pixelsArray)
   }
 
   def generatePhotonBatch(job: RenderJob)(n: Int): Seq[Photon] = {
