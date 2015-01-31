@@ -15,7 +15,7 @@ class Plane(val normal: Vector3.Normalized, val offset: Double) extends Shape {
   def intersect(ray: Ray): Option[ShapeHit] = {
     val t = (offset - (ray.start.truncateTo3 dot normal)) / (ray.direction dot normal)
 
-    if (t > 0 && java.lang.Double.isFinite(t))
+    if (t > 0.0 && t < Double.PositiveInfinity)
       Some(new ShapeHit(t, normal))
     else
       None
