@@ -1,5 +1,5 @@
 package timetrace.material
 
-trait Material {
+trait Material extends Serializable {
 
 }

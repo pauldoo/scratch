@@ -2,6 +2,7 @@ package timetrace
 
 object Color {
   val BLACK = Color(0.0, 0.0, 0.0)
+  val WHITE = Color(1.0, 1.0, 1.0)
 }
 
 sealed case class Color(val red: Double, val green: Double, val blue: Double) {

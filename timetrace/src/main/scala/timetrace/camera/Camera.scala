@@ -2,7 +2,7 @@ package timetrace.camera
 
 import timetrace.Ray
 
-trait Camera {
+trait Camera extends Serializable {
   /**
    * x, y in the range [0.0, 1.0]
    */

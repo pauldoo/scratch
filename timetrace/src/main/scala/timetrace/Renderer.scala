@@ -13,14 +13,21 @@ import java.awt.image.BufferedImage
 import javax.imageio.ImageIO
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
+import timetrace.camera.DefaultStillCamera
+import timetrace.light.StaticPointLight
+import timetrace.shape.Plane
+import timetrace.math.Vector3
+import timetrace.light.StaticPointLight
+import timetrace.material.WhiteDiffuseMaterial
 
 object Renderer {
 
   def main(args: Array[String]): Unit = {
-    val camera :Camera = DefaultStillCamera
+    val camera: Camera = DefaultStillCamera
     val scene = new Scene( //
-        List(StaticPointLight())
-    render(new RenderJob(null, camera, 1.0, 100000, 320, 240, 10, null, 1.0, 1.0 / 1.8));
+      List(Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial)), //
+      List(new StaticPointLight(Vector3(0.0, 1.0, 0.0), Color.WHITE)))
+    render(new RenderJob(scene, camera, 1.0, 100000, 320, 240, 10, null, 1.0, 1.0 / 1.8))
   }
 
   def render(job: RenderJob): Unit = {
