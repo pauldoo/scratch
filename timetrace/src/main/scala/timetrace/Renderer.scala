@@ -46,7 +46,7 @@ object Renderer {
       val images: Iterator[(Int, Array[Byte])] = frames.map(convertToImageFile(job)).toLocalIterator
 
       for (i <- images) {
-        val filename = s"var/frame_${i._1}.png"
+        val filename = f"var/frame_${i._1}%06d.png"
         println(s"Saving ${filename}")
         val out = new FileOutputStream(filename)
         out.write(i._2)
