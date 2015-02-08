@@ -105,7 +105,7 @@ object Renderer {
         exposeAndGamma(c.blue)
     }
     for (y <- 0 until frame.height; x <- 0 until frame.width) {
-      image.setRGB(x, y, colorToRgb(frame.pixels(y * frame.width + x)))
+      image.setRGB(x, frame.height - y - 1, colorToRgb(frame.pixels(y * frame.width + x)))
     }
     val buffer = new ByteArrayOutputStream()
     ImageIO.write(image, "png", buffer)
