@@ -8,6 +8,6 @@ object DefaultStillCamera extends Camera {
   def generateRay(x: Double, y: Double, t: Double): Ray = {
     return new Ray( //
       Vector4(0.0, 0.0, 0.0, t), //
-      Vector3((x - 0.5), (y - 0.5), 0.5).normalize)
+      Vector3(x, y, 1.0).normalize)
   }
 }

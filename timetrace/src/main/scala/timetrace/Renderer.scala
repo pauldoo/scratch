@@ -69,12 +69,16 @@ object Renderer {
     val raytracer: Raytrace = new Raytrace(job.scene)
     val t: Double = n.toDouble / job.frameCount
 
+    val averageHalfSizeInPixels: Double = (job.widthInPixels + job.heightInPixels) / 4.0;
+
+    def iToR(i: Int, max: Int) = (i - ((max - 1) / 2.0)) / averageHalfSizeInPixels
+
     val pixels: Seq[Color] =
       for {
         yi <- 0 until job.heightInPixels
-        y = yi.toDouble / (job.heightInPixels - 1)
+        y = iToR(yi, job.heightInPixels)
         xi <- 0 until job.widthInPixels
-        x = xi.toDouble / (job.widthInPixels - 1)
+        x = iToR(xi, job.widthInPixels)
         ray = job.camera.generateRay(x, y, t)
       } yield {
         raytracer.raytrace(ray)
