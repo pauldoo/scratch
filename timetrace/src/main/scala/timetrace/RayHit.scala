@@ -8,7 +8,4 @@ sealed case class RayHit(
   val ray: Ray,
   val shapeHit: ShapeHit,
   val material: Material) {
-
-  val location: Vector4 = ray.march(shapeHit.t)
-
 }

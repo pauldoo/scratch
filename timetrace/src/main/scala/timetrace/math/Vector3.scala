@@ -16,6 +16,8 @@ case class Vector3(val x: Double, val y: Double, val z: Double) extends VectorN[
 
   def to4(): Vector4 = new Vector4(x, y, z, 1.0)
 
+  def to4(t: Double): Vector4 = new Vector4(x, y, z, t)
+
   def -(that: Vector3): Vector3 = Vector3(
     this.x - that.x,
     this.y - that.y,
@@ -33,4 +35,3 @@ case class Vector3(val x: Double, val y: Double, val z: Double) extends VectorN[
     new Normalized(x / mag, y / mag, z / mag)
   }
 }
-

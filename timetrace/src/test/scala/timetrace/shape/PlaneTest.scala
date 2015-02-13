@@ -34,7 +34,7 @@ class PlaneTest extends UnitSpec {
           val rayHit: Option[ShapeHit] = plane.intersect(ray)
 
           if (currentSide != eventualSide) {
-            val location = ray.march(rayHit.get.t)
+            val location = ray.marchForwardInTime(rayHit.get.t)
             (location.truncateTo3 dot plane.normal) should equal(plane.offset +- 1e-6)
           } else {
             rayHit should not be ('defined)

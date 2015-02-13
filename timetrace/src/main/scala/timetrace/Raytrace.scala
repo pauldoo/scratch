@@ -3,6 +3,7 @@ package timetrace
 import timetrace.light.Light
 import timetrace.math.Vector3
 import timetrace.math.MathUtils._
+import timetrace.math.Vector4
 
 class Raytrace(val scene: Scene) {
 
@@ -24,11 +25,16 @@ class Raytrace(val scene: Scene) {
   def calculateDirectLighting(hit: RayHit): Color = {
 
     def contributionFromLight(light: Light): Color = {
-      val pathToLight: Vector3 = light.location - hit.location.truncateTo3
-      val contribution: Double = pathToLight.normalize dot hit.shapeHit.normal
-      val attenuation: Double = 1.0 / square(pathToLight.magnitude)
+      val hitLocation: Vector4 = hit.ray.marchBackwardInTime(hit.shapeHit.t)
 
-      light.color * contribution * attenuation
+      val pathToLight: Vector3 = light.location - hitLocation.truncateTo3
+      val contribution: Double = pathToLight.normalize dot hit.shapeHit.normal
+      val distance: Double = pathToLight.magnitude
+      val attenuation: Double = 1.0 / square(distance)
+
+      val relevantTimeAtLightSource = hitLocation.t - distance
+
+      light.colorAtTime(relevantTimeAtLightSource) * contribution * attenuation
     }
 
     scene.lights.map(contributionFromLight _).reduce(_ + _)

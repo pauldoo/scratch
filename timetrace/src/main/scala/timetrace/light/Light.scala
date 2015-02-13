@@ -5,5 +5,5 @@ import timetrace.Color
 
 trait Light extends Serializable {
   val location: Vector3
-  val color: Color
+  def colorAtTime(t: Double): Color
 }

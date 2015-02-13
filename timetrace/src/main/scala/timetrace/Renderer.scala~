@@ -27,7 +27,7 @@ object Renderer {
     val scene = new Scene( //
       List(Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial)), //
       List(new SinglePulsePointLight(Vector3(0.0, 1.0, 0.0), Color.WHITE, 1.0)))
-    render(new RenderJob(scene, camera, 20.0, 100000, 320, 240, 75, null, 1.0, 1.0 / 1.8))
+    render(new RenderJob(scene, camera, 10.0, 100000, 320, 240, 10, null, 1.0, 1.0 / 1.8))
   }
 
   def render(job: RenderJob): Unit = {
@@ -39,7 +39,7 @@ object Renderer {
 
       val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(photons.collect))
 
-      val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap))
+      val frames: RDD[Frame] = sparkContext.parallelize(1 to job.frameCount).map(renderFrame(job, photonMap))
 
       //frames.saveAsObjectFile("var/frames")
 
