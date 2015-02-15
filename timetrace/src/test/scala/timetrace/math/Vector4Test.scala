@@ -11,6 +11,11 @@ object Vector4Test {
     v <- Vector3Test.vector3s;
     t <- Generators.numbers
   ) yield new Vector4(v.x, v.y, v.z, t)
+
+  val vector4sSpatiallyNormalized: Gen[Vector4.SpatiallyNormalized] = for (
+    v <- Vector3Test.vector3sNormalized;
+    t <- Gen.oneOf(-1.0, 1.0)
+  ) yield new Vector4.SpatiallyNormalized(v, t)
 }
 
 @RunWith(classOf[JUnitRunner])

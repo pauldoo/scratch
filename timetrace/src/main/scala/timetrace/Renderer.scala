@@ -27,7 +27,12 @@ object Renderer {
     val scene = new Scene( //
       List(Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial)), //
       List(new SinglePulsePointLight(Vector3(0.0, 1.0, 0.0), Color.WHITE, 1.0)))
-    render(new RenderJob(scene, camera, 20.0, 100000, 320, 240, 75, null, 1.0, 1.0 / 1.8))
+
+    val downscale = 4
+
+    val job = new RenderJob(scene, camera, 20.0, 100000, 1920 / downscale, 1080 / downscale, 100, null, 10.0, 1.0 / 1.8)
+
+    render(job)
   }
 
   def render(job: RenderJob): Unit = {

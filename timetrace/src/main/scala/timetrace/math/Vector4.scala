@@ -1,12 +1,20 @@
 package timetrace.math
 
 import timetrace.math.Vector4.Normalized
+import timetrace.math.Vector4.SpatiallyNormalized
 
 object Vector4 {
   class Normalized(x: Double, y: Double, z: Double, t: Double) extends Vector4(x, y, z, t) {
     assume(Math.abs(magnitude - 1.0) < 1e-6)
     override val normalize = this
     override def isNormalized() = true
+  }
+
+  // Normalized (x, y, z) part, ensure t is +/- 1.0.
+  // Used mainly to describe ray directions
+  class SpatiallyNormalized(v3: Vector3.Normalized, t: Double) extends Vector4(v3.x, v3.y, v3.z, t) {
+    assume(t == -1.0 || t == 1.0)
+    override val spatiallyNormalize = this
   }
 }
 
@@ -36,4 +44,8 @@ sealed case class Vector4(val x: Double, val y: Double, val z: Double, val t: Do
     new Normalized(x / mag, y / mag, z / mag, t / mag)
   }
 
+  def spatiallyNormalize(): Vector4.SpatiallyNormalized = {
+    assert(t == -1.0 || t == 1.0)
+    new SpatiallyNormalized(truncateTo3().normalize(), t)
+  }
 }

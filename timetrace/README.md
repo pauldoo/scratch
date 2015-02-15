@@ -17,4 +17,3 @@ TODO:
 * Movable surfaces
 * Movable lights
 * Movable camera
-* Better abstraction/seperation of forward vs backward rays

@@ -29,12 +29,12 @@ class PlaneTest extends UnitSpec {
       (plane: Plane, ray: Ray) =>
         {
           val currentSide = Math.signum((ray.start.truncateTo3 dot plane.normal) - plane.offset)
-          val eventualSide = Math.signum(ray.direction dot plane.normal)
+          val eventualSide = Math.signum(ray.direction.truncateTo3() dot plane.normal)
 
           val rayHit: Option[ShapeHit] = plane.intersect(ray)
 
           if (currentSide != eventualSide) {
-            val location = ray.marchForwardInTime(rayHit.get.t)
+            val location = ray.march(rayHit.get.t)
             (location.truncateTo3 dot plane.normal) should equal(plane.offset +- 1e-6)
           } else {
             rayHit should not be ('defined)
@@ -45,7 +45,7 @@ class PlaneTest extends UnitSpec {
 
   it should "fail to intersect when rays are parallel" in {
     val plane = new Plane(Vector3(1.0, 0.0, 0.0).normalize, 0.0)
-    val ray = Ray(Vector4(1.0, 0.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0).normalize)
+    val ray = Ray(Vector4(1.0, 0.0, 0.0, 0.0), Vector4(0.0, 1.0, 0.0, 1.0).spatiallyNormalize())
 
     val rayHit = plane.intersect(ray)
   }

@@ -13,7 +13,7 @@ import timetrace.math.MathUtils._
 class RaytraceTest extends UnitSpec with ColorMatchers {
   "raytrace" should "find nothing in an empty scene" in {
     val scene = new Scene(List.empty, List.empty)
-    val ray = new Ray(new Vector4(0.0, 0.0, 0.0, 0.0), new Vector3(1.0, 0.0, 0.0).normalize)
+    val ray = new Ray(new Vector4(0.0, 0.0, 0.0, 0.0), new Vector4(1.0, 0.0, 0.0, -1.0).spatiallyNormalize())
     val hit = new Raytrace(scene).firstHit(ray)
 
     hit should be(None)
@@ -23,7 +23,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
     val scene = new Scene(
       List(Thing(new Plane(Vector3(0.0, 0.0, 1.0).normalize, 0.0), WhiteDiffuseMaterial)),
       List.empty)
-    val ray = new Ray(new Vector4(0.0, 0.0, 1.0, 0.0), new Vector3(0.0, 0.0, -1.0).normalize)
+    val ray = new Ray(new Vector4(0.0, 0.0, 1.0, 0.0), new Vector4(0.0, 0.0, -1.0, -1.0).spatiallyNormalize())
     val hit: Option[RayHit] = new Raytrace(scene).firstHit(ray)
 
     hit should be('defined)
@@ -35,7 +35,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
       List(new StaticPointLight(lightPos, Color(1.0, 2.0, 3.0))))
 
     val raytrace = new Raytrace(scene)
-    val colorHeadOn: Color = raytrace.raytrace(new Ray(rayStart.to4, (rayStart * -1.0).normalize))
+    val colorHeadOn: Color = raytrace.raytrace(new Ray(rayStart.to4, (rayStart * -1.0).to4(-1.0).spatiallyNormalize()))
     colorHeadOn
   }
 
