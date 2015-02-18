@@ -24,7 +24,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
       List(Thing(new Plane(Vector3(0.0, 0.0, 1.0).normalize, 0.0), WhiteDiffuseMaterial)),
       List.empty)
     val ray = new Ray(new Vector4(0.0, 0.0, 1.0, 0.0), new Vector4(0.0, 0.0, -1.0, -1.0).spatiallyNormalize())
-    val hit: Option[RayHit] = new Raytrace(scene).firstHit(ray)
+    val hit: Option[Hit[Ray]] = new Raytrace(scene).firstHit(ray)
 
     hit should be('defined)
   }

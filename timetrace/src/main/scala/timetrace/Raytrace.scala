@@ -4,26 +4,28 @@ import timetrace.light.Light
 import timetrace.math.Vector3
 import timetrace.math.MathUtils._
 import timetrace.math.Vector4
+import timetrace.math.RayLike
+import timetrace.photon.Photon
 
 class Raytrace(val scene: Scene) {
 
   def raytrace(ray: Ray): Color = {
     assert(ray.direction.t == -1.0)
 
-    val hit: Option[RayHit] = firstHit(ray)
+    val hit: Option[Hit[Ray]] = firstHit(ray)
     hit.map(calculateDirectLighting _).getOrElse(Color.BLACK)
 
   }
 
-  def firstHit(ray: Ray): Option[RayHit] = {
-    def pickClosest(a: RayHit, b: RayHit) = {
+  def firstHit[R <: RayLike](ray: R): Option[Hit[R]] = {
+    def pickClosest(a: Hit[R], b: Hit[R]): Hit[R] = {
       if (a.shapeHit.t < b.shapeHit.t) a else b
     }
 
     scene.things.flatMap(_.intersect(ray)).reduceOption(pickClosest _)
   }
 
-  def calculateDirectLighting(hit: RayHit): Color = {
+  def calculateDirectLighting(hit: Hit[Ray]): Color = {
 
     def contributionFromLight(light: Light): Color = {
       val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
@@ -39,6 +41,22 @@ class Raytrace(val scene: Scene) {
     }
 
     scene.lights.map(contributionFromLight _).reduce(_ + _)
+  }
+
+  def generatePhotons(): List[Photon] = {
+    assume(scene.lights.size == 1)
+
+    val light = scene.lights(0)
+
+    val photon: Photon = light.emitPhoton
+
+    val hit: Option[Hit[Photon]] = firstHit(photon)
+
+    hit.map(ph => {
+      val hitLocation = ph.ray.march(ph.shapeHit.t)
+
+      new Photon(hitLocation, ph.ray.direction, ph.ray.color)
+    }).toList
   }
 
 }

@@ -8,7 +8,6 @@ import org.scalacheck.Gen
 import timetrace.math.Vector4Test
 import timetrace.RayTest
 import timetrace.Ray
-import timetrace.RayHit
 import timetrace.Generators
 import timetrace.RayTest
 import timetrace.math.Vector3
@@ -28,7 +27,7 @@ class PlaneTest extends UnitSpec {
     forAll(PlaneTest.planes, RayTest.rays) {
       (plane: Plane, ray: Ray) =>
         {
-          val currentSide = Math.signum((ray.start.truncateTo3 dot plane.normal) - plane.offset)
+          val currentSide = Math.signum((ray.location.truncateTo3 dot plane.normal) - plane.offset)
           val eventualSide = Math.signum(ray.direction.truncateTo3() dot plane.normal)
 
           val rayHit: Option[ShapeHit] = plane.intersect(ray)
@@ -45,7 +44,7 @@ class PlaneTest extends UnitSpec {
 
   it should "fail to intersect when rays are parallel" in {
     val plane = new Plane(Vector3(1.0, 0.0, 0.0).normalize, 0.0)
-    val ray = Ray(Vector4(1.0, 0.0, 0.0, 0.0), Vector4(0.0, 1.0, 0.0, 1.0).spatiallyNormalize())
+    val ray = new Ray(Vector4(1.0, 0.0, 0.0, 0.0), Vector4(0.0, 1.0, 0.0, 1.0).spatiallyNormalize())
 
     val rayHit = plane.intersect(ray)
   }

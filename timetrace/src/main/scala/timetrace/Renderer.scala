@@ -22,11 +22,13 @@ import timetrace.material.WhiteDiffuseMaterial
 
 object Renderer {
 
+  private val PHOTON_SCATTERING_PARTITIONS = 1000
+
   def main(args: Array[String]): Unit = {
     val camera: Camera = DefaultStillCamera
     val scene = new Scene( //
       List(Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial)), //
-      List(new SinglePulsePointLight(Vector3(0.0, 1.0, 0.0), Color.WHITE, 1.0)))
+      List(new SinglePulsePointLight(Vector3(0.0, 1.0, 0.0), Color.WHITE, 0.0, 1.0)))
 
     val downscale = 4
 
@@ -40,7 +42,9 @@ object Renderer {
     val sparkContext = new SparkContext(sparkConf)
 
     try {
-      val photons: RDD[Photon] = sparkContext.parallelize(1 to 1000, 1000).flatMap(generatePhotonBatch(job))
+      val photons: RDD[Photon] = sparkContext //
+        .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
+        .flatMap(generatePhotonBatch(job))
 
       val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(photons.collect))
 
@@ -95,11 +99,11 @@ object Renderer {
   }
 
   def generatePhotonBatch(job: RenderJob)(n: Int): Seq[Photon] = {
-    Iterator.continually(generatePhotonsFromSingleEmission(job)).flatten.take(job.photonCount / 1000).toSeq
-  }
+    val raytracer: Raytrace = new Raytrace(job.scene)
 
-  def generatePhotonsFromSingleEmission(job: RenderJob): Seq[Photon] = {
-    List(Photon(null, null, null))
+    val photonsToGenerate = job.photonCount / PHOTON_SCATTERING_PARTITIONS
+
+    Iterator.continually(raytracer.generatePhotons()).flatten.take(photonsToGenerate).toSeq
   }
 
   def convertToImageFile(job: RenderJob)(frame: Frame): (Int, Array[Byte]) = {

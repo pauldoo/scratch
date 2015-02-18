@@ -7,13 +7,17 @@ Test: sbt test
 Style: sbt scalastyle-generate-config / sbt scalastyle
 
 
+PLAN:
+
+Will start by doing all lighting (even direct) from photon map
+Raytrace out from camera will find first hit, then query PM
+Later extend this to recurse only down the direct (straight) path, in case of participating media
+
 
 TODO:
-* Rendering a sequence of frames
-* Shadowing
+* Participating media
 * Global illumination
 * Specular surfaces
-* Participating media
 * Movable surfaces
 * Movable lights
 * Movable camera

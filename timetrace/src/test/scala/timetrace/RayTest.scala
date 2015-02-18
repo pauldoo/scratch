@@ -22,14 +22,14 @@ class RayTest extends UnitSpec {
       {
         val v = new Ray(start, direction)
 
-        v.start should equal(start)
+        v.location should equal(start)
         v.direction should equal(direction)
       }
     }
   }
 
   it should "have a nice toString" in {
-    val ray = Ray(
+    val ray = new Ray(
       Vector4(1.0, 2.0, 3.0, 4.0),
       Vector4(0.0, 1.0, 0.0, -1.0).spatiallyNormalize())
     ray.toString() should equal("Ray([1.0, 2.0, 3.0, 4.0] -> [0.0, 1.0, 0.0, -1.0])")
