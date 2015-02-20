@@ -1,0 +1,1 @@
+The core of the raytracer logic lives here, without any spark specifics.
