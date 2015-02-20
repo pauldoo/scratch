@@ -6,6 +6,8 @@ import timetrace.math.MathUtils._
 import timetrace.math.Vector4
 import timetrace.math.RayLike
 import timetrace.photon.Photon
+import scala.util.Random
+import org.apache.commons.math3.random.RandomGenerator
 
 class Raytrace(val scene: Scene) {
 
@@ -43,12 +45,12 @@ class Raytrace(val scene: Scene) {
     scene.lights.map(contributionFromLight _).reduce(_ + _)
   }
 
-  def generatePhotons(): List[Photon] = {
+  def generatePhotons(rng: RandomGenerator): List[Photon] = {
     assume(scene.lights.size == 1)
 
     val light = scene.lights(0)
 
-    val photon: Photon = light.emitPhoton
+    val photon: Photon = light.emitPhoton(rng)
 
     val hit: Option[Hit[Photon]] = firstHit(photon)
 

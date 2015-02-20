@@ -17,8 +17,10 @@ import timetrace.camera.DefaultStillCamera
 import timetrace.light.SinglePulsePointLight
 import timetrace.shape.Plane
 import timetrace.math.Vector3
-import timetrace.light.StaticPointLight
 import timetrace.material.WhiteDiffuseMaterial
+import scala.util.Random
+import org.apache.commons.math3.random.MersenneTwister
+import org.apache.commons.math3.random.RandomGenerator
 
 object Renderer {
 
@@ -102,8 +104,9 @@ object Renderer {
     val raytracer: Raytrace = new Raytrace(job.scene)
 
     val photonsToGenerate = job.photonCount / PHOTON_SCATTERING_PARTITIONS
+    val rng: RandomGenerator = new MersenneTwister
 
-    Iterator.continually(raytracer.generatePhotons()).flatten.take(photonsToGenerate).toSeq
+    Iterator.continually(raytracer.generatePhotons(rng)).flatten.take(photonsToGenerate).toSeq
   }
 
   def convertToImageFile(job: RenderJob)(frame: Frame): (Int, Array[Byte]) = {

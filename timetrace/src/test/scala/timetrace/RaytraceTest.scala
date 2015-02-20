@@ -6,8 +6,8 @@ import timetrace.math.Vector3
 import timetrace.math.Vector4
 import timetrace.shape.Plane
 import timetrace.material.WhiteDiffuseMaterial
-import timetrace.light.StaticPointLight
 import timetrace.math.MathUtils._
+import timetrace.light.SinglePulsePointLight
 
 @RunWith(classOf[JUnitRunner])
 class RaytraceTest extends UnitSpec with ColorMatchers {
@@ -32,7 +32,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
   private def singleRayTest(rayStart: Vector3, lightPos: Vector3): Color = {
     val scene = new Scene(
       List(Thing(new Plane(Vector3(0.0, 0.0, 1.0).normalize, 0.0), WhiteDiffuseMaterial)),
-      List(new StaticPointLight(lightPos, Color(1.0, 2.0, 3.0))))
+      List(new SinglePulsePointLight(lightPos, Color(1.0, 2.0, 3.0), -1e3, 1e3)))
 
     val raytrace = new Raytrace(scene)
     val colorHeadOn: Color = raytrace.raytrace(new Ray(rayStart.to4, (rayStart * -1.0).to4(-1.0).spatiallyNormalize()))
