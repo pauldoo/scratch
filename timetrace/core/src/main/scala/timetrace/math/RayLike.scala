@@ -1,6 +1,8 @@
 package timetrace.math
 
-trait RayLike {
+import timetrace.kdtree.PointLike
+
+trait RayLike extends PointLike {
   def location(): Vector4
 
   def direction(): Vector4.SpatiallyNormalized

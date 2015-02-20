@@ -16,6 +16,22 @@ object Vector4 {
     assume(t == -1.0 || t == 1.0)
     override val spatiallyNormalize = this
   }
+
+  def componentMinimums(v1: Vector4, v2: Vector4): Vector4 = {
+    return new Vector4( //
+      scala.math.min(v1.x, v2.x), //
+      scala.math.min(v1.y, v2.y), //
+      scala.math.min(v1.z, v2.z), //
+      scala.math.min(v1.t, v2.t))
+  }
+
+  def componentMaximums(v1: Vector4, v2: Vector4): Vector4 = {
+    return new Vector4( //
+      scala.math.max(v1.x, v2.x), //
+      scala.math.max(v1.y, v2.y), //
+      scala.math.max(v1.z, v2.z), //
+      scala.math.max(v1.t, v2.t))
+  }
 }
 
 sealed case class Vector4(val x: Double, val y: Double, val z: Double, val t: Double) extends VectorN[Vector4] {

@@ -8,5 +8,5 @@ object PhotonMap {
 }
 
 case class PhotonMap(val photons: Array[Photon]) {
-
 }
+

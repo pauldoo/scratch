@@ -21,6 +21,7 @@ import timetrace.material.WhiteDiffuseMaterial
 import scala.util.Random
 import org.apache.commons.math3.random.MersenneTwister
 import org.apache.commons.math3.random.RandomGenerator
+import timetrace.kdtree.KDTree
 
 object Renderer {
 
@@ -48,7 +49,7 @@ object Renderer {
         .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
         .flatMap(generatePhotonBatch(job))
 
-      val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(photons.collect))
+      val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(photons.collect.toList))
 
       val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap))
 
@@ -57,7 +58,7 @@ object Renderer {
       val images: Iterator[(Int, Array[Byte])] = frames.map(convertToImageFile(job)).toLocalIterator
 
       for (i <- images) {
-        val filename = f"var/frame_${i._1}%06d.png"
+        val filename = f"../var/frame_${i._1}%06d.png"
         println(s"Saving ${filename}")
         val out = new FileOutputStream(filename)
         out.write(i._2)
@@ -70,8 +71,9 @@ object Renderer {
 
   }
 
-  def buildPhotonMap(photons: Array[Photon]) = {
-    PhotonMap.build(photons)
+  def buildPhotonMap(photons: List[Photon]) = {
+    KDTree.build(photons)
+    PhotonMap.build(???)
   }
 
   def renderFrame(job: RenderJob, photonMap: Broadcast[PhotonMap])(n: Int): Frame = {
