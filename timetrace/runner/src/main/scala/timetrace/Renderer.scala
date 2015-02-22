@@ -35,7 +35,7 @@ object Renderer {
 
     val downscale = 4
 
-    val job = new RenderJob(scene, camera, 20.0, 100000, 1920 / downscale, 1080 / downscale, 100, null, 10.0, 1.0 / 1.8)
+    val job = new RenderJob(scene, camera, 20.0, 1000000, 1920 / downscale, 1080 / downscale, 100, null, 10.0, 1.0 / 1.8)
 
     render(job)
   }
@@ -49,7 +49,7 @@ object Renderer {
         .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
         .flatMap(generatePhotonBatch(job))
 
-      val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(photons.collect.toList))
+      val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(job, photons.collect.toList))
 
       val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap))
 
@@ -71,13 +71,13 @@ object Renderer {
 
   }
 
-  def buildPhotonMap(photons: List[Photon]) = {
-    KDTree.build(photons)
-    PhotonMap.build(???)
+  def buildPhotonMap(job: RenderJob, photons: List[Photon]): PhotonMap = {
+    val kdtree = KDTree.build(photons)
+    new PhotonMap(job.photonCount, kdtree)
   }
 
   def renderFrame(job: RenderJob, photonMap: Broadcast[PhotonMap])(n: Int): Frame = {
-    println(s"Rendering frame ${n}, found ${photonMap.value.photons.length} photons.")
+    println(s"Rendering frame ${n}, found ${photonMap.value.photons.size} photons.")
 
     val raytracer: Raytrace = new Raytrace(job.scene)
     val t: Double = n.toDouble * (job.maxT / job.frameCount)

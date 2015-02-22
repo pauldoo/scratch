@@ -15,6 +15,7 @@ Later extend this to recurse only down the direct (straight) path, in case of pa
 
 
 TODO:
+* Normalize photon intensity wrt how many were emitted
 * Participating media
 * Global illumination
 * Specular surfaces

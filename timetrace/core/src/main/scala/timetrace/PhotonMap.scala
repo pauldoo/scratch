@@ -1,12 +1,7 @@
 package timetrace
 
 import timetrace.photon.Photon
+import timetrace.kdtree.KDTree
 
-object PhotonMap {
-  def build(photons: Array[Photon]): PhotonMap =
-    new PhotonMap(photons)
+case class PhotonMap(val photonsEmitted: Int, val photons: KDTree[Photon]) {
 }
-
-case class PhotonMap(val photons: Array[Photon]) {
-}
-

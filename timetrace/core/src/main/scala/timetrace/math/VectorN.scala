@@ -10,4 +10,8 @@ trait VectorN[Self] {
   def dot(that: Self): Double
 
   def *(s: Double): Self
+
+  def +(that: Self): Self
+
+  def -(that: VectorN[Self]) = this + (that * -1.0)
 }
