@@ -8,14 +8,15 @@ import timetrace.math.RayLike
 import timetrace.photon.Photon
 import scala.util.Random
 import org.apache.commons.math3.random.RandomGenerator
+import timetrace.photon.PhotonMap
 
 class Raytrace(val scene: Scene) {
 
-  def raytrace(ray: Ray): Color = {
+  def raytrace(ray: Ray, photonMap: PhotonMap): Color = {
     assert(ray.direction.t == -1.0)
 
     val hit: Option[Hit[Ray]] = firstHit(ray)
-    hit.map(calculateDirectLighting _).getOrElse(Color.BLACK)
+    hit.map(calculateGlobalLighting(photonMap)).getOrElse(Color.BLACK)
 
   }
 
@@ -25,6 +26,14 @@ class Raytrace(val scene: Scene) {
     }
 
     scene.things.flatMap(_.intersect(ray)).reduceOption(pickClosest _)
+  }
+
+  def calculateGlobalLighting(photonMap: PhotonMap)(hit: Hit[Ray]): Color = {
+    val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
+
+    val incomingLights: List[PhotonMap.Contribution] = photonMap.incomingLightAt(hitLocation, hit.shapeHit.normal)
+
+    ???
   }
 
   def calculateDirectLighting(hit: Hit[Ray]): Color = {

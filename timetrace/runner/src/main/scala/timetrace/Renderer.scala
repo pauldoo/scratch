@@ -76,8 +76,10 @@ object Renderer {
     new PhotonMap(job.photonCount, kdtree)
   }
 
-  def renderFrame(job: RenderJob, photonMap: Broadcast[PhotonMap])(n: Int): Frame = {
-    println(s"Rendering frame ${n}, found ${photonMap.value.photons.size} photons.")
+  def renderFrame(job: RenderJob, photonMapBroadcast: Broadcast[PhotonMap])(n: Int): Frame = {
+    println(s"Rendering frame ${n}.")
+
+    val photonMap = photonMapBroadcast.value
 
     val raytracer: Raytrace = new Raytrace(job.scene)
     val t: Double = n.toDouble * (job.maxT / job.frameCount)
@@ -95,7 +97,7 @@ object Renderer {
         x = iToR(xi, job.widthInPixels)
         ray = job.camera.generateRay(x, y, t)
       } yield {
-        raytracer.raytrace(ray)
+        raytracer.raytrace(ray, photonMap)
       }
 
     val pixelsArray: Array[Color] = pixels.toArray
