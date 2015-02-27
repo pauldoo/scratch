@@ -16,13 +16,13 @@ object KDTreeTest {
 @RunWith(classOf[JUnitRunner])
 class KDTreeTest extends UnitSpec {
 
-  "kdtrees" should "find closest points in random cloud" in {
+  "kdtrees" should "find closest points in random cloud, and return them in closest last order" in {
     forAll(KDTreeTest.dummyPointsList, Vector4Test.vector4s) { (points: List[DummyPoint], target: Vector4) =>
       {
-        val expected = points.sortBy(x => (target - x.location).magnitude()).take(10).toSet
+        val expected = points.sortBy(x => (target - x.location).magnitude()).take(10).reverse
 
         val tree = KDTree.build(points)
-        val actual = tree.findClosestTo(target, 10).toSet
+        val actual = tree.findClosestTo(target, 10)
 
         actual should equal(expected)
       }
