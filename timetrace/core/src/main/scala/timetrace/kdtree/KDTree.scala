@@ -2,6 +2,8 @@ package timetrace.kdtree
 
 import timetrace.math.Vector4
 import scala.language.implicitConversions
+import scala.collection.mutable.PriorityQueue
+import scala.annotation.tailrec
 
 trait PointLike {
   val location: Vector4
@@ -58,26 +60,112 @@ class KDTree[T <: PointLike]( //
   private val maxs: Vector4, //
   private val rootNode: KDTreeNode[T]) {
 
+  def findClosestTo(target: Vector4, n: Int): List[T] = {
+
+    class NodeWithKnownBoundsAndMinDistance( //
+      val node: KDTreeNode[T], //
+      val mins: Vector4, //
+      val maxs: Vector4) {
+      val minDistance: Double = {
+        val closestPoint = Vector4.clamp(mins, maxs)(target)
+        (closestPoint - target).magnitude()
+      }
+    }
+
+    class PointWithDistance( //
+      val point: T) {
+      val distance = (point.location - target).magnitude()
+    }
+
+    // Queue of kdtree nodes to try, ordered by closest first
+    val queue: PriorityQueue[NodeWithKnownBoundsAndMinDistance] = //
+      new PriorityQueue[NodeWithKnownBoundsAndMinDistance]()(Ordering.by(n => -n.minDistance))
+
+    def considerEnqueue( //
+      node: KDTreeNode[T], //
+      minsHint: Vector4, //
+      maxsHint: Vector4): Unit = {
+      node match {
+        case null => ()
+        case leaf: KDTreeLeafNode[T] => {
+          queue.enqueue(new NodeWithKnownBoundsAndMinDistance(
+            leaf, leaf.point.location, leaf.point.location))
+        }
+        case inner: KDTreeInnerNode[T] => {
+          queue.enqueue(new NodeWithKnownBoundsAndMinDistance(
+            inner, minsHint, maxsHint))
+        }
+      }
+    }
+
+    considerEnqueue(rootNode, mins, maxs)
+
+    @tailrec
+    def find(result: List[T]): List[T] = {
+      if (result.size >= n || queue.isEmpty) {
+        result
+      } else {
+        val curr = queue.dequeue()
+
+        curr.node match {
+          case leaf: KDTreeLeafNode[T] => {
+
+            find(leaf.point :: result)
+
+          }
+          case inner: KDTreeInnerNode[T] => {
+            considerEnqueue(new KDTreeLeafNode[T](inner.pivot), null, null)
+            if (inner.left != null) {
+              considerEnqueue(inner.left, curr.mins, inner.axis.set(curr.maxs, inner.pivot.location))
+            }
+            if (inner.right != null) {
+              considerEnqueue(inner.right, inner.axis.set(curr.mins, inner.pivot.location), curr.maxs)
+            }
+
+            find(result)
+          }
+        }
+
+      }
+    }
+
+    find(List.empty)
+  }
+
 }
 
 private sealed trait Axis {
   def extractor(p: Vector4): Double
+
+  def set(p: Vector4, v: Vector4): Vector4
 }
 
 private case object X extends Axis {
   def extractor(p: Vector4): Double = p.x
+
+  def set(p: Vector4, v: Vector4): Vector4 =
+    new Vector4(v.x, p.y, p.z, p.t)
 }
 
 private case object Y extends Axis {
   def extractor(p: Vector4): Double = p.y
+
+  def set(p: Vector4, v: Vector4): Vector4 =
+    new Vector4(p.x, v.y, p.z, p.t)
 }
 
 private case object Z extends Axis {
   def extractor(p: Vector4): Double = p.z
+
+  def set(p: Vector4, v: Vector4): Vector4 =
+    new Vector4(p.x, p.y, v.z, p.t)
 }
 
 private case object T extends Axis {
   def extractor(p: Vector4): Double = p.t
+
+  def set(p: Vector4, v: Vector4): Vector4 =
+    new Vector4(p.x, p.y, p.z, v.t)
 }
 
 private sealed trait KDTreeNode[T <: PointLike] {

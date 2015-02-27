@@ -22,6 +22,7 @@ import scala.util.Random
 import org.apache.commons.math3.random.MersenneTwister
 import org.apache.commons.math3.random.RandomGenerator
 import timetrace.kdtree.KDTree
+import timetrace.photon.PhotonMap
 
 object Renderer {
 

@@ -15,5 +15,6 @@ case class PhotonMap(val photonsEmitted: Int, val photons: KDTree[Photon]) {
   def incomingLightAt(location: Vector4, surfaceNormal: Vector3): List[PhotonMap.Contribution] = {
 
     val closesPhotons: List[Photon] = photons.findClosestTo(location, 100)
+    ???
   }
 }

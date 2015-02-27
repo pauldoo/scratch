@@ -2,6 +2,7 @@ package timetrace.math
 
 import timetrace.math.Vector4.Normalized
 import timetrace.math.Vector4.SpatiallyNormalized
+import scala.math.{ min, max }
 
 object Vector4 {
   class Normalized(x: Double, y: Double, z: Double, t: Double) extends Vector4(x, y, z, t) {
@@ -19,18 +20,31 @@ object Vector4 {
 
   def componentMinimums(v1: Vector4, v2: Vector4): Vector4 = {
     return new Vector4( //
-      scala.math.min(v1.x, v2.x), //
-      scala.math.min(v1.y, v2.y), //
-      scala.math.min(v1.z, v2.z), //
-      scala.math.min(v1.t, v2.t))
+      min(v1.x, v2.x), //
+      min(v1.y, v2.y), //
+      min(v1.z, v2.z), //
+      min(v1.t, v2.t))
   }
 
   def componentMaximums(v1: Vector4, v2: Vector4): Vector4 = {
     return new Vector4( //
-      scala.math.max(v1.x, v2.x), //
-      scala.math.max(v1.y, v2.y), //
-      scala.math.max(v1.z, v2.z), //
-      scala.math.max(v1.t, v2.t))
+      max(v1.x, v2.x), //
+      max(v1.y, v2.y), //
+      max(v1.z, v2.z), //
+      max(v1.t, v2.t))
+  }
+
+  def clamp(mins: Vector4, maxs: Vector4)(v: Vector4): Vector4 = {
+    assume(mins.x <= maxs.x)
+    assume(mins.y <= maxs.y)
+    assume(mins.z <= maxs.z)
+    assume(mins.t <= maxs.t)
+
+    return new Vector4( //
+      max(mins.x, min(maxs.x, v.x)), //
+      max(mins.y, min(maxs.y, v.y)), //
+      max(mins.z, min(maxs.z, v.z)), //
+      max(mins.t, min(maxs.t, v.t)))
   }
 }
 
