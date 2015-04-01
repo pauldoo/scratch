@@ -18,4 +18,5 @@ pi@raspberrypi /sys/bus/w1/devices $ cat 28-*/w1_slave
 63 01 55 00 7f ff 0c 10 ec : crc=ec YES
 63 01 55 00 7f ff 0c 10 ec t=22187
 
-
+28-0114b80b74ff = beer
+28-0114b80a4bff = room
