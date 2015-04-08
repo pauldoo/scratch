@@ -20,3 +20,8 @@ pi@raspberrypi /sys/bus/w1/devices $ cat 28-*/w1_slave
 
 28-0114b80b74ff = beer
 28-0114b80a4bff = room
+
+
+Crontab:
+*/2 * * * * (cd /home/paul/Programs/scratch/BeerMonitor && /usr/bin/python ./BeerMonitor.py >> stdout.log 2>&1)
+
