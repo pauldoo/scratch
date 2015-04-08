@@ -6,19 +6,13 @@ import logging
 import RPi.GPIO as GPIO
 import time
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-logger = logging.getLogger('BeerMonitor')
 
 BEER_PROBE = "28-0114b80b74ff"
 ROOM_PROBE = "28-0114b80a4bff"
 TARGET_TEMPERATURE = 25
-
-def configureLogging():
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    ch.setFormatter(logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s'))
-    logging.getLogger('').addHandler(ch)
-
 
 def readTemperature(probename):
     filename = "/sys/bus/w1/devices/{0}/w1_slave".format(probename)
@@ -38,10 +32,10 @@ def readBeerTemperature():
     return readTemperature(BEER_PROBE)
 
 def readRoomTemperature():
-    return readRoomTemperature(ROOM_PROBE)
+    return readTemperature(ROOM_PROBE)
 
 def shouldHeaterBeOn(beerTemperature):
-    result = beerTemperature < TARGET_TEMPERATURE
+    result = (beerTemperature < TARGET_TEMPERATURE)
     logger.info("Beer is at {0}, target is {1}, heater should be on: {2}".format(beerTemperature, TARGET_TEMPERATURE, result))
     return result
 
@@ -101,8 +95,8 @@ def sendHeaterSignal(heaterOn):
         GPIO.cleanup()
 
 def sendTweetUpdate(beerTemperature, roomTemperature, heaterOn):
-    message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {2}.".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
-    log.info("Will tweet: {0}".format(message))
+    message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {3}.".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
+    logger.info("Will tweet: {0}".format(message))
 
 def main():
     logger.info("starting")
@@ -113,7 +107,6 @@ def main():
     sendTweetUpdate(beerTemperature, roomTemperature, heaterOn)
 
 if __name__ == "__main__":
-    configureLogging()
     try:
         main()
     except:
