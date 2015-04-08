@@ -5,6 +5,9 @@ import re
 import logging
 import RPi.GPIO as GPIO
 import time
+import tweepy
+
+import twittersecrets as tws
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -95,8 +98,15 @@ def sendHeaterSignal(heaterOn):
         GPIO.cleanup()
 
 def sendTweetUpdate(beerTemperature, roomTemperature, heaterOn):
-    message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {3}.".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
+    message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {3}. (this is a test)".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
     logger.info("Will tweet: {0}".format(message))
+
+    auth = tweepy.OAuthHandler(tws.consumer_key, tws.consumer_secret, secure=True)
+    auth.set_access_token(tws.access_token, tws.access_token_secret)
+    api = tweepy.API(auth)
+    status = api.update_status(message)
+
+    logger.info("Twitter status posted: {0}".format(status))
 
 def main():
     logger.info("starting")
