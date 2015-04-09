@@ -97,16 +97,19 @@ def sendHeaterSignal(heaterOn):
     finally:
         GPIO.cleanup()
 
-def sendTweetUpdate(beerTemperature, roomTemperature, heaterOn):
+def sendTweetUpdate(enabled, beerTemperature, roomTemperature, heaterOn):
     message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {3}. (this is a test)".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
-    logging.info("Will tweet: {0}".format(message))
+    logging.info("Considering tweet: {0}".format(message))
 
-    auth = tweepy.OAuthHandler(tws.consumer_key, tws.consumer_secret, secure=True)
-    auth.set_access_token(tws.access_token, tws.access_token_secret)
-    api = tweepy.API(auth)
-    status = api.update_status(message)
+    if enabled:
+        auth = tweepy.OAuthHandler(tws.consumer_key, tws.consumer_secret, secure=True)
+        auth.set_access_token(tws.access_token, tws.access_token_secret)
+        api = tweepy.API(auth)
+        status = api.update_status(message)
 
-    logging.info("Twitter status posted: {0}".format(status))
+        logging.info("Twitter status posted: {0}".format(status))
+    else:
+        logging.info("Tweeting not enabled.")
 
 def main():
     logging.info("starting")
@@ -121,8 +124,8 @@ def main():
     heaterOn = shouldHeaterBeOn(beerTemperature)
     roomTemperature = readRoomTemperature()
     sendHeaterSignal(heaterOn)
-    if args.tweet:
-        sendTweetUpdate(beerTemperature, roomTemperature, heaterOn)
+
+    sendTweetUpdate(args.tweet, beerTemperature, roomTemperature, heaterOn)
 
 if __name__ == "__main__":
     try:
