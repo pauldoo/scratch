@@ -11,7 +11,6 @@ import tweepy
 import twittersecrets as tws
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 BEER_PROBE = "28-0114b80b74ff"
@@ -20,14 +19,14 @@ TARGET_TEMPERATURE = 25
 
 def readTemperature(probename):
     filename = "/sys/bus/w1/devices/{0}/w1_slave".format(probename)
-    logger.info("Reading probe {0} from file {1}".format(probename, filename))
+    logging.info("Reading probe {0} from file {1}".format(probename, filename))
     regex = "^.* crc=.* YES\n.* t=([0-9]+)$"
     with open(filename) as probefile:
         contents = probefile.read()
         match = re.match(regex, contents)
         if match:
             temperature = int(match.group(1)) / 1000.0
-            logger.info("Probe has reading: {0} C".format(temperature))
+            logging.info("Probe has reading: {0} C".format(temperature))
             return temperature
 
     raise "Unable to read probe {0}".format(probename)
@@ -40,7 +39,7 @@ def readRoomTemperature():
 
 def shouldHeaterBeOn(beerTemperature):
     result = (beerTemperature < TARGET_TEMPERATURE)
-    logger.info("Beer is at {0}, target is {1}, heater should be on: {2}".format(beerTemperature, TARGET_TEMPERATURE, result))
+    logging.info("Beer is at {0}, target is {1}, heater should be on: {2}".format(beerTemperature, TARGET_TEMPERATURE, result))
     return result
 
 def sendHeaterSignal(heaterOn):
@@ -74,13 +73,13 @@ def sendHeaterSignal(heaterOn):
         GPIO.output (13, False)
 
         if heaterOn:
-            logger.info("sending code 1111 socket 1 on")
+            logging.info("sending code 1111 socket 1 on")
             GPIO.output (11, True)
             GPIO.output (15, True)
             GPIO.output (16, True)
             GPIO.output (13, True)
         else:
-            logger.info("sending code 0111 Socket 1 off")
+            logging.info("sending code 0111 Socket 1 off")
             GPIO.output (11, True)
             GPIO.output (15, True)
             GPIO.output (16, True)
@@ -100,23 +99,23 @@ def sendHeaterSignal(heaterOn):
 
 def sendTweetUpdate(beerTemperature, roomTemperature, heaterOn):
     message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {3}. (this is a test)".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
-    logger.info("Will tweet: {0}".format(message))
+    logging.info("Will tweet: {0}".format(message))
 
     auth = tweepy.OAuthHandler(tws.consumer_key, tws.consumer_secret, secure=True)
     auth.set_access_token(tws.access_token, tws.access_token_secret)
     api = tweepy.API(auth)
     status = api.update_status(message)
 
-    logger.info("Twitter status posted: {0}".format(status))
+    logging.info("Twitter status posted: {0}".format(status))
 
 def main():
-    logger.info("starting")
+    logging.info("starting")
     
     parser = argparse.ArgumentParser()
     parser.add_argument("--tweet", help="enable posting to twitter", action="store_true")
     args = parser.parse_args()
 
-    logger.info("Tweet enabled: {0}".format(args.tweet))    
+    logging.info("Tweet enabled: {0}".format(args.tweet))    
 
     beerTemperature = readBeerTemperature()
     heaterOn = shouldHeaterBeOn(beerTemperature)
@@ -129,5 +128,5 @@ if __name__ == "__main__":
     try:
         main()
     except:
-        logger.exception("Unexpected error")
+        logging.exception("Unexpected error")
 
