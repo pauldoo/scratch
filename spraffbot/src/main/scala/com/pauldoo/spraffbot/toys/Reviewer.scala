@@ -9,7 +9,7 @@ import scala.util.Random
 
 object Reviewer {
   def props(): Props =
-    Props(classOf[Cheer])
+    Props(classOf[Reviewer])
 }
 
 class Reviewer extends Actor with ActorLogging {
@@ -31,11 +31,11 @@ class Reviewer extends Actor with ActorLogging {
   def receive: Receive = {
     case u: IrcUtterance => {
       if (u.message.startsWith("!rr")) {
-        sender ! SayMessage(u.replyDestination, pickRandomReviewer())
+        sender ! SayMessage(u.replyDestination, pickRandomReviewer(u.from.user))
       }
     }
   }
 
-  private def pickRandomReviewer(): String =
-     rng.shuffle(reviewers).head
+  private def pickRandomReviewer(requester: String): String =
+     rng.shuffle(reviewers.filter(_ != requester)).take(2).mkString(", ")
 }
