@@ -10,7 +10,8 @@ import tweepy
 
 import twittersecrets as tws
 
-logging.basicConfig(level=logging.INFO)
+LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
 
 BEER_PROBE = "28-0114b80b74ff"
@@ -128,8 +129,5 @@ def main():
     sendTweetUpdate(args.tweet, beerTemperature, roomTemperature, heaterOn)
 
 if __name__ == "__main__":
-    try:
-        main()
-    except:
-        logging.exception("Unexpected error")
+    main()
 
