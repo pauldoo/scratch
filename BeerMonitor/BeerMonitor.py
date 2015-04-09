@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
 
 BEER_PROBE = "28-0114b80b74ff"
 ROOM_PROBE = "28-0114b80a4bff"
-TARGET_TEMPERATURE = 25
+TARGET_TEMPERATURE = 24.0
 
 def readTemperature(probename):
     filename = "/sys/bus/w1/devices/{0}/w1_slave".format(probename)
