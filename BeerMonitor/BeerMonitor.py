@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import argparse
 import re
 import logging
 import RPi.GPIO as GPIO
@@ -110,11 +111,19 @@ def sendTweetUpdate(beerTemperature, roomTemperature, heaterOn):
 
 def main():
     logger.info("starting")
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--tweet", help="enable posting to twitter", action="store_true")
+    args = parser.parse_args()
+
+    logger.info("Tweet enabled: {0}".format(args.tweet))    
+
     beerTemperature = readBeerTemperature()
     heaterOn = shouldHeaterBeOn(beerTemperature)
     roomTemperature = readRoomTemperature()
     sendHeaterSignal(heaterOn)
-    sendTweetUpdate(beerTemperature, roomTemperature, heaterOn)
+    if args.tweet:
+        sendTweetUpdate(beerTemperature, roomTemperature, heaterOn)
 
 if __name__ == "__main__":
     try:
