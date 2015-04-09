@@ -11,6 +11,7 @@ import com.pauldoo.spraffbot.irc.SayMessage
 import java.net.InetSocketAddress
 import com.pauldoo.spraffbot.toys.Cheer
 import com.pauldoo.spraffbot.toys.Memory
+import com.pauldoo.spraffbot.toys.Reviewer
 
 object SpraffBot {
   val username: String = "spraffbot"
@@ -25,7 +26,8 @@ class SpraffBot extends Actor with ActorLogging {
   val handlers: List[ActorRef] = List( //
     context.actorOf(Spraffer.props(new File("corpus.txt")), "spraffer"),
     context.actorOf(Cheer.props()),
-    context.actorOf(Memory.props()))
+    context.actorOf(Memory.props()),
+    context.actorOf(Reviewer.props()))
 
   def receive = {
     case k: IrcUtterance => {
