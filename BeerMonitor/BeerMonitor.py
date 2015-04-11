@@ -103,7 +103,7 @@ def sendHeaterSignal(heaterOn):
         GPIO.cleanup()
 
 def sendTweetUpdate(enabled, beerTemperature, roomTemperature, heaterOn):
-    message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {3}. (this is a test)".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
+    message = "Room is {0} °C. Beer is {1} °C. Ideal temperature is {2} °C. Heater is on: {3}.".format(roomTemperature, beerTemperature, TARGET_TEMPERATURE, heaterOn)
     logging.info("Considering tweet: {0}".format(message))
 
     if enabled:
