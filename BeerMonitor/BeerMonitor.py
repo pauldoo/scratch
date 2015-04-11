@@ -6,6 +6,7 @@ import re
 import logging
 import RPi.GPIO as GPIO
 import time
+import random
 import tweepy
 
 import twittersecrets as tws
@@ -39,7 +40,10 @@ def readRoomTemperature():
     return readTemperature(ROOM_PROBE)
 
 def shouldHeaterBeOn(beerTemperature):
-    result = (beerTemperature < TARGET_TEMPERATURE)
+    if beerTemperature == TARGET_TEMPERATURE:
+        result = random.choice([True, False])
+    else:
+        result = (beerTemperature < TARGET_TEMPERATURE)
     logging.info("Beer is at {0}, target is {1}, heater should be on: {2}".format(beerTemperature, TARGET_TEMPERATURE, result))
     return result
 
