@@ -22,3 +22,5 @@ ffmpeg -i foobar.vob -filter:v yadif -s 768x576 -c:v libx264 -profile:v high -pr
 # See also: http://en.wikibooks.org/wiki/FFMPEG_An_Intermediate_Guide
 
 
+# Copy DVD to iso
+ddrescue -v --no-scrape --sector-size=2048 /dev/rdisk2 dvd.iso dvd.log
