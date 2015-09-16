@@ -31,15 +31,21 @@ class Raytrace(val scene: Scene) {
   def calculateGlobalLighting(photonMap: PhotonMap)(hit: Hit[Ray]): Color = {
     val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
 
-    val incomingLights: List[PhotonMap.Contribution] = photonMap.incomingLightAt(hitLocation, hit.shapeHit.normal)
+    val incomingLights: List[PhotonMap.Contribution] = photonMap.incomingLightAt(hitLocation)
 
-    ???
+    def contributionFromPhoton(photon: PhotonMap.Contribution): Color = {
+      val contribution: Double = - (photon.incomingDirection.truncateTo3() dot hit.shapeHit.normal)
+      
+      photon.color * contribution
+    }
+    
+    incomingLights.map(contributionFromPhoton _).reduce(_+_)
   }
 
   def calculateDirectLighting(hit: Hit[Ray]): Color = {
+	  val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
 
     def contributionFromLight(light: Light): Color = {
-      val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
 
       val pathToLight: Vector3 = light.location - hitLocation.truncateTo3
       val contribution: Double = pathToLight.normalize dot hit.shapeHit.normal
@@ -57,6 +63,8 @@ class Raytrace(val scene: Scene) {
   def generatePhotons(rng: RandomGenerator): List[Photon] = {
     assume(scene.lights.size == 1)
 
+    // TODO: do more than first direct hit
+    
     val light = scene.lights(0)
 
     val photon: Photon = light.emitPhoton(rng)

@@ -58,7 +58,7 @@ object KDTree {
 class KDTree[T <: PointLike]( //
   private val mins: Vector4, //
   private val maxs: Vector4, //
-  private val rootNode: KDTreeNode[T]) {
+  private val rootNode: KDTreeNode[T]) extends java.io.Serializable {
 
   def findClosestTo(target: Vector4, n: Int): List[T] = {
 

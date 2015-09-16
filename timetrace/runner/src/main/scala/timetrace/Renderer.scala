@@ -23,6 +23,9 @@ import org.apache.commons.math3.random.MersenneTwister
 import org.apache.commons.math3.random.RandomGenerator
 import timetrace.kdtree.KDTree
 import timetrace.photon.PhotonMap
+import org.apache.spark.storage.StorageLevel
+import com.google.common.base.Stopwatch
+import java.util.concurrent.TimeUnit
 
 object Renderer {
 
@@ -45,17 +48,20 @@ object Renderer {
     val sparkConf = new SparkConf().setAppName("timetrace").setMaster("local[*]")
     val sparkContext = new SparkContext(sparkConf)
 
+    val stopwatch = new Stopwatch().start()
+    
     try {
       val photons: RDD[Photon] = sparkContext //
         .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
         .flatMap(generatePhotonBatch(job))
 
       val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(job, photons.collect.toList))
+      
+      val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap)).persist( StorageLevel.MEMORY_AND_DISK )
 
-      val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap))
-
-      //frames.saveAsObjectFile("var/frames")
-
+      // Force all calculations to occur, in parallel
+      frames.count()
+      
       val images: Iterator[(Int, Array[Byte])] = frames.map(convertToImageFile(job)).toLocalIterator
 
       for (i <- images) {
@@ -69,6 +75,10 @@ object Renderer {
     } finally {
       sparkContext.stop
     }
+    
+    stopwatch.stop()
+    val elapsedTimeInSeconds = stopwatch.elapsed(TimeUnit.SECONDS)
+    println(f"Completed in ${elapsedTimeInSeconds}")
 
   }
 
