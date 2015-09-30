@@ -9,6 +9,7 @@ import timetrace.photon.Photon
 import scala.util.Random
 import org.apache.commons.math3.random.RandomGenerator
 import timetrace.photon.PhotonMap
+import timetrace.math.MathUtils
 
 class Raytrace(val scene: Scene) {
 
@@ -31,7 +32,7 @@ class Raytrace(val scene: Scene) {
   def calculateGlobalLighting(photonMap: PhotonMap)(hit: Hit[Ray]): Color = {
     val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
 
-    val incomingLights: List[PhotonMap.Contribution] = photonMap.incomingLightAt(hitLocation)
+    val incomingLights: List[PhotonMap.Contribution] = photonMap.incomingLightAt(hitLocation, hit.shapeHit.normal)
 
     def contributionFromPhoton(photon: PhotonMap.Contribution): Color = {
       val contribution: Double = - (photon.incomingDirection.truncateTo3() dot hit.shapeHit.normal)
@@ -60,22 +61,34 @@ class Raytrace(val scene: Scene) {
     scene.lights.map(contributionFromLight _).reduce(_ + _)
   }
 
-  def generatePhotons(rng: RandomGenerator): List[Photon] = {
+  def generatePhotonStrikes(rng: RandomGenerator): List[Photon] = {
     assume(scene.lights.size == 1)
-
-    // TODO: do more than first direct hit
     
     val light = scene.lights(0)
-
     val photon: Photon = light.emitPhoton(rng)
-
-    val hit: Option[Hit[Photon]] = firstHit(photon)
-
-    hit.map(ph => {
-      val hitLocation = ph.ray.march(ph.shapeHit.t)
-
-      new Photon(hitLocation, ph.ray.direction, ph.ray.color)
-    }).toList
+    generatePhotonStrikes(rng, photon)
   }
 
+  def generatePhotonStrikes(rng: RandomGenerator, emittedPhoton: Photon): List[Photon] = {
+
+    val hit: Option[Hit[Photon]] = firstHit(emittedPhoton)
+
+    hit.map(ph => {
+    	val hitLocation = ph.ray.march(ph.shapeHit.t)
+			val photonHere = new Photon(hitLocation, ph.ray.direction, ph.ray.color)
+      
+    	val diffuse = ph.material.diffuseComponent()
+    	
+    	val furtherStrikes :List[Photon] = 
+      	if (rng.nextDouble() < diffuse) {
+      	  val bouncedPhotonDirection: Vector3.Normalized = MathUtils.randomDirectionInHemisphere(rng, ph.shapeHit.normal)
+      	  val bouncedPhoton: Photon = new Photon(hitLocation, bouncedPhotonDirection.toSpatiallyNormalized4(1.0), emittedPhoton.color).tweakForward()
+          generatePhotonStrikes(rng, bouncedPhoton)
+      	} else List.empty
+
+    	photonHere :: furtherStrikes
+    	
+    }).getOrElse(List.empty)
+  }
+  
 }

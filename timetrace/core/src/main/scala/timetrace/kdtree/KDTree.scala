@@ -60,7 +60,7 @@ class KDTree[T <: PointLike]( //
   private val maxs: Vector4, //
   private val rootNode: KDTreeNode[T]) extends java.io.Serializable {
 
-  def findClosestTo(target: Vector4, n: Int): List[T] = {
+  def findClosestTo(target: Vector4, n: Int, pred: (T => Boolean)): List[T] = {
 
     class NodeWithKnownBoundsAndMinDistance( //
       val node: KDTreeNode[T], //
@@ -109,9 +109,8 @@ class KDTree[T <: PointLike]( //
 
         curr.node match {
           case leaf: KDTreeLeafNode[T] => {
-
-            find(leaf.point :: result)
-
+            val newResult :List[T] = if (pred(leaf.point)) (leaf.point :: result) else result
+            find(newResult)
           }
           case inner: KDTreeInnerNode[T] => {
             considerEnqueue(new KDTreeLeafNode[T](inner.pivot), null, null)

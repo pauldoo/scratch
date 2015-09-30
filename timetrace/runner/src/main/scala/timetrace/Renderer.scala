@@ -26,20 +26,24 @@ import timetrace.photon.PhotonMap
 import org.apache.spark.storage.StorageLevel
 import com.google.common.base.Stopwatch
 import java.util.concurrent.TimeUnit
+import timetrace.shape.Sphere
 
 object Renderer {
 
-  private val PHOTON_SCATTERING_PARTITIONS = 1000
+  private val PHOTON_SCATTERING_PARTITIONS = 100
 
   def main(args: Array[String]): Unit = {
     val camera: Camera = DefaultStillCamera
     val scene = new Scene( //
-      List(Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial)), //
-      List(new SinglePulsePointLight(Vector3(0.0, 1.0, 0.0), Color.WHITE, 0.0, 1.0)))
+      List( //
+          Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial), //
+          Thing(new Sphere(Vector3(0.0, 0.0, 3.0), 1.0), WhiteDiffuseMaterial)    
+      ), //
+      List(new SinglePulsePointLight(Vector3(1.0, 1.0, 0.0), Color.WHITE, 0.0, 0.5)))
 
     val downscale = 4
 
-    val job = new RenderJob(scene, camera, 20.0, 1000000, 1920 / downscale, 1080 / downscale, 100, null, 10.0, 1.0 / 1.8)
+    val job = new RenderJob(scene, camera, 2.0, 12.0, 1000000, 1920 / downscale, 1080 / downscale, 100, null, 1000.0, 1.0 / 1.8)
 
     render(job)
   }
@@ -50,14 +54,13 @@ object Renderer {
 
     val stopwatch = new Stopwatch().start()
     
+    val outputDir = s"../var${System.currentTimeMillis()}"
+    new File(outputDir).mkdirs()
+        
     try {
-      val photons: RDD[Photon] = sparkContext //
-        .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
-        .flatMap(generatePhotonBatch(job))
-
-      val photonMap: Broadcast[PhotonMap] = sparkContext.broadcast(buildPhotonMap(job, photons.collect.toList))
+      val photonMap = scatterPhotonsAndBroadcast(sparkContext, job)
       
-      val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap)).persist( StorageLevel.MEMORY_AND_DISK )
+      val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap)).persist( StorageLevel.DISK_ONLY )
 
       // Force all calculations to occur, in parallel
       frames.count()
@@ -65,7 +68,7 @@ object Renderer {
       val images: Iterator[(Int, Array[Byte])] = frames.map(convertToImageFile(job)).toLocalIterator
 
       for (i <- images) {
-        val filename = f"../var/frame_${i._1}%06d.png"
+        val filename = f"${outputDir}/frame_${i._1}%06d.png"
         println(s"Saving ${filename}")
         val out = new FileOutputStream(filename)
         out.write(i._2)
@@ -78,13 +81,19 @@ object Renderer {
     
     stopwatch.stop()
     val elapsedTimeInSeconds = stopwatch.elapsed(TimeUnit.SECONDS)
-    println(f"Completed in ${elapsedTimeInSeconds}")
+    println(s"Completed in ${elapsedTimeInSeconds}")
 
   }
+  
+  def scatterPhotonsAndBroadcast(sparkContext: SparkContext, job: RenderJob): Broadcast[PhotonMap] = {
+      val photons: RDD[Photon] = sparkContext //
+        .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
+        .flatMap(generatePhotonBatch(job))
 
-  def buildPhotonMap(job: RenderJob, photons: List[Photon]): PhotonMap = {
-    val kdtree = KDTree.build(photons)
-    new PhotonMap(job.photonCount, kdtree)
+      val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, KDTree.build(photons.collect.toList))
+      photons.unpersist()
+      
+      sparkContext.broadcast(photonMap)
   }
 
   def renderFrame(job: RenderJob, photonMapBroadcast: Broadcast[PhotonMap])(n: Int): Frame = {
@@ -121,7 +130,7 @@ object Renderer {
     val photonsToGenerate = job.photonCount / PHOTON_SCATTERING_PARTITIONS
     val rng: RandomGenerator = new MersenneTwister
 
-    Iterator.continually(raytracer.generatePhotons(rng)).flatten.take(photonsToGenerate).toSeq
+    Iterator.continually(raytracer.generatePhotonStrikes(rng)).flatten.take(photonsToGenerate).toSeq
   }
 
   def convertToImageFile(job: RenderJob)(frame: Frame): (Int, Array[Byte]) = {

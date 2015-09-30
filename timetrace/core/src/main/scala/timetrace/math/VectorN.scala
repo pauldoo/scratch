@@ -3,7 +3,9 @@ package timetrace.math
 trait VectorN[Self] {
   this: Self =>
 
-  def magnitude(): Double = Math.sqrt(this dot this)
+  def magnitudeSquared(): Double = this dot this
+    
+  def magnitude(): Double = Math.sqrt(magnitudeSquared())
 
   def isNormalized() = false
 
