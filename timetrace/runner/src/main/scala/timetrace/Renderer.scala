@@ -27,6 +27,7 @@ import org.apache.spark.storage.StorageLevel
 import com.google.common.base.Stopwatch
 import java.util.concurrent.TimeUnit
 import timetrace.shape.Sphere
+import timetrace.shape.Fog
 
 object Renderer {
 
@@ -60,7 +61,7 @@ object Renderer {
     try {
       val photonMap = scatterPhotonsAndBroadcast(sparkContext, job)
       
-      val frames: RDD[Frame] = sparkContext.parallelize(0 to job.frameCount).map(renderFrame(job, photonMap)).persist( StorageLevel.DISK_ONLY )
+      val frames: RDD[Frame] = sparkContext.parallelize(0 until job.frameCount).map(renderFrame(job, photonMap)).persist( StorageLevel.DISK_ONLY )
 
       // Force all calculations to occur, in parallel
       frames.count()
@@ -97,13 +98,12 @@ object Renderer {
   }
 
   def renderFrame(job: RenderJob, photonMapBroadcast: Broadcast[PhotonMap])(n: Int): Frame = {
-    println(s"Rendering frame ${n}.")
-
     val photonMap = photonMapBroadcast.value
+    val rng: RandomGenerator = new MersenneTwister
 
     val raytracer: Raytrace = new Raytrace(job.scene)
-    val t: Double = n.toDouble * (job.maxT / job.frameCount)
-    println(s"Rendering t=${t}")
+    val t: Double = job.minT + (n.toDouble * (job.maxT - job.minT)) / job.frameCount
+    println(s"Rendering frame ${n} (t=${t})")
 
     val averageHalfSizeInPixels: Double = (job.widthInPixels + job.heightInPixels) / 4.0;
 
@@ -117,7 +117,7 @@ object Renderer {
         x = iToR(xi, job.widthInPixels)
         ray = job.camera.generateRay(x, y, t)
       } yield {
-        raytracer.raytrace(ray, photonMap)
+        raytracer.raytrace(ray, photonMap, rng)
       }
 
     val pixelsArray: Array[Color] = pixels.toArray

@@ -14,7 +14,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
   "raytrace" should "find nothing in an empty scene" in {
     val scene = new Scene(List.empty, List.empty)
     val ray = new Ray(new Vector4(0.0, 0.0, 0.0, 0.0), new Vector4(1.0, 0.0, 0.0, -1.0).spatiallyNormalize())
-    val hit = new Raytrace(scene).firstHit(ray)
+    val hit = new Raytrace(scene).firstHit(ray, null)
 
     hit should be(None)
   }
@@ -24,7 +24,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
       List(Thing(new Plane(Vector3(0.0, 0.0, 1.0).normalize, 0.0), WhiteDiffuseMaterial)),
       List.empty)
     val ray = new Ray(new Vector4(0.0, 0.0, 1.0, 0.0), new Vector4(0.0, 0.0, -1.0, -1.0).spatiallyNormalize())
-    val hit: Option[Hit[Ray]] = new Raytrace(scene).firstHit(ray)
+    val hit: Option[Hit[Ray]] = new Raytrace(scene).firstHit(ray, null)
 
     hit should be('defined)
   }
@@ -35,7 +35,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
       List(new SinglePulsePointLight(lightPos, Color(1.0, 2.0, 3.0), -1e3, 1e3)))
 
     val raytrace = new Raytrace(scene)
-    val colorHeadOn: Color = raytrace.raytrace(new Ray(rayStart.to4, (rayStart * -1.0).to4(-1.0).spatiallyNormalize()), ???)
+    val colorHeadOn: Color = raytrace.raytrace(new Ray(rayStart.to4, (rayStart * -1.0).to4(-1.0).spatiallyNormalize()), ???, null)
     colorHeadOn
   }
 

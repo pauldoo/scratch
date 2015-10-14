@@ -8,7 +8,7 @@ import timetrace.math.RayLike
 /**
  * Set of points x, satisfying x dot normal == offset
  */
-class Plane(val normal: Vector3.Normalized, val offset: Double) extends Shape {
+class Plane(val normal: Vector3.Normalized, val offset: Double) extends NonRandomShape {
 
   override def toString = s"Plane($normal, $offset)"
 

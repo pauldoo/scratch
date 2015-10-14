@@ -26,7 +26,7 @@ object MathUtils {
     return Option.empty
   }
   
-  def randomDirectionInHemisphere(rng: RandomGenerator, hemisphere: Vector3.Normalized) : Vector3.Normalized = {
+  def randomDirectionInHemisphere(rng: RandomGenerator, hemisphere: Vector3) : Vector3.Normalized = {
     Iterator.continually(Vector3.randomUnit(rng)).find(v => (v dot hemisphere) > 0.0).get
   }
   

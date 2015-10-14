@@ -13,20 +13,20 @@ import timetrace.math.MathUtils
 
 class Raytrace(val scene: Scene) {
 
-  def raytrace(ray: Ray, photonMap: PhotonMap): Color = {
+  def raytrace(ray: Ray, photonMap: PhotonMap, rng: RandomGenerator): Color = {
     assert(ray.direction.t == -1.0)
 
-    val hit: Option[Hit[Ray]] = firstHit(ray)
+    val hit: Option[Hit[Ray]] = firstHit(ray, rng)
     hit.map(calculateGlobalLighting(photonMap)).getOrElse(Color.BLACK)
 
   }
 
-  def firstHit[R <: RayLike](ray: R): Option[Hit[R]] = {
+  def firstHit[R <: RayLike](ray: R, rng: RandomGenerator): Option[Hit[R]] = {
     def pickClosest(a: Hit[R], b: Hit[R]): Hit[R] = {
       if (a.shapeHit.t < b.shapeHit.t) a else b
     }
 
-    scene.things.flatMap(_.intersect(ray)).reduceOption(pickClosest _)
+    scene.things.flatMap(_.intersect(ray, rng)).reduceOption(pickClosest _)
   }
 
   def calculateGlobalLighting(photonMap: PhotonMap)(hit: Hit[Ray]): Color = {
@@ -43,7 +43,7 @@ class Raytrace(val scene: Scene) {
     incomingLights.map(contributionFromPhoton _).reduce(_+_)
   }
 
-  def calculateDirectLighting(hit: Hit[Ray]): Color = {
+  private def calculateDirectLighting(hit: Hit[Ray]): Color = {
 	  val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
 
     def contributionFromLight(light: Light): Color = {
@@ -71,7 +71,7 @@ class Raytrace(val scene: Scene) {
 
   def generatePhotonStrikes(rng: RandomGenerator, emittedPhoton: Photon): List[Photon] = {
 
-    val hit: Option[Hit[Photon]] = firstHit(emittedPhoton)
+    val hit: Option[Hit[Photon]] = firstHit(emittedPhoton, rng)
 
     hit.map(ph => {
     	val hitLocation = ph.ray.march(ph.shapeHit.t)

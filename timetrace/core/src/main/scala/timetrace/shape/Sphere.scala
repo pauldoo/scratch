@@ -7,7 +7,7 @@ import timetrace.math.MathUtils
 /**
  * Static, unmoving sphere.
  */
-class Sphere(val center: Vector3, val radius: Double) extends Shape {
+class Sphere(val center: Vector3, val radius: Double) extends NonRandomShape {
   def intersect(ray: RayLike): Option[ShapeHit] = {
     val offset = ray.location.truncateTo3() - center 
     val a = ray.direction.truncateTo3().magnitudeSquared()
