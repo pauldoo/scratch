@@ -41,9 +41,9 @@ object Renderer {
       ), //
       List(new SinglePulsePointLight(Vector3(1.0, 1.0, 0.0), Color.WHITE, 0.0, 0.5)))
 
-    val downscale = 4
+    val downscale = 40
 
-    val job = new RenderJob(scene, camera, 2.0, 12.0, 1000000, 1920 / downscale, 1080 / downscale, 100, null, 1000.0, 1.0 / 1.8)
+    val job = new RenderJob(scene, camera, 2.0, 12.0, 1000000, 1920 / downscale, 1080 / downscale, 10, null, 1000.0, 1.0 / 1.8)
 
     render(job)
   }

@@ -72,11 +72,6 @@ class KDTree[T <: PointLike]( //
       }
     }
 
-    class PointWithDistance( //
-      val point: T) {
-      val distance = (point.location - target).magnitude()
-    }
-
     // Queue of kdtree nodes to try, ordered by closest first
     val queue: PriorityQueue[NodeWithKnownBoundsAndMinDistance] = //
       new PriorityQueue[NodeWithKnownBoundsAndMinDistance]()(Ordering.by(n => -n.minDistance))
@@ -88,8 +83,10 @@ class KDTree[T <: PointLike]( //
       node match {
         case null => ()
         case leaf: KDTreeLeafNode[T] => {
-          queue.enqueue(new NodeWithKnownBoundsAndMinDistance(
-            leaf, leaf.point.location, leaf.point.location))
+          if (pred(leaf.point)) {
+            queue.enqueue(new NodeWithKnownBoundsAndMinDistance(
+              leaf, leaf.point.location, leaf.point.location))
+          }
         }
         case inner: KDTreeInnerNode[T] => {
           queue.enqueue(new NodeWithKnownBoundsAndMinDistance(
@@ -109,8 +106,8 @@ class KDTree[T <: PointLike]( //
 
         curr.node match {
           case leaf: KDTreeLeafNode[T] => {
-            val newResult :List[T] = if (pred(leaf.point)) (leaf.point :: result) else result
-            find(newResult)
+            assert(pred(leaf.point))
+            find(leaf.point :: result)
           }
           case inner: KDTreeInnerNode[T] => {
             considerEnqueue(new KDTreeLeafNode[T](inner.pivot), null, null)
