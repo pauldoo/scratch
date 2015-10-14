@@ -75,14 +75,14 @@ class Raytrace(val scene: Scene) {
 
     hit.map(ph => {
     	val hitLocation = ph.ray.march(ph.shapeHit.t)
-			val photonHere = new Photon(hitLocation, ph.ray.direction, ph.ray.color)
+			val photonHere = new Photon(hitLocation, ph.ray.direction, ph.ray.bounceCount)
       
     	val diffuse = ph.material.diffuseComponent()
     	
     	val furtherStrikes :List[Photon] = 
       	if (rng.nextDouble() < diffuse) {
       	  val bouncedPhotonDirection: Vector3.Normalized = MathUtils.randomDirectionInHemisphere(rng, ph.shapeHit.normal)
-      	  val bouncedPhoton: Photon = new Photon(hitLocation, bouncedPhotonDirection.toSpatiallyNormalized4(1.0), emittedPhoton.color).tweakForward()
+      	  val bouncedPhoton: Photon = new Photon(hitLocation, bouncedPhotonDirection.toSpatiallyNormalized4(1.0), photonHere.bounceCount + 1).tweakForward()
           generatePhotonStrikes(rng, bouncedPhoton)
       	} else List.empty
 

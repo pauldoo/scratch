@@ -29,4 +29,6 @@ object MathUtils {
   def randomDirectionInHemisphere(rng: RandomGenerator, hemisphere: Vector3.Normalized) : Vector3.Normalized = {
     Iterator.continually(Vector3.randomUnit(rng)).find(v => (v dot hemisphere) > 0.0).get
   }
+  
+  def clamp(min:Double, v: Double, max: Double) = math.min(math.max(min, v), max)
 }

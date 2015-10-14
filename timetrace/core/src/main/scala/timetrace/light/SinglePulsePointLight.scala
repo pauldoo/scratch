@@ -20,6 +20,6 @@ class SinglePulsePointLight(val location: Vector3, val color: Color, val minT: D
 
   def emitPhoton(rng: RandomGenerator): Photon = {
     val t = rng.nextDouble() * (maxT - minT) + minT
-    new Photon(location.to4(t), Vector3.randomUnit(rng).toSpatiallyNormalized4(1.0), color)
+    new Photon(location.to4(t), Vector3.randomUnit(rng).toSpatiallyNormalized4(1.0), 0)
   }
 }
