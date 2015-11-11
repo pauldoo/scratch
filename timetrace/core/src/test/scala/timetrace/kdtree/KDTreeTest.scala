@@ -6,6 +6,7 @@ import timetrace.math.Vector4
 import org.scalatest.junit.JUnitRunner
 import timetrace.math.Vector4Test
 import org.scalacheck.Gen
+import timetrace.math.RayLike
 
 object KDTreeTest {
   private val dummyPoints: Gen[DummyPoint] = Vector4Test.vector4s.map(x => new DummyPoint(x))
@@ -22,7 +23,7 @@ class KDTreeTest extends UnitSpec {
         val expected = points.sortBy(x => (target - x.location).magnitude()).take(10).reverse
 
         val tree = KDTree.build(points)
-        val actual = tree.findClosestTo(target, 10, _ => true)
+        val actual = tree.findClosestTo(target, 10, Vector4(1.0, 0.0, 0.0, 0.0))
 
         actual should equal(expected)
       }
@@ -30,4 +31,6 @@ class KDTreeTest extends UnitSpec {
   }
 }
 
-case class DummyPoint(val location: Vector4) extends PointLike {}
+case class DummyPoint(val location: Vector4) extends RayLike {
+  val direction: Vector4.SpatiallyNormalized = Vector4(1.0, 0.0, 0.0, 1.0).spatiallyNormalize()
+}

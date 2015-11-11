@@ -40,7 +40,7 @@ class Vector3Test extends UnitSpec {
   it should "be extendable to a Vector4" in {
     forAll(Vector3Test.vector3s) { (v3: Vector3) =>
       {
-        val v4: Vector4 = v3.to4
+        val v4: Vector4 = v3.to4(1.0)
 
         v4.x should equal(v3.x)
         v4.y should equal(v3.y)

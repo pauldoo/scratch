@@ -14,12 +14,8 @@ case class PhotonMap(val photonPower: Double, val photons: KDTree[Photon]) {
 
   def incomingLightAt(location: Vector4, surfaceNormal: Vector3): List[PhotonMap.Contribution] = {
 
-    def photonPredicate(photon: Photon) = {
-      (photon.direction.truncateTo3() dot surfaceNormal) < 0.0
-    }
-    
     // TODO: not sure how much of the cone modulation, normalization, etc to do here vs in the caller.
-    val closestPhotons: List[Photon] = photons.findClosestTo(location, 100, photonPredicate _)
+    val closestPhotons: List[Photon] = photons.findClosestTo(location, 100, (- surfaceNormal).to4(0.0))
     
     def photonDistance(photon: Photon) : Double = (location - photon.location).magnitude()
     val distanceToFurthestPhoton = photonDistance(closestPhotons.head)

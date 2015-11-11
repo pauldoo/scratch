@@ -28,6 +28,9 @@ import com.google.common.base.Stopwatch
 import java.util.concurrent.TimeUnit
 import timetrace.shape.Sphere
 import timetrace.shape.Fog
+import java.io.BufferedOutputStream
+import java.io.DataOutputStream
+import timetrace.kdtree.KDTreeInMemory
 
 object Renderer {
 
@@ -94,7 +97,15 @@ object Renderer {
         .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
         .flatMap(generatePhotonBatch(job))
 
-      val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, KDTree.build(photons.collect.toList))
+      val kdTree = KDTree.build(photons.collect.toList)
+      val file = File.createTempFile("photon-map", ".map")
+      //file.deleteOnExit();
+      val output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))
+      KDTreeInMemory.write(output, kdTree)
+      output.close()
+      ???
+        
+      val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTree)
       photons.unpersist()
       
       sparkContext.broadcast(photonMap)

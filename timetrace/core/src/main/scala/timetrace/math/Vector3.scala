@@ -31,7 +31,7 @@ case class Vector3(val x: Double, val y: Double, val z: Double) extends VectorN[
 
   override def toString(): String = s"[$x, $y, $z]"
 
-  def to4(): Vector4 = new Vector4(x, y, z, 1.0)
+  //def to4(): Vector4 = new Vector4(x, y, z, 1.0)
 
   def to4(t: Double): Vector4 = new Vector4(x, y, z, t)
 
@@ -46,6 +46,8 @@ case class Vector3(val x: Double, val y: Double, val z: Double) extends VectorN[
     this.z * that.z)
 
   def *(s: Double): Vector3 = Vector3(x * s, y * s, z * s)
+  
+  def unary_-(): Vector3 = Vector3(-x, -y, -z)
 
   def normalize(): Vector3.Normalized = {
     val mag = magnitude()

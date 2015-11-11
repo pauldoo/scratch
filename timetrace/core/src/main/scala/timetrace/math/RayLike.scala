@@ -1,7 +1,5 @@
 package timetrace.math
 
-import timetrace.kdtree.PointLike
-
 trait RayLike extends PointLike {
   val direction: Vector4.SpatiallyNormalized
 

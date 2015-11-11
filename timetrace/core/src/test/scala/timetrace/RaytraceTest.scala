@@ -35,7 +35,7 @@ class RaytraceTest extends UnitSpec with ColorMatchers {
       List(new SinglePulsePointLight(lightPos, Color(1.0, 2.0, 3.0), -1e3, 1e3)))
 
     val raytrace = new Raytrace(scene)
-    val colorHeadOn: Color = raytrace.raytrace(new Ray(rayStart.to4, (rayStart * -1.0).to4(-1.0).spatiallyNormalize()), ???, null)
+    val colorHeadOn: Color = raytrace.raytrace(new Ray(rayStart.to4(1.0), (rayStart * -1.0).to4(-1.0).spatiallyNormalize()), ???, null)
     colorHeadOn
   }
 
