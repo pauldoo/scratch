@@ -11,7 +11,7 @@ import java.io.DataOutputStream
 import timetrace.photon.Photon
 
 object KDTreeInMemory {
-  def buildNode[T <: PointLike](points: List[T]): KDTreeNode[T] = {
+  def buildNode[T <: PointLike](points: IndexedSeq[T]): KDTreeNode[T] = {
     if (points.isEmpty) {
       null
     } else if (points.size == 1) {
@@ -20,7 +20,7 @@ object KDTreeInMemory {
     } else {
       val splitDirection: Axis = decideSplitDirection(points)
       def sortByFn(p: PointLike) = splitDirection.extractor(p.location)
-      val sortedPoints: List[T] = points.sortBy(sortByFn _)
+      val sortedPoints: IndexedSeq[T] = points.sortBy(sortByFn _)
 
       val middleIndex = sortedPoints.size / 2
 
@@ -35,7 +35,7 @@ object KDTreeInMemory {
     }
   }
 
-  private def decideSplitDirection(points: List[PointLike]): Axis = {
+  private def decideSplitDirection(points: IndexedSeq[PointLike]): Axis = {
     val pointLocations = points.map(_.location)
     val mins: Vector4 = pointLocations.reduce(Vector4.componentMinimums)
     val maxs: Vector4 = pointLocations.reduce(Vector4.componentMaximums)
@@ -43,37 +43,37 @@ object KDTreeInMemory {
 
     List((ranges.x, X), (ranges.y, Y), (ranges.z, Z), (ranges.t, T)).maxBy(_._1)._2
   }
-  
-  def write(output: DataOutputStream, kdTree: KDTreeInMemory[Photon]) = {
+
+  def inOrderTraversalWrite(outputAsStream: OutputStream, kdTree: KDTreeInMemory[Photon]): IndexedSeq[Photon] = {
+
+    val output = new DataOutputStream(outputAsStream)
 
     def writeLittleEndianInteger(i: Int): Unit = {
-    		output.write((i >>>  0) & 0xFF)
-    		output.write((i >>>  8) & 0xFF)
-    		output.write((i >>> 16) & 0xFF)
-        output.write((i >>> 24) & 0xFF)
+      output.write((i >>> 0) & 0xFF)
+      output.write((i >>> 8) & 0xFF)
+      output.write((i >>> 16) & 0xFF)
+      output.write((i >>> 24) & 0xFF)
     }
-    
+
     def writeLittleEndianFloat(v: Float): Unit = {
       writeLittleEndianInteger(java.lang.Float.floatToIntBits(v))
     }
 
-    
-    def writeVec(v: Vector4):Unit = {
+    def writeVec(v: Vector4): Unit = {
       writeLittleEndianFloat(v.x.toFloat)
       writeLittleEndianFloat(v.y.toFloat)
       writeLittleEndianFloat(v.z.toFloat)
       writeLittleEndianFloat(v.t.toFloat)
     }
-    
-    
+
     def writePhoton(p: Photon): Unit = {
       writeVec(p.location)
       writeVec(p.direction)
-      writeLittleEndianInteger(p.bounceCount)
+      //writeLittleEndianInteger(p.bounceCount)
     }
-    
+
     def writeAxis(a: Axis): Unit = {
-      val axisAsInteger : Int = a match {
+      val axisAsInteger: Int = a match {
         case null => 0
         case X => 1
         case Y => 2
@@ -82,50 +82,51 @@ object KDTreeInMemory {
       }
       writeLittleEndianInteger(axisAsInteger)
     }
-    
-    def writeNode (n: KDTreeNode[Photon]) :Unit = {
+
+    def writeNode(n: KDTreeNode[Photon]): Vector[Photon] = {
       n match {
-        case null => ()
+        case null => Vector.empty
         case leaf: KDTreeLeafNode[Photon] => {
           writePhoton(leaf.point)
           writeAxis(null)
+          Vector(leaf.point)
         }
         case inner: KDTreeInnerNode[Photon] => {
+          val left = writeNode(inner.left)
           writePhoton(inner.pivot)
           writeAxis(inner.axis)
-          writeNode(inner.left)
-          writeNode(inner.right)
+          val right = writeNode(inner.right)
+
+          left ++ (inner.pivot +: right)
         }
-            
+
       }
     }
-    
+
     writeVec(kdTree.mins)
     writeVec(kdTree.maxs)
     writeNode(kdTree.rootNode)
   }
-  
+
 }
 
-
-
 class KDTreeInMemory[T <: RayLike]( //
-  private val mins: Vector4, //
-  private val maxs: Vector4, //
-  private val rootNode: KDTreeNode[T]) extends KDTree[T] {
+    private val mins: Vector4, //
+    private val maxs: Vector4, //
+    private val rootNode: KDTreeNode[T]) extends KDTree[T] {
 
   def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): List[T] = {
 
     class NodeWithKnownBoundsAndMinDistance( //
-      val node: KDTreeNode[T], //
-      val mins: Vector4, //
-      val maxs: Vector4) {
+        val node: KDTreeNode[T], //
+        val mins: Vector4, //
+        val maxs: Vector4) {
       val minDistance: Double = {
         val closestPoint = Vector4.clamp(mins, maxs)(target)
         (closestPoint - target).magnitude()
       }
     }
-    
+
     def predicate(point: RayLike) = {
       (point.direction dot interestingHemisphere) > 0.0
     }
@@ -226,10 +227,10 @@ sealed trait KDTreeNode[T <: PointLike] {
 }
 
 private case class KDTreeInnerNode[T <: PointLike]( //
-  val pivot: T, //
-  val axis: Axis, //
-  val left: KDTreeNode[T], //
-  val right: KDTreeNode[T]) extends KDTreeNode[T] {
+    val pivot: T, //
+    val axis: Axis, //
+    val left: KDTreeNode[T], //
+    val right: KDTreeNode[T]) extends KDTreeNode[T] {
 
   assert(left != null || right != null)
 
@@ -239,5 +240,5 @@ private case class KDTreeInnerNode[T <: PointLike]( //
 }
 
 private case class KDTreeLeafNode[T <: PointLike]( //
-  val point: T) extends KDTreeNode[T] {
+    val point: T) extends KDTreeNode[T] {
 }

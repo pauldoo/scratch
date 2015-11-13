@@ -1,3 +1,4 @@
 #!/bin/sh
 
-exec c++ -Wall -g -Ofast -o pmapd main.cpp
+exec c++ -Wall -g -Ofast -march=native -o pmapd *.cpp
+

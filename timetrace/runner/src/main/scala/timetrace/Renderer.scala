@@ -40,10 +40,9 @@ object Renderer {
     val camera: Camera = DefaultStillCamera
     val scene = new Scene( //
       List( //
-          Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial), //
-          Thing(new Sphere(Vector3(0.0, 0.0, 3.0), 1.0), WhiteDiffuseMaterial), //
-          Thing(new Fog(3.0), WhiteDiffuseMaterial)
-      ), //
+        Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial), //
+        Thing(new Sphere(Vector3(0.0, 0.0, 3.0), 1.0), WhiteDiffuseMaterial), //
+        Thing(new Fog(3.0), WhiteDiffuseMaterial)), //
       List(new SinglePulsePointLight(Vector3(2.0, 1.0, 2.0), Color.WHITE, 0.0, 0.5)))
 
     val downscale = 4
@@ -60,18 +59,18 @@ object Renderer {
     val sparkContext = new SparkContext(sparkConf)
 
     val stopwatch = new Stopwatch().start()
-    
+
     val outputDir = s"../var${System.currentTimeMillis()}"
     new File(outputDir).mkdirs()
-        
+
     try {
       val photonMap = scatterPhotonsAndBroadcast(sparkContext, job)
-      
-      val frames: RDD[Frame] = sparkContext.parallelize(0 until job.frameCount).map(renderFrame(job, photonMap)).persist( StorageLevel.DISK_ONLY )
+
+      val frames: RDD[Frame] = sparkContext.parallelize(0 until job.frameCount).map(renderFrame(job, photonMap)).persist(StorageLevel.DISK_ONLY)
 
       // Force all calculations to occur, in parallel
       frames.count()
-      
+
       val images: Iterator[(Int, Array[Byte])] = frames.map(convertToImageFile(job)).toLocalIterator
 
       for (i <- images) {
@@ -85,30 +84,31 @@ object Renderer {
     } finally {
       sparkContext.stop
     }
-    
+
     stopwatch.stop()
     val elapsedTimeInSeconds = stopwatch.elapsed(TimeUnit.SECONDS)
     println(s"Completed in ${elapsedTimeInSeconds}")
 
   }
-  
-  def scatterPhotonsAndBroadcast(sparkContext: SparkContext, job: RenderJob): Broadcast[PhotonMap] = {
-      val photons: RDD[Photon] = sparkContext //
-        .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
-        .flatMap(generatePhotonBatch(job))
 
-      val kdTree = KDTree.build(photons.collect.toList)
-      val file = File.createTempFile("photon-map", ".map")
-      //file.deleteOnExit();
-      val output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))
-      KDTreeInMemory.write(output, kdTree)
-      output.close()
-      ???
-        
-      val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTree)
-      photons.unpersist()
-      
-      sparkContext.broadcast(photonMap)
+  def scatterPhotonsAndBroadcast(sparkContext: SparkContext, job: RenderJob): Broadcast[PhotonMap] = {
+    val photons: RDD[Photon] = sparkContext //
+      .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
+      .flatMap(generatePhotonBatch(job))
+
+    val kdTree = KDTree.build(photons.collect.toVector)
+    val file = File.createTempFile("photon-map", ".map")
+    println(s"Saving to ${file.getAbsolutePath}")
+    //file.deleteOnExit();
+    val output = new BufferedOutputStream(new FileOutputStream(file))
+    KDTreeInMemory.inOrderTraversalWrite(output, kdTree)
+    output.close()
+    ???
+
+    val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTree)
+    photons.unpersist()
+
+    sparkContext.broadcast(photonMap)
   }
 
   def renderFrame(job: RenderJob, photonMapBroadcast: Broadcast[PhotonMap])(n: Int): Frame = {

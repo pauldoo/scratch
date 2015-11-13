@@ -22,7 +22,7 @@ class KDTreeTest extends UnitSpec {
       {
         val expected = points.sortBy(x => (target - x.location).magnitude()).take(10).reverse
 
-        val tree = KDTree.build(points)
+        val tree = KDTree.build(points.toVector)
         val actual = tree.findClosestTo(target, 10, Vector4(1.0, 0.0, 0.0, 0.0))
 
         actual should equal(expected)

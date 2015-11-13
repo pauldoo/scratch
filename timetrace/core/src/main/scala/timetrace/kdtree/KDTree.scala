@@ -12,7 +12,7 @@ import java.io.DataOutputStream
 import java.io.BufferedOutputStream
 
 object KDTree {
-  def build[T <: RayLike](points: List[T]): KDTreeInMemory[T] = {
+  def build[T <: RayLike](points: IndexedSeq[T]): KDTreeInMemory[T] = {
     assert(!points.isEmpty)
 
     val pointLocations = points.map(_.location)
@@ -27,5 +27,3 @@ object KDTree {
 trait KDTree[T <: RayLike] extends java.io.Serializable {
   def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): List[T]
 }
-
-
