@@ -32,19 +32,19 @@ class Raytrace(val scene: Scene) {
   def calculateGlobalLighting(photonMap: PhotonMap)(hit: Hit[Ray]): Color = {
     val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
 
-    val incomingLights: List[PhotonMap.Contribution] = photonMap.incomingLightAt(hitLocation, hit.shapeHit.normal)
+    val incomingLights: Seq[PhotonMap.Contribution] = photonMap.incomingLightAt(hitLocation, hit.shapeHit.normal)
 
     def contributionFromPhoton(photon: PhotonMap.Contribution): Color = {
-      val contribution: Double = - (photon.incomingDirection.truncateTo3() dot hit.shapeHit.normal)
-      
+      val contribution: Double = -(photon.incomingDirection.truncateTo3() dot hit.shapeHit.normal)
+
       photon.color * contribution
     }
-    
-    incomingLights.map(contributionFromPhoton _).reduce(_+_)
+
+    incomingLights.map(contributionFromPhoton _).reduce(_ + _)
   }
 
   private def calculateDirectLighting(hit: Hit[Ray]): Color = {
-	  val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
+    val hitLocation: Vector4 = hit.ray.march(hit.shapeHit.t)
 
     def contributionFromLight(light: Light): Color = {
 
@@ -63,7 +63,7 @@ class Raytrace(val scene: Scene) {
 
   def generatePhotonStrikes(rng: RandomGenerator): List[Photon] = {
     assume(scene.lights.size == 1)
-    
+
     val light = scene.lights(0)
     val photon: Photon = light.emitPhoton(rng)
     generatePhotonStrikes(rng, photon)
@@ -74,21 +74,21 @@ class Raytrace(val scene: Scene) {
     val hit: Option[Hit[Photon]] = firstHit(emittedPhoton, rng)
 
     hit.map(ph => {
-    	val hitLocation = ph.ray.march(ph.shapeHit.t)
-			val photonHere = new Photon(hitLocation, ph.ray.direction, ph.ray.bounceCount)
-      
-    	val diffuse = ph.material.diffuseComponent()
-    	
-    	val furtherStrikes :List[Photon] = 
-      	if (rng.nextDouble() < diffuse) {
-      	  val bouncedPhotonDirection: Vector3.Normalized = MathUtils.randomDirectionInHemisphere(rng, ph.shapeHit.normal)
-      	  val bouncedPhoton: Photon = new Photon(hitLocation, bouncedPhotonDirection.toSpatiallyNormalized4(1.0), photonHere.bounceCount + 1).tweakForward()
-          generatePhotonStrikes(rng, bouncedPhoton)
-      	} else List.empty
+      val hitLocation = ph.ray.march(ph.shapeHit.t)
+      val photonHere = new Photon(hitLocation, ph.ray.direction, ph.ray.bounceCount)
 
-    	photonHere :: furtherStrikes
-    	
+      val diffuse = ph.material.diffuseComponent()
+
+      val furtherStrikes: List[Photon] =
+        if (rng.nextDouble() < diffuse) {
+          val bouncedPhotonDirection: Vector3.Normalized = MathUtils.randomDirectionInHemisphere(rng, ph.shapeHit.normal)
+          val bouncedPhoton: Photon = new Photon(hitLocation, bouncedPhotonDirection.toSpatiallyNormalized4(1.0), photonHere.bounceCount + 1).tweakForward()
+          generatePhotonStrikes(rng, bouncedPhoton)
+        } else List.empty
+
+      photonHere :: furtherStrikes
+
     }).getOrElse(List.empty)
   }
-  
+
 }

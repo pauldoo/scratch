@@ -31,6 +31,7 @@ import timetrace.shape.Fog
 import java.io.BufferedOutputStream
 import java.io.DataOutputStream
 import timetrace.kdtree.KDTreeInMemory
+import timetrace.kdtree.KDTreeGoneNative
 
 object Renderer {
 
@@ -49,7 +50,8 @@ object Renderer {
 
     //val job = new RenderJob(scene, camera, 2.0, 12.0, 1000000, 1920 / downscale, 1080 / downscale, 10, null, 1000.0, 1.0 / 1.8)
     //val job = new RenderJob(scene, camera, 4.5, 6.5, 1000000, 1920 / downscale, 1080 / downscale, 10, null, 10000.0, 1.0 / 1.8)
-    val job = new RenderJob(scene, camera, 2.5, 8.5, 4000000, 1920 / downscale, 1080 / downscale, 40, null, 10000.0, 1.0 / 1.8)
+    //val job = new RenderJob(scene, camera, 2.5, 8.5, 4000000, 1920 / downscale, 1080 / downscale, 40, null, 10000.0, 1.0 / 1.8)
+    val job = new RenderJob(scene, camera, 2.5, 8.5, 1000, 1920 / downscale, 1080 / downscale, 40, null, 10000.0, 1.0 / 1.8)
 
     render(job)
   }
@@ -96,14 +98,9 @@ object Renderer {
       .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
       .flatMap(generatePhotonBatch(job))
 
-    val kdTree = KDTree.build(photons.collect.toVector)
-    val file = File.createTempFile("photon-map", ".map")
-    println(s"Saving to ${file.getAbsolutePath}")
-    //file.deleteOnExit();
-    val output = new BufferedOutputStream(new FileOutputStream(file))
-    KDTreeInMemory.inOrderTraversalWrite(output, kdTree)
-    output.close()
-    ???
+    val kdTreeInMemory: KDTreeInMemory[Photon] = KDTree.build(photons.collect.toVector)
+
+    val kdTree: KDTreeGoneNative = KDTreeGoneNative.buildFromInMemory(kdTreeInMemory)
 
     val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTree)
     photons.unpersist()

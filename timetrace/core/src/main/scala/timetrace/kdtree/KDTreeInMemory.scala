@@ -2,7 +2,6 @@ package timetrace.kdtree
 
 import timetrace.math.RayLike
 import timetrace.math.Vector4
-import timetrace.kdtree.KDTree
 import scala.collection.mutable.PriorityQueue
 import scala.annotation.tailrec
 import timetrace.math.PointLike
@@ -44,33 +43,7 @@ object KDTreeInMemory {
     List((ranges.x, X), (ranges.y, Y), (ranges.z, Z), (ranges.t, T)).maxBy(_._1)._2
   }
 
-  def inOrderTraversalWrite(outputAsStream: OutputStream, kdTree: KDTreeInMemory[Photon]): IndexedSeq[Photon] = {
-
-    val output = new DataOutputStream(outputAsStream)
-
-    def writeLittleEndianInteger(i: Int): Unit = {
-      output.write((i >>> 0) & 0xFF)
-      output.write((i >>> 8) & 0xFF)
-      output.write((i >>> 16) & 0xFF)
-      output.write((i >>> 24) & 0xFF)
-    }
-
-    def writeLittleEndianFloat(v: Float): Unit = {
-      writeLittleEndianInteger(java.lang.Float.floatToIntBits(v))
-    }
-
-    def writeVec(v: Vector4): Unit = {
-      writeLittleEndianFloat(v.x.toFloat)
-      writeLittleEndianFloat(v.y.toFloat)
-      writeLittleEndianFloat(v.z.toFloat)
-      writeLittleEndianFloat(v.t.toFloat)
-    }
-
-    def writePhoton(p: Photon): Unit = {
-      writeVec(p.location)
-      writeVec(p.direction)
-      //writeLittleEndianInteger(p.bounceCount)
-    }
+  def inOrderTraversalWrite(output: OutputStream, kdTree: KDTreeInMemory[Photon]): IndexedSeq[Photon] = {
 
     def writeAxis(a: Axis): Unit = {
       val axisAsInteger: Int = a match {
@@ -80,20 +53,20 @@ object KDTreeInMemory {
         case Z => 3
         case T => 4
       }
-      writeLittleEndianInteger(axisAsInteger)
+      IOUtils.writeLittleEndianInteger(output, axisAsInteger)
     }
 
     def writeNode(n: KDTreeNode[Photon]): Vector[Photon] = {
       n match {
         case null => Vector.empty
         case leaf: KDTreeLeafNode[Photon] => {
-          writePhoton(leaf.point)
+          IOUtils.writePhoton(output, leaf.point)
           writeAxis(null)
           Vector(leaf.point)
         }
         case inner: KDTreeInnerNode[Photon] => {
           val left = writeNode(inner.left)
-          writePhoton(inner.pivot)
+          IOUtils.writePhoton(output, inner.pivot)
           writeAxis(inner.axis)
           val right = writeNode(inner.right)
 
@@ -103,8 +76,8 @@ object KDTreeInMemory {
       }
     }
 
-    writeVec(kdTree.mins)
-    writeVec(kdTree.maxs)
+    IOUtils.writeVec(output, kdTree.mins)
+    IOUtils.writeVec(output, kdTree.maxs)
     writeNode(kdTree.rootNode)
   }
 

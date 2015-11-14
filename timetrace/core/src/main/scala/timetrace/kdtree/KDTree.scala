@@ -25,5 +25,5 @@ object KDTree {
 }
 
 trait KDTree[T <: RayLike] extends java.io.Serializable {
-  def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): List[T]
+  def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): Seq[T]
 }

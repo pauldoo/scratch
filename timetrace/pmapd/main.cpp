@@ -44,7 +44,7 @@ namespace timetrace {
 
         std::clog << photonMap.mins << std::endl;
         std::clog << photonMap.maxs << std::endl;
-        dump(photonMap.begin, photonMap.count, 0);
+        //dump(photonMap.begin, photonMap.count, 0);
 
         while (true) {
             Request req = readRequest(stdin);

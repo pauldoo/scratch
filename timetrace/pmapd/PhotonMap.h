@@ -41,8 +41,8 @@ namespace timetrace {
 #pragma pack(push, 4)
     struct Request {
         Vector4 target;
-        int count;
         Vector4 interestingHemisphere;
+        int count;
     };
 #pragma pack(pop)
 

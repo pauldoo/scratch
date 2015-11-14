@@ -9,21 +9,21 @@ namespace timetrace {
         struct NodeWithKnownBoundsAndMinDistance
         {
             NodeWithKnownBoundsAndMinDistance( //
-                const KDTreeNode* const node, //
                 const Vector4& mins, //
                 const Vector4& maxs, //
+                const KDTreeNode* const node, //
                 const float minDistance
                 ) : //
-                node(node), //
                 mins(mins), //
                 maxs(maxs), //
+                node(node), //
                 minDistance(minDistance)
             {
             }
 
-            const KDTreeNode* node;
             Vector4 mins;
             Vector4 maxs;
+            const KDTreeNode* node;
             float minDistance;
         };
 
@@ -40,9 +40,9 @@ namespace timetrace {
         std::priority_queue<NodeWithKnownBoundsAndMinDistance> queue;
 
         queue.push( NodeWithKnownBoundsAndMinDistance( //
-          photonMap.begin, //
           photonMap.mins, //
           photonMap.maxs, //
+          photonMap.begin + (photonMap.count / 2), //
           minDistanceToBoundingBox( photonMap.mins, photonMap.maxs, request.target ) ) );
 
 
