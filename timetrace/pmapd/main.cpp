@@ -1,6 +1,7 @@
 #include "Assert.h"
 #include "IO.h"
 #include "PhotonMap.h"
+#include "TraceImp.h"
 
 
 #include <iostream>
@@ -32,6 +33,8 @@ namespace timetrace {
 
     int pmapd_main(int argc, char** argv) {
 
+        std::clog << "pid: " << getpid() << std::endl;
+
         std::clog << sizeof(Vector4) << std::endl;
         std::clog << sizeof(Photon) << std::endl;
         std::clog << sizeof(KDTreeNode) << std::endl;
@@ -46,9 +49,21 @@ namespace timetrace {
         std::clog << photonMap.maxs << std::endl;
         //dump(photonMap.begin, photonMap.count, 0);
 
-        while (true) {
-            Request req = readRequest(stdin);
+        if (false) {
+            Request t;
+            t.target.data[0] = 0.0f;
+            t.target.data[1] = 0.0f;
+            t.target.data[2] = 0.0f;
+            t.target.data[3] = 0.0f;
+            t.count = 10;
 
+            findClosestTo(stdout, photonMap, t);
+        }
+
+        while (true) {
+            TRACE("before read")
+            Request req = readRequest(stdin);
+            TRACE("after read")
             findClosestTo(stdout, photonMap, req);
         }
 

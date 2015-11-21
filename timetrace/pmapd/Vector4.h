@@ -1,8 +1,9 @@
 #pragma once
 
+#include "TraceImp.h"
+
 #include <x86intrin.h>
 #include <iosfwd>
-
 
 namespace timetrace {
     struct Vector4 {
@@ -39,16 +40,29 @@ namespace timetrace {
         return Vector4(_mm_sub_ps(a.data, b.data));
     }
 
-    inline const float magnitudeSquared(const Vector4& v)
+    inline const float dotProduct(const Vector4& a, const Vector4& b)
     {
-      __m128 t = _mm_dp_ps(v.data, v.data, 0xF1);
-      return ((float*)&t)[0];
+        TRACE( a );
+        TRACE( b );
+        __m128 t = _mm_dp_ps(a.data, b.data, 0xF1);
+        float r = t[0];
+        TRACE( r );
+        return r;
     }
 
-    inline const float minDistanceToBoundingBox(const Vector4& mins, const Vector4& maxs, const Vector4& target)
+    inline const float magnitudeSquared(const Vector4& v)
     {
-        Vector4 closestPoint = min(maxs, max(mins, target));
-        return magnitudeSquared(sub(target, closestPoint));
+      return dotProduct(v, v);
+    }
+
+    inline const float distanceSquared(const Vector4& a, const Vector4& b)
+    {
+        return magnitudeSquared(sub(a, b));
+    }
+
+    inline const float distanceSquaredToBoundingBox(const Vector4& mins, const Vector4& maxs, const Vector4& target)
+    {
+        return distanceSquared(target, min(maxs, max(mins, target)));
     }
 
     std::ostream& operator<<(std::ostream& os, const Vector4& obj);

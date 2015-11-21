@@ -5,19 +5,19 @@
 namespace timetrace {
 
     float Vector4::x() const {
-        return ((float*)&data)[0];
+        return data[0];
     }
 
     float Vector4::y() const {
-        return ((float*)&data)[1];
+        return data[1];
     }
 
     float Vector4::z() const {
-        return ((float*)&data)[2];
+        return data[2];
     }
 
     float Vector4::t() const {
-        return ((float*)&data)[3];
+        return data[3];
     }
 
     std::ostream& operator<<(std::ostream& os, const Vector4& obj)

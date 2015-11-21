@@ -10,6 +10,7 @@ import java.io.OutputStream
 import java.io.InputStream
 import java.io.BufferedOutputStream
 import java.io.BufferedInputStream
+import java.lang.ProcessBuilder.Redirect
 
 object KDTreeGoneNative {
   def buildFromInMemory(kdTree: KDTreeInMemory[Photon]): KDTreeGoneNative = {
@@ -19,12 +20,25 @@ object KDTreeGoneNative {
     val result = new KDTreeGoneNative(traversed.toArray, output.toByteArray())
 
     {
-      val a = kdTree.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 10, Vector4(0.0, 0.0, 0.0, 1.0))
-      val b = result.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 10, Vector4(0.0, 0.0, 0.0, 1.0))
+      val a = time { kdTree.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 1, Vector4(0.0, 0.0, 0.0, 1.0)) }
+      val b = time { result.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 1, Vector4(0.0, 0.0, 0.0, 1.0)) }
+
+      println(s"${a.head.location.magnitude()} ${a.head.direction}")
+      println(s"${b.head.location.magnitude()} ${b.head.direction}")
 
       assert(a == b)
     }
 
+    result
+  }
+
+  private def time[R](block: => R): R = {
+    block
+
+    val t0 = System.nanoTime()
+    val result = block // call-by-name
+    val t1 = System.nanoTime()
+    println("Elapsed time: " + ((t1 - t0) / 1000000.0) + "ms")
     result
   }
 }
@@ -36,13 +50,16 @@ class KDTreeGoneNative(val traversed: Array[Photon], val serializedForm: Array[B
     override def initialValue(): (Process, OutputStream, InputStream) = {
       val file = File.createTempFile("photon-map", ".map")
       println(s"Saving to ${file.getAbsolutePath}")
-      file.deleteOnExit();
+      //file.deleteOnExit();
       val output = new FileOutputStream(file)
       output.write(serializedForm)
       output.close()
 
       println("Starting pmapd")
-      val p = new ProcessBuilder("../pmapd/pmapd", file.getAbsolutePath).start()
+
+      val p = new ProcessBuilder("../pmapd/pmapd", file.getAbsolutePath) //
+        .redirectError(ProcessBuilder.Redirect.INHERIT) //
+        .start()
 
       val out = new BufferedOutputStream(p.getOutputStream)
       val in = new BufferedInputStream(p.getInputStream)
@@ -54,13 +71,9 @@ class KDTreeGoneNative(val traversed: Array[Photon], val serializedForm: Array[B
   def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): Seq[Photon] = {
     val proc = childProcess.get
 
-    println("Sending request")
     sendRequest(proc._2, target, n, interestingHemisphere)
-    println("Request sent")
 
-    println("Reading response")
     val r = readResponse(proc._3, n)
-    println("Response read")
 
     r
   }

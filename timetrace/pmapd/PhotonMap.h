@@ -12,12 +12,10 @@ namespace timetrace {
     };
 
     // TODO: can experiment with packing options
-#pragma pack(push, 4)
     struct KDTreeNode {
         const Photon photon;
         const int splitAxis;
     };
-#pragma pack(pop)
 
     struct PhotonMap {
         const int count;
