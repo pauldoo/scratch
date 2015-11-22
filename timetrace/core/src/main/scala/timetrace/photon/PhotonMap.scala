@@ -18,7 +18,7 @@ case class PhotonMap(val photonPower: Double, val photons: KDTree[Photon]) {
     val closestPhotons: Seq[Photon] = photons.findClosestTo(location, 100, (-surfaceNormal).to4(0.0))
 
     def photonDistance(photon: Photon): Double = (location - photon.location).magnitude()
-    val distanceToFurthestPhoton = photonDistance(closestPhotons.head)
+    val distanceToFurthestPhoton = photonDistance(closestPhotons.last)
     def coneModulation(photon: Photon): Double = 1.0 - (photonDistance(photon) / distanceToFurthestPhoton)
 
     val denominator = closestPhotons.map(coneModulation _).sum

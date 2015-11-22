@@ -94,7 +94,7 @@ class KDTreeInMemory[T <: RayLike]( //
     private val maxs: Vector4, //
     private val rootNode: KDTreeNode[T]) extends KDTree[T] {
 
-  def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): List[T] = {
+  def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): Vector[T] = {
 
     class NodeWithKnownBoundsAndMinDistance( //
         val node: KDTreeNode[T], //
@@ -136,7 +136,7 @@ class KDTreeInMemory[T <: RayLike]( //
     considerEnqueue(rootNode, mins, maxs)
 
     @tailrec
-    def find(result: List[T]): List[T] = {
+    def find(result: Vector[T]): Vector[T] = {
       if (result.size >= n || queue.isEmpty) {
         result
       } else {
@@ -145,7 +145,7 @@ class KDTreeInMemory[T <: RayLike]( //
         curr.node match {
           case leaf: KDTreeLeafNode[T] => {
             assert(predicate(leaf.point))
-            find(leaf.point :: result)
+            find(result :+ leaf.point)
           }
           case inner: KDTreeInnerNode[T] => {
             considerEnqueue(new KDTreeLeafNode[T](inner.pivot), null, null)
@@ -163,7 +163,7 @@ class KDTreeInMemory[T <: RayLike]( //
       }
     }
 
-    find(List.empty)
+    find(Vector.empty)
   }
 
 }

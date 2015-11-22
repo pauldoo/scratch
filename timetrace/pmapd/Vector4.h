@@ -1,6 +1,6 @@
 #pragma once
 
-#include "TraceImp.h"
+#include "Assert.h"
 
 #include <x86intrin.h>
 #include <iosfwd>
@@ -25,6 +25,12 @@ namespace timetrace {
         float t() const;
     };
 
+    inline const bool operator == (const Vector4& a, const Vector4& b)
+    {
+        const uint16_t test = _mm_movemask_epi8(_mm_cmpneq_ps(a.data, b.data));
+        return test == 0;
+    }
+
     inline const Vector4 min(const Vector4& a, const Vector4& b)
     {
         return Vector4(_mm_min_ps(a.data, b.data));
@@ -42,11 +48,8 @@ namespace timetrace {
 
     inline const float dotProduct(const Vector4& a, const Vector4& b)
     {
-        TRACE( a );
-        TRACE( b );
         __m128 t = _mm_dp_ps(a.data, b.data, 0xF1);
         float r = t[0];
-        TRACE( r );
         return r;
     }
 
@@ -62,6 +65,8 @@ namespace timetrace {
 
     inline const float distanceSquaredToBoundingBox(const Vector4& mins, const Vector4& maxs, const Vector4& target)
     {
+        DEBUG_ASSERT(min(mins, maxs) == mins);
+        DEBUG_ASSERT(max(mins, maxs) == maxs);
         return distanceSquared(target, min(maxs, max(mins, target)));
     }
 

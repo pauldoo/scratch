@@ -20,11 +20,11 @@ object KDTreeGoneNative {
     val result = new KDTreeGoneNative(traversed.toArray, output.toByteArray())
 
     {
-      val a = time { kdTree.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 1, Vector4(0.0, 0.0, 0.0, 1.0)) }
-      val b = time { result.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 1, Vector4(0.0, 0.0, 0.0, 1.0)) }
+      val a = time { kdTree.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 100, Vector4(0.0, 0.0, 0.0, 1.0)) }
+      val b = time { result.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 100, Vector4(0.0, 0.0, 0.0, 1.0)) }
 
-      println(s"${a.head.location.magnitude()} ${a.head.direction}")
-      println(s"${b.head.location.magnitude()} ${b.head.direction}")
+      println(s"${a.head.location.magnitude()} ${a.last.location.magnitude()} ${a.head.location} ${a.head.direction}")
+      println(s"${b.head.location.magnitude()} ${b.last.location.magnitude()} ${b.head.location} ${b.head.direction}")
 
       assert(a == b)
     }
@@ -46,25 +46,28 @@ object KDTreeGoneNative {
 class KDTreeGoneNative(val traversed: Array[Photon], val serializedForm: Array[Byte]) extends KDTree[Photon] {
 
   @transient
-  val childProcess = new ThreadLocal[(Process, OutputStream, InputStream)]() {
-    override def initialValue(): (Process, OutputStream, InputStream) = {
-      val file = File.createTempFile("photon-map", ".map")
-      println(s"Saving to ${file.getAbsolutePath}")
-      //file.deleteOnExit();
-      val output = new FileOutputStream(file)
-      output.write(serializedForm)
-      output.close()
+  lazy val childProcess = {
+    val file = File.createTempFile("photon-map", ".map")
+    println(s"Saving to ${file.getAbsolutePath}")
+    file.deleteOnExit();
+    val output = new FileOutputStream(file)
+    output.write(serializedForm)
+    output.close()
 
-      println("Starting pmapd")
+    new ThreadLocal[(Process, OutputStream, InputStream)]() {
+      override def initialValue(): (Process, OutputStream, InputStream) = {
 
-      val p = new ProcessBuilder("../pmapd/pmapd", file.getAbsolutePath) //
-        .redirectError(ProcessBuilder.Redirect.INHERIT) //
-        .start()
+        println("Starting pmapd")
 
-      val out = new BufferedOutputStream(p.getOutputStream)
-      val in = new BufferedInputStream(p.getInputStream)
+        val p = new ProcessBuilder("../pmapd/pmapd", file.getAbsolutePath) //
+          .redirectError(ProcessBuilder.Redirect.INHERIT) //
+          .start()
 
-      (p, out, in)
+        val out = new BufferedOutputStream(p.getOutputStream)
+        val in = new BufferedInputStream(p.getInputStream)
+
+        (p, out, in)
+      }
     }
   }
 

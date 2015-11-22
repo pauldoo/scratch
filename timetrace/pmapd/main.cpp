@@ -61,9 +61,9 @@ namespace timetrace {
         }
 
         while (true) {
-            TRACE("before read")
+            DEBUG_TRACE("before read")
             Request req = readRequest(stdin);
-            TRACE("after read")
+            DEBUG_TRACE("after read")
             findClosestTo(stdout, photonMap, req);
         }
 

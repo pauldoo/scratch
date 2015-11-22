@@ -2,9 +2,11 @@
 
 #include <string>
 
-//#define TRACE(expression)
-
-#define TRACE(expression) ::timetrace::Trace((expression), #expression, __FUNCTION__, __FILE__, __LINE__);
+#ifdef NO_DEBUG_TRACE
+#define DEBUG_TRACE(expression)
+#else
+#define DEBUG_TRACE(expression) ::timetrace::Trace((expression), #expression, __FUNCTION__, __FILE__, __LINE__);
+#endif
 
 namespace timetrace {
     template <typename T>

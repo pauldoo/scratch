@@ -2,7 +2,14 @@
 
 #include <string>
 
+#ifdef NO_DEBUG_ASSERT
+#define DEBUG_ASSERT(expression)
+#else
+#define DEBUG_ASSERT(expression) ::timetrace::Assert((expression), #expression, __FUNCTION__, __FILE__, __LINE__);
+#endif
+
 #define ASSERT(expression) ::timetrace::Assert((expression), #expression, __FUNCTION__, __FILE__, __LINE__);
+
 
 namespace timetrace {
     void Assert(

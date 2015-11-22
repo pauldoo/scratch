@@ -36,6 +36,7 @@ class Raytrace(val scene: Scene) {
 
     def contributionFromPhoton(photon: PhotonMap.Contribution): Color = {
       val contribution: Double = -(photon.incomingDirection.truncateTo3() dot hit.shapeHit.normal)
+      assume(contribution >= 0.0)
 
       photon.color * contribution
     }
