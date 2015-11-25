@@ -26,10 +26,6 @@ namespace timetrace {
         ASSERT(statData.st_size % sizeof(KDTreeNode) == 2 * sizeof(Vector4));
         int count = statData.st_size / sizeof(KDTreeNode);
 
-        ASSERT(0 == madvise(result, statData.st_size, MADV_WILLNEED));
-        ASSERT(0 == madvise(result, statData.st_size, MADV_HUGEPAGE));
-        
-
         return PhotonMap(
           count, //
           static_cast<const Vector4*>(result)[0], //
