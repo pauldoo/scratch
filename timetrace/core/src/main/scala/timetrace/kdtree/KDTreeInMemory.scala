@@ -1,6 +1,7 @@
 package timetrace.kdtree
 
 import timetrace.math.RayLike
+
 import timetrace.math.Vector4
 import scala.collection.mutable.PriorityQueue
 import scala.annotation.tailrec
@@ -14,6 +15,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.Try
 import java.util.concurrent.atomic.AtomicLong
+import scala.concurrent.blocking
 
 object KDTreeInMemory {
 
@@ -35,11 +37,15 @@ object KDTreeInMemory {
         val leftSubTree = buildNode(sortedPoints.slice(0, middleIndex))
         val rightSubTree = buildNode(sortedPoints.slice(middleIndex + 1, sortedPoints.size))
 
-        new KDTreeInnerNode[T]( //
-          sortedPoints(middleIndex), //
-          splitDirection, //
-          Await.result(leftSubTree, Duration.Inf), //
-          Await.result(rightSubTree, Duration.Inf))
+        val pivot = sortedPoints(middleIndex)
+
+        blocking {
+          new KDTreeInnerNode[T]( //
+            pivot, //
+            splitDirection, //
+            Await.result(leftSubTree, Duration.Inf), //
+            Await.result(rightSubTree, Duration.Inf))
+        }
       }
     }
 
