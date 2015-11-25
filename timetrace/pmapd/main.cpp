@@ -2,7 +2,7 @@
 #include "IO.h"
 #include "PhotonMap.h"
 #include "TraceImp.h"
-
+#include "Time.h"
 
 #include <iostream>
 #include <cstdio>
@@ -64,6 +64,7 @@ namespace timetrace {
             DEBUG_TRACE("before read")
             Request req = readRequest(stdin);
             DEBUG_TRACE("after read")
+            
             findClosestTo(stdout, photonMap, req);
         }
 

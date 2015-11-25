@@ -36,13 +36,11 @@ namespace timetrace {
         }
     };
 
-#pragma pack(push, 4)
     struct Request {
         Vector4 target;
         Vector4 interestingHemisphere;
         int count;
     };
-#pragma pack(pop)
 
     void findClosestTo(FILE* const out, const PhotonMap& photonMap, const Request& request);
 

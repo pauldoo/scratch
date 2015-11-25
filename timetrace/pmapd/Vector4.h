@@ -4,6 +4,7 @@
 
 #include <x86intrin.h>
 #include <iosfwd>
+#include <stdint.h>
 
 namespace timetrace {
     struct Vector4 {

@@ -20,25 +20,12 @@ object KDTreeGoneNative {
     val result = new KDTreeGoneNative(traversed.toArray, output.toByteArray())
 
     {
-      val a = time { kdTree.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 100, Vector4(0.0, 0.0, 0.0, 1.0)) }
-      val b = time { result.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 100, Vector4(0.0, 0.0, 0.0, 1.0)) }
-
-      println(s"${a.head.location.magnitude()} ${a.last.location.magnitude()} ${a.head.location} ${a.head.direction}")
-      println(s"${b.head.location.magnitude()} ${b.last.location.magnitude()} ${b.head.location} ${b.head.direction}")
-
+      // sanity test
+      val a =kdTree.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 100, Vector4(0.0, 0.0, 0.0, 1.0)) 
+      val b =  result.findClosestTo(Vector4(0.0, 0.0, 0.0, 0.0), 100, Vector4(0.0, 0.0, 0.0, 1.0)) 
       assert(a == b)
     }
 
-    result
-  }
-
-  private def time[R](block: => R): R = {
-    block
-
-    val t0 = System.nanoTime()
-    val result = block // call-by-name
-    val t1 = System.nanoTime()
-    println("Elapsed time: " + ((t1 - t0) / 1000000.0) + "ms")
     result
   }
 }
@@ -71,7 +58,7 @@ class KDTreeGoneNative(val traversed: Array[Photon], val serializedForm: Array[B
     }
   }
 
-  def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): Seq[Photon] = {
+  def findClosestToImp(target: Vector4, n: Int, interestingHemisphere: Vector4): Seq[Photon] = {
     val proc = childProcess.get
 
     sendRequest(proc._2, target, n, interestingHemisphere)

@@ -20,11 +20,15 @@ namespace timetrace {
         const int statResult = fstat(fd, &statData);
         ASSERT(statResult == 0);
 
-        const void* result = mmap(NULL, statData.st_size, PROT_READ, MAP_SHARED, fd, 0);
+        void* const result = mmap(NULL, statData.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         ASSERT(result != MAP_FAILED);
 
         ASSERT(statData.st_size % sizeof(KDTreeNode) == 2 * sizeof(Vector4));
         int count = statData.st_size / sizeof(KDTreeNode);
+
+        ASSERT(0 == madvise(result, statData.st_size, MADV_WILLNEED));
+        ASSERT(0 == madvise(result, statData.st_size, MADV_HUGEPAGE));
+        
 
         return PhotonMap(
           count, //
@@ -36,7 +40,8 @@ namespace timetrace {
     Request readRequest(FILE* const in)
     {
         Request result;
-        size_t itemsRead = fread(&result, sizeof(result), 1, in);
+        ASSERT(sizeof(result) == 48); // Assert is primarily here as a regression test
+        size_t itemsRead = fread(&result, 36, 1, in);
         ASSERT(itemsRead == 1);
         return result;
     }

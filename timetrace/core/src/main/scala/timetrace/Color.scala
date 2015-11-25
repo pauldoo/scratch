@@ -15,9 +15,12 @@ sealed case class Color(val red: Double, val green: Double, val blue: Double) {
     this.green + that.green,
     this.blue + that.blue)
 
-  def *(v: Double): Color = new Color(
-    red * v,
-    green * v,
-    blue * v)
+  def *(v: Double): Color = {
+    assert(v >= 0.0)
+    new Color(
+      red * v,
+      green * v,
+      blue * v)
+  }
 
 }

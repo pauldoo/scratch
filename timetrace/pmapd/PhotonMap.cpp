@@ -1,10 +1,11 @@
 #include "PhotonMap.h"
-#include "Assert.h"
 
 #include "Assert.h"
 #include "TraceImp.h"
+#include "Time.h"
 
 #include <queue>
+#include <cstdio>
 
 namespace timetrace {
 
@@ -47,11 +48,14 @@ namespace timetrace {
                 return lhs.minDistance > rhs.minDistance;
             }
         };
-
+        
+        long requestCounter = 0;
     }
 
     void findClosestTo(FILE* const out, const PhotonMap& photonMap, const Request& request)
     {
+        const long begin = getNanos();
+    
         DEBUG_TRACE(request.target);
         DEBUG_TRACE(request.interestingHemisphere);
 
@@ -112,12 +116,14 @@ namespace timetrace {
                     DEBUG_ASSERT(photonMap.begin <= rootLeft && rootLeft < (photonMap.begin + photonMap.count));
 
                     if (countOnLeft == 1) {
-                        queue.push( NodeWithKnownBoundsAndMinDistance( //
-                            rootLeft->photon.position, //
-                            rootLeft->photon.position, //
-                            rootLeft, //
-                            distanceSquared(rootLeft->photon.position, request.target), //
-                            1) );
+                        if (dotProduct(request.interestingHemisphere, rootLeft->photon.direction) > 0.0f) {
+                            queue.push( NodeWithKnownBoundsAndMinDistance( //
+                                rootLeft->photon.position, //
+                                rootLeft->photon.position, //
+                                rootLeft, //
+                                distanceSquared(rootLeft->photon.position, request.target), //
+                                1) );
+                        }
                     } else {
                         const Vector4 minsLeft = top.mins;
                         Vector4 maxsLeft = top.maxs;
@@ -141,12 +147,14 @@ namespace timetrace {
                     DEBUG_ASSERT(photonMap.begin <= rootRight && rootRight < (photonMap.begin + photonMap.count));
 
                     if (countOnRight == 1) {
-                        queue.push( NodeWithKnownBoundsAndMinDistance( //
-                            rootRight->photon.position, //
-                            rootRight->photon.position, //
-                            rootRight, //
-                            distanceSquared(rootRight->photon.position, request.target), //
-                            1) );
+                        if (dotProduct(request.interestingHemisphere, rootRight->photon.direction) > 0.0f) {
+                            queue.push( NodeWithKnownBoundsAndMinDistance( //
+                                rootRight->photon.position, //
+                                rootRight->photon.position, //
+                                rootRight, //
+                                distanceSquared(rootRight->photon.position, request.target), //
+                                1) );
+                        }
                     } else {
 
                         Vector4 minsRight = top.mins;
@@ -168,7 +176,15 @@ namespace timetrace {
             }
         }
 
+        const long beforeFlush = getNanos();
         fflush(out);
+        const long end = getNanos();
+        
+        if (requestCounter % 1000 == 0) {
+           std::clog << "Request served in " << ((end - begin) / 1000000.0) << "ms (" << ((beforeFlush - begin) / 1000000.0) << "ms excluding flush)" << std::endl;
+        }
+        requestCounter++;
+        
     }
 
 

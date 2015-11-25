@@ -8,29 +8,45 @@ import timetrace.math.PointLike
 import java.io.OutputStream
 import java.io.DataOutputStream
 import timetrace.photon.Photon
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.util.Try
+import java.util.concurrent.atomic.AtomicLong
 
 object KDTreeInMemory {
-  def buildNode[T <: PointLike](points: IndexedSeq[T]): KDTreeNode[T] = {
-    if (points.isEmpty) {
-      null
-    } else if (points.size == 1) {
-      new KDTreeLeafNode[T]( //
-        points.head)
+
+  implicit val ec: ExecutionContext = ExecutionContext.global
+
+  def buildNode[T <: PointLike](points: IndexedSeq[T]): Future[KDTreeNode[T]] = {
+    val computation = () => {
+      if (points.isEmpty) {
+        null
+      } else if (points.size == 1) {
+        new KDTreeLeafNode[T](points.head)
+      } else {
+        val splitDirection: Axis = decideSplitDirection(points)
+        def sortByFn(p: PointLike) = splitDirection.extractor(p.location)
+        val sortedPoints: IndexedSeq[T] = points.sortBy(sortByFn _)
+
+        val middleIndex = sortedPoints.size / 2
+
+        val leftSubTree = buildNode(sortedPoints.slice(0, middleIndex))
+        val rightSubTree = buildNode(sortedPoints.slice(middleIndex + 1, sortedPoints.size))
+
+        new KDTreeInnerNode[T]( //
+          sortedPoints(middleIndex), //
+          splitDirection, //
+          Await.result(leftSubTree, Duration.Inf), //
+          Await.result(rightSubTree, Duration.Inf))
+      }
+    }
+
+    if (points.length >= 100000) {
+      Future { computation() }
     } else {
-      val splitDirection: Axis = decideSplitDirection(points)
-      def sortByFn(p: PointLike) = splitDirection.extractor(p.location)
-      val sortedPoints: IndexedSeq[T] = points.sortBy(sortByFn _)
-
-      val middleIndex = sortedPoints.size / 2
-
-      val leftSubTree = buildNode(sortedPoints.slice(0, middleIndex))
-      val rightSubTree = buildNode(sortedPoints.slice(middleIndex + 1, sortedPoints.size))
-
-      new KDTreeInnerNode[T]( //
-        sortedPoints(middleIndex), //
-        splitDirection, //
-        leftSubTree, //
-        rightSubTree)
+      Future.fromTry(Try { computation() })
     }
   }
 
@@ -44,6 +60,8 @@ object KDTreeInMemory {
   }
 
   def inOrderTraversalWrite(output: OutputStream, kdTree: KDTreeInMemory[Photon]): IndexedSeq[Photon] = {
+
+    println("Serializing in-memory KD tree")
 
     def writeAxis(a: Axis): Unit = {
       val axisAsInteger: Int = a match {
@@ -84,7 +102,11 @@ object KDTreeInMemory {
 
     IOUtils.writeVec(output, kdTree.mins)
     IOUtils.writeVec(output, kdTree.maxs)
-    writeNode(kdTree.rootNode)
+    val result = writeNode(kdTree.rootNode)
+
+    println("Done serializing in-memory KD tree")
+
+    result
   }
 
 }
@@ -93,8 +115,8 @@ class KDTreeInMemory[T <: RayLike]( //
     private val mins: Vector4, //
     private val maxs: Vector4, //
     private val rootNode: KDTreeNode[T]) extends KDTree[T] {
-
-  def findClosestTo(target: Vector4, n: Int, interestingHemisphere: Vector4): Vector[T] = {
+  
+  def findClosestToImp(target: Vector4, n: Int, interestingHemisphere: Vector4): Vector[T] = {
 
     class NodeWithKnownBoundsAndMinDistance( //
         val node: KDTreeNode[T], //

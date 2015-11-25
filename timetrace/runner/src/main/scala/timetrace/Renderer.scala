@@ -44,13 +44,13 @@ object Renderer {
         Thing(new Plane(Vector3(0.0, 1.0, 0.0).normalize(), -1.0), WhiteDiffuseMaterial), //
         Thing(new Sphere(Vector3(0.0, 0.0, 3.0), 1.0), WhiteDiffuseMaterial), //
         Thing(new Fog(3.0), WhiteDiffuseMaterial)), //
-      List(new SinglePulsePointLight(Vector3(2.0, 1.0, 2.0), Color.WHITE, 0.0, 0.5)))
+      List(new SinglePulsePointLight(Vector3(2.0, 1.0, 2.0), Color.WHITE, 0.0, 0.3)))
 
-    val downscale = 10
+    val downscale = 4
 
     //val job = new RenderJob(scene, camera, 2.0, 12.0, 1000000, 1920 / downscale, 1080 / downscale, 10, null, 1000.0, 1.0 / 1.8)
     //val job = new RenderJob(scene, camera, 4.5, 6.5, 1000000, 1920 / downscale, 1080 / downscale, 10, null, 10000.0, 1.0 / 1.8)
-    val job = new RenderJob(scene, camera, 2.5, 8.5, 4000000, 1920 / downscale, 1080 / downscale, 10, null, 10000.0, 1.0 / 1.8)
+    val job = new RenderJob(scene, camera, 2.5, 8.5, 40000000, 1920 / downscale, 1080 / downscale, 40, null, 10000.0, 1.0 / 1.8)
     //val job = new RenderJob(scene, camera, 2.5, 8.5, 1000, 1920 / downscale, 1080 / downscale, 40, null, 10000.0, 1.0 / 1.8)
 
     render(job)
@@ -100,10 +100,9 @@ object Renderer {
 
     val kdTreeInMemory: KDTreeInMemory[Photon] = KDTree.build(photons.collect.toVector)
 
-    val kdTree: KDTreeGoneNative = KDTreeGoneNative.buildFromInMemory(kdTreeInMemory)
+    val kdTreeGoneNative: KDTreeGoneNative = KDTreeGoneNative.buildFromInMemory(kdTreeInMemory)
 
-    val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTree)
-    photons.unpersist()
+    val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTreeGoneNative)
 
     sparkContext.broadcast(photonMap)
   }
