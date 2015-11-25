@@ -11,13 +11,19 @@ import java.io.InputStream
 import java.io.BufferedOutputStream
 import java.io.BufferedInputStream
 import java.lang.ProcessBuilder.Redirect
+import java.util.zip.GZIPOutputStream
+import java.io.ByteArrayInputStream
+import java.util.zip.GZIPInputStream
+import scala.annotation.tailrec
 
 object KDTreeGoneNative {
   def buildFromInMemory(kdTree: KDTreeInMemory[Photon]): KDTreeGoneNative = {
-    val output = new ByteArrayOutputStream()
-    val traversed: IndexedSeq[Photon] = KDTreeInMemory.inOrderTraversalWrite(output, kdTree)
+    val gzippedOutput = new ByteArrayOutputStream()
+    val gzipper = new GZIPOutputStream(gzippedOutput)
+    val traversed: IndexedSeq[Photon] = KDTreeInMemory.inOrderTraversalWrite(gzipper, kdTree)
+    gzipper.close()
 
-    val result = new KDTreeGoneNative(traversed.toArray, output.toByteArray())
+    val result = new KDTreeGoneNative(traversed.toArray, gzippedOutput.toByteArray())
 
     {
       // sanity test
@@ -30,15 +36,15 @@ object KDTreeGoneNative {
   }
 }
 
-class KDTreeGoneNative(val traversed: Array[Photon], val serializedForm: Array[Byte]) extends KDTree[Photon] {
+class KDTreeGoneNative(val traversed: Array[Photon], val gzipSerializedForm: Array[Byte]) extends KDTree[Photon] {
 
   @transient
   lazy val childProcess = {
     val file = File.createTempFile("photon-map", ".map")
     println(s"Saving to ${file.getAbsolutePath}")
     file.deleteOnExit();
-    val output = new FileOutputStream(file)
-    output.write(serializedForm)
+    val output = new BufferedOutputStream(new FileOutputStream(file))
+    copyStream(new GZIPInputStream(new ByteArrayInputStream(gzipSerializedForm)), output)
     output.close()
 
     new ThreadLocal[(Process, OutputStream, InputStream)]() {
@@ -80,6 +86,21 @@ class KDTreeGoneNative(val traversed: Array[Photon], val serializedForm: Array[B
       val index = IOUtils.readLittleEndianInteger(in)
       traversed(index)
     }
+  }
+
+  private def copyStream(input: InputStream, output: OutputStream) = {
+    val buffer :Array[Byte] = new Array[Byte](1024)
+
+    @tailrec
+    def doCopy() :Unit = {
+      val bytesRead = input.read(buffer)
+      if (bytesRead != -1) {
+        output.write(buffer, 0, bytesRead)
+        doCopy()
+      }
+    }
+
+    doCopy()
   }
 
 }
