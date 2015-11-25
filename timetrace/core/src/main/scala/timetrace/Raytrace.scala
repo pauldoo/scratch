@@ -10,6 +10,7 @@ import scala.util.Random
 import org.apache.commons.math3.random.RandomGenerator
 import timetrace.photon.PhotonMap
 import timetrace.math.MathUtils
+import scala.math.max
 
 class Raytrace(val scene: Scene) {
 
@@ -36,9 +37,9 @@ class Raytrace(val scene: Scene) {
 
     def contributionFromPhoton(photon: PhotonMap.Contribution): Color = {
       val contribution: Double = -(photon.incomingDirection.truncateTo3() dot hit.shapeHit.normal)
-      assume(contribution >= 0.0)
+      assume(contribution >= -0.001) // small tolerance because pmapd works with floats just
 
-      photon.color * contribution
+      photon.color * max(0.0, contribution)
     }
 
     incomingLights.map(contributionFromPhoton _).reduce(_ + _)
