@@ -40,10 +40,19 @@ namespace timetrace {
                 const int lineNumber)
     {
         if (v == false) {
-            std::ostringstream message;
-            message << "Assertion failure: \"" << expression << "\" in " << function << " (" << file << ", line " << lineNumber << ")";
-            throw Exception(message.str());
+            AssertFailed(expression, function, file, lineNumber);
         }
+    }
+
+    void AssertFailed(
+                const std::string& expression,
+                const std::string& function,
+                const std::string& file,
+                const int lineNumber)
+    {
+        std::ostringstream message;
+        message << "Assertion failure: \"" << expression << "\" in " << function << " (" << file << ", line " << lineNumber << ")";
+        throw Exception(message.str());
     }
 
 }
