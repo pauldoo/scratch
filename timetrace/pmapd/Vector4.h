@@ -7,49 +7,46 @@
 #include <stdint.h>
 
 namespace timetrace {
+
     struct Vector4 {
-        __m128 data;
+        float data[4];
 
-        Vector4()
-        {
-        }
-
-        Vector4(__m128 v) : data(v)
-        {
-        }
-
-        // These are for debugging only, and aren't friendly to the SIMD.
-        // For this reason I'm not even inlining them.
-        float x() const;
-        float y() const;
-        float z() const;
-        float t() const;
+        float x() const { return data[0]; }
+        float y() const { return data[1]; }
+        float z() const { return data[2]; }
+        float t() const { return data[3]; }
     };
 
     inline const bool operator == (const Vector4& a, const Vector4& b)
     {
-        const uint16_t test = _mm_movemask_epi8(_mm_cmpneq_ps(a.data, b.data));
+        const uint16_t test = _mm_movemask_epi8(_mm_cmpneq_ps(_mm_loadu_ps(a.data), _mm_loadu_ps(b.data)));
         return test == 0;
     }
 
     inline const Vector4 min(const Vector4& a, const Vector4& b)
     {
-        return Vector4(_mm_min_ps(a.data, b.data));
+        Vector4 result;
+        _mm_storeu_ps(result.data, _mm_min_ps(_mm_loadu_ps(a.data), _mm_loadu_ps(b.data)));
+        return result;
     }
 
     inline const Vector4 max(const Vector4& a, const Vector4& b)
     {
-        return Vector4(_mm_max_ps(a.data, b.data));
+        Vector4 result;
+        _mm_storeu_ps(result.data, _mm_max_ps(_mm_loadu_ps(a.data), _mm_loadu_ps(b.data)));
+        return result;
     }
 
     inline const Vector4 sub(const Vector4& a, const Vector4& b)
     {
-        return Vector4(_mm_sub_ps(a.data, b.data));
+        Vector4 result;
+        _mm_storeu_ps(result.data, _mm_sub_ps(_mm_loadu_ps(a.data), _mm_loadu_ps(b.data)));
+        return result;
     }
 
     inline const float dotProduct(const Vector4& a, const Vector4& b)
     {
-        __m128 t = _mm_dp_ps(a.data, b.data, 0xF1);
+        __m128 t = _mm_dp_ps(_mm_loadu_ps(a.data), _mm_loadu_ps(b.data), 0xF1);
         float r = t[0];
         return r;
     }

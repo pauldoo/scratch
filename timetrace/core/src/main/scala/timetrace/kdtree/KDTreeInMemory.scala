@@ -86,18 +86,12 @@ object KDTreeInMemory {
         case leaf: KDTreeLeafNode[Photon] => {
           IOUtils.writePhoton(output, leaf.point)
           writeAxis(null)
-          IOUtils.writeLittleEndianInteger(output, 0);
-          IOUtils.writeLittleEndianInteger(output, 0);
-          IOUtils.writeLittleEndianInteger(output, 0);
           Vector(leaf.point)
         }
         case inner: KDTreeInnerNode[Photon] => {
           val left = writeNode(inner.left)
           IOUtils.writePhoton(output, inner.pivot)
           writeAxis(inner.axis)
-          IOUtils.writeLittleEndianInteger(output, 0);
-          IOUtils.writeLittleEndianInteger(output, 0);
-          IOUtils.writeLittleEndianInteger(output, 0);
           val right = writeNode(inner.right)
 
           left ++ (inner.pivot +: right)
@@ -121,7 +115,7 @@ class KDTreeInMemory[T <: RayLike]( //
     private val mins: Vector4, //
     private val maxs: Vector4, //
     private val rootNode: KDTreeNode[T]) extends KDTree[T] {
-  
+
   def findClosestToImp(target: Vector4, n: Int, interestingHemisphere: Vector4): Vector[T] = {
 
     class NodeWithKnownBoundsAndMinDistance( //

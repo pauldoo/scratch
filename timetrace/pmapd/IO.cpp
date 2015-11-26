@@ -36,8 +36,8 @@ namespace timetrace {
     Request readRequest(FILE* const in)
     {
         Request result;
-        ASSERT(sizeof(result) == 48); // Assert is primarily here as a regression test
-        size_t itemsRead = fread(&result, 36, 1, in);
+        ASSERT(sizeof(result) == 36); // Assert is primarily here as a regression test
+        size_t itemsRead = fread(&result, sizeof(result), 1, in);
         ASSERT(itemsRead == 1);
         return result;
     }
