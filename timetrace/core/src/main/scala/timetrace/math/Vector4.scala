@@ -7,7 +7,7 @@ import scala.math.{ min, max }
 object Vector4 {
   class Normalized(x: Double, y: Double, z: Double, t: Double) extends Vector4(x, y, z, t) {
     assume(Math.abs(magnitude - 1.0) < 1e-6)
-    override val normalize = this
+    override def normalize = this
     override def isNormalized() = true
   }
 
@@ -15,7 +15,7 @@ object Vector4 {
   // Used mainly to describe ray directions
   class SpatiallyNormalized(v3: Vector3.Normalized, t: Double) extends Vector4(v3.x, v3.y, v3.z, t) {
     assume(t == -1.0 || t == 1.0)
-    override val spatiallyNormalize = this
+    override def spatiallyNormalize = this
   }
 
   def componentMinimums(v1: Vector4, v2: Vector4): Vector4 = {

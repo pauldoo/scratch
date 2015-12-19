@@ -1,0 +1,50 @@
+NULLS:
+
+    ParallelGC:
+    Reaches 40M ish quickly, slows down significantly, lost patience waiting for OOM.
+    
+    G1GC:
+    Reaches true peak of 56M ish v quickly, then takes 2mins to OOM.
+    > OOM at 56726910 elements
+    
+Will use G1GC for remainder of tests.
+
+Baseline:
+OOM at 1988627 elements
+
+override val => def:
+OOM at 2116943 elements
+
+target jdk 8 + enable scala compiler optimizations:
+OOM at 2114159 elements
+
+floats:
+OOM at 1683785 elements
+(I think the double and the floats were kept as fields... :/)
+
+Array[Byte](36):
+OOM at 4347180 elements
+
+FlatPhoton:
+OOM at 5008154 elements
+48bytes each, vs 36bytes theoretical min (12bytes off)
+Only 25% wasteage, will stop here
+
+CompressedOops:
+No difference.
+
+Try ParallelGC
+OOMs quicker now, but at 4.2M items.  Sticking with G1.
+
+
+
+Idea..
+
+KDTree nodes should be flattened to have an inline photon.
+Still use explicit references between nodes to represent tree (rather than store nodes in an array with implicit tree structure),
+as either way is exactly one ref per node.
+
+Fitting all full fat photons into memory at once may not work, so may need flattened Photons as well as flattened KDTree nodes?
+
+Feels like a shame to duplicate code..
+
