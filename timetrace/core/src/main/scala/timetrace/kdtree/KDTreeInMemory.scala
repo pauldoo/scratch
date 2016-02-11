@@ -1,7 +1,6 @@
 package timetrace.kdtree
 
 import timetrace.math.RayLike
-
 import timetrace.math.Vector4
 import scala.collection.mutable.PriorityQueue
 import scala.annotation.tailrec
@@ -16,21 +15,34 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 import java.util.concurrent.atomic.AtomicLong
 import scala.concurrent.blocking
+import timetrace.kdtree.X
+import timetrace.kdtree.Y
+import timetrace.kdtree.Z
+import timetrace.kdtree.T
 
 object KDTreeInMemory {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
-  def buildNode[T <: PointLike](points: IndexedSeq[T]): Future[KDTreeNode[T]] = {
+  def buildNode(points: IndexedSeq[Photon]): Future[KDTreeNodeFlattened] = {
     val computation = () => {
       if (points.isEmpty) {
         null
       } else if (points.size == 1) {
-        new KDTreeLeafNode[T](points.head)
+        new KDTreeNodeFlattened( //
+          points.head.location.x.toFloat, //
+          points.head.location.y.toFloat, //
+          points.head.location.z.toFloat, //
+          points.head.location.t.toFloat, //
+          points.head.direction.x.toFloat, //
+          points.head.direction.y.toFloat, //
+          points.head.direction.z.toFloat, //
+          points.head.direction.t.toFloat, //
+          -1, null, null)
       } else {
         val splitDirection: Axis = decideSplitDirection(points)
         def sortByFn(p: PointLike) = splitDirection.extractor(p.location)
-        val sortedPoints: IndexedSeq[T] = points.sortBy(sortByFn _)
+        val sortedPoints: IndexedSeq[Photon] = points.sortBy(sortByFn _)
 
         val middleIndex = sortedPoints.size / 2
 
@@ -39,10 +51,24 @@ object KDTreeInMemory {
 
         val pivot = sortedPoints(middleIndex)
 
+        val splitDirectionAsByte: Byte = splitDirection match {
+          case X => 1
+          case Y => 2
+          case Z => 3
+          case T => 4
+        }
+
         blocking {
-          new KDTreeInnerNode[T]( //
-            pivot, //
-            splitDirection, //
+          new KDTreeNodeFlattened( //
+            pivot.location.x.toFloat, //
+            pivot.location.y.toFloat, //
+            pivot.location.z.toFloat, //
+            pivot.location.t.toFloat, //
+            pivot.direction.x.toFloat, //
+            pivot.direction.y.toFloat, //
+            pivot.direction.z.toFloat, //
+            pivot.direction.t.toFloat, //
+            splitDirectionAsByte, //
             Await.result(leftSubTree, Duration.Inf), //
             Await.result(rightSubTree, Duration.Inf))
         }
@@ -65,181 +91,54 @@ object KDTreeInMemory {
     List((ranges.x, X), (ranges.y, Y), (ranges.z, Z), (ranges.t, T)).maxBy(_._1)._2
   }
 
-  def inOrderTraversalWrite(output: OutputStream, kdTree: KDTreeInMemory[Photon]): IndexedSeq[Photon] = {
-
-    println("Serializing in-memory KD tree")
-
-    def writeAxis(a: Axis): Unit = {
-      val axisAsInteger: Int = a match {
-        case null => 0
-        case X => 1
-        case Y => 2
-        case Z => 3
-        case T => 4
-      }
-      IOUtils.writeLittleEndianInteger(output, axisAsInteger)
-    }
-
-    def writeNode(n: KDTreeNode[Photon]): Vector[Photon] = {
-      n match {
-        case null => Vector.empty
-        case leaf: KDTreeLeafNode[Photon] => {
-          IOUtils.writePhoton(output, leaf.point)
-          writeAxis(null)
-          Vector(leaf.point)
-        }
-        case inner: KDTreeInnerNode[Photon] => {
-          val left = writeNode(inner.left)
-          IOUtils.writePhoton(output, inner.pivot)
-          writeAxis(inner.axis)
-          val right = writeNode(inner.right)
-
-          left ++ (inner.pivot +: right)
-        }
-
-      }
-    }
-
-    IOUtils.writeVec(output, kdTree.mins)
-    IOUtils.writeVec(output, kdTree.maxs)
-    val result = writeNode(kdTree.rootNode)
-
-    println("Done serializing in-memory KD tree")
-
-    result
-  }
-
 }
 
-class KDTreeInMemory[T <: RayLike]( //
+class KDTreeInMemory( //
     private val mins: Vector4, //
     private val maxs: Vector4, //
-    private val rootNode: KDTreeNode[T]) extends KDTree[T] {
+    val rootNode: KDTreeNodeFlattened) extends KDTreeStructure[Photon] {
 
-  def findClosestToImp(target: Vector4, n: Int, interestingHemisphere: Vector4): Vector[T] = {
+  def bounds() = (mins, maxs)
+}
 
-    class NodeWithKnownBoundsAndMinDistance( //
-        val node: KDTreeNode[T], //
-        val mins: Vector4, //
-        val maxs: Vector4) {
-      val minDistance: Double = {
-        val closestPoint = Vector4.clamp(mins, maxs)(target)
-        (closestPoint - target).magnitude()
-      }
+class KDTreeNodeFlattened( //
+    private val photonLocationX: Float, //
+    private val photonLocationY: Float, //
+    private val photonLocationZ: Float, //
+    private val photonLocationT: Float, //
+    private val photonDirectionX: Float, //
+    private val photonDirectionY: Float, //
+    private val photonDirectionZ: Float, //
+    private val photonDirectionT: Float, //
+    private val splitAxisAsByte: Byte, //
+    private val leftChildAsRef: KDTreeNodeFlattened, //
+    private val rightChildAsRef: KDTreeNodeFlattened) extends KDTreeStructureNode[Photon] {
+
+  def splitAxis(): Axis =
+    splitAxisAsByte match {
+      case 1 => X
+      case 2 => Y
+      case 3 => Z
+      case 4 => T
     }
 
-    def predicate(point: RayLike) = {
-      (point.direction dot interestingHemisphere) > 0.0
-    }
+  def leftChild(): Option[KDTreeStructureNode[Photon]] = Option(leftChildAsRef)
 
-    // Queue of kdtree nodes to try, ordered by closest first
-    val queue: PriorityQueue[NodeWithKnownBoundsAndMinDistance] = //
-      new PriorityQueue[NodeWithKnownBoundsAndMinDistance]()(Ordering.by(n => -n.minDistance))
+  def rightChild(): Option[KDTreeStructureNode[Photon]] = Option(rightChildAsRef)
 
-    def considerEnqueue( //
-      node: KDTreeNode[T], //
-      minsHint: Vector4, //
-      maxsHint: Vector4): Unit = {
-      node match {
-        case null => ()
-        case leaf: KDTreeLeafNode[T] => {
-          if (predicate(leaf.point)) {
-            queue.enqueue(new NodeWithKnownBoundsAndMinDistance(
-              leaf, leaf.point.location, leaf.point.location))
-          }
-        }
-        case inner: KDTreeInnerNode[T] => {
-          queue.enqueue(new NodeWithKnownBoundsAndMinDistance(
-            inner, minsHint, maxsHint))
-        }
-      }
-    }
-
-    considerEnqueue(rootNode, mins, maxs)
-
-    @tailrec
-    def find(result: Vector[T]): Vector[T] = {
-      if (result.size >= n || queue.isEmpty) {
-        result
-      } else {
-        val curr = queue.dequeue()
-
-        curr.node match {
-          case leaf: KDTreeLeafNode[T] => {
-            assert(predicate(leaf.point))
-            find(result :+ leaf.point)
-          }
-          case inner: KDTreeInnerNode[T] => {
-            considerEnqueue(new KDTreeLeafNode[T](inner.pivot), null, null)
-            if (inner.left != null) {
-              considerEnqueue(inner.left, curr.mins, inner.axis.set(curr.maxs, inner.pivot.location))
-            }
-            if (inner.right != null) {
-              considerEnqueue(inner.right, inner.axis.set(curr.mins, inner.pivot.location), curr.maxs)
-            }
-
-            find(result)
-          }
-        }
-
-      }
-    }
-
-    find(Vector.empty)
+  def pivot(): Photon = {
+    new Photon(location(), direction(), 0)
   }
 
-}
+  private def location(): Vector4 = Vector4( //
+    photonLocationX, //
+    photonLocationY, //
+    photonLocationZ, //
+    photonLocationT)
 
-private sealed trait Axis {
-  def extractor(p: Vector4): Double
-
-  def set(p: Vector4, v: Vector4): Vector4
-}
-
-private case object X extends Axis {
-  def extractor(p: Vector4): Double = p.x
-
-  def set(p: Vector4, v: Vector4): Vector4 =
-    new Vector4(v.x, p.y, p.z, p.t)
-}
-
-private case object Y extends Axis {
-  def extractor(p: Vector4): Double = p.y
-
-  def set(p: Vector4, v: Vector4): Vector4 =
-    new Vector4(p.x, v.y, p.z, p.t)
-}
-
-private case object Z extends Axis {
-  def extractor(p: Vector4): Double = p.z
-
-  def set(p: Vector4, v: Vector4): Vector4 =
-    new Vector4(p.x, p.y, v.z, p.t)
-}
-
-private case object T extends Axis {
-  def extractor(p: Vector4): Double = p.t
-
-  def set(p: Vector4, v: Vector4): Vector4 =
-    new Vector4(p.x, p.y, p.z, v.t)
-}
-
-sealed trait KDTreeNode[T <: PointLike] {
-}
-
-private case class KDTreeInnerNode[T <: PointLike]( //
-    val pivot: T, //
-    val axis: Axis, //
-    val left: KDTreeNode[T], //
-    val right: KDTreeNode[T]) extends KDTreeNode[T] {
-
-  assert(left != null || right != null)
-
-  private def nonNullSubTrees(): List[KDTreeNode[T]] = {
-    List(Option(left), Option(right)).flatten
-  }
-}
-
-private case class KDTreeLeafNode[T <: PointLike]( //
-    val point: T) extends KDTreeNode[T] {
+  private def direction(): Vector4.SpatiallyNormalized = Vector4( //
+    photonDirectionX, //
+    photonDirectionY, //
+    photonDirectionZ, //
+    photonDirectionT).spatiallyNormalize()
 }
