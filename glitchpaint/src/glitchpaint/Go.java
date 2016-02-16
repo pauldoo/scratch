@@ -109,7 +109,7 @@ public class Go {
     }
 
     private boolean shouldBitFlip() {
-        return rng.nextBoolean();
+        return rng.nextInt(4) == 0;
     }
 
     private float randomJpegQuality() {
