@@ -19,17 +19,18 @@ import timetrace.kdtree.X
 import timetrace.kdtree.Y
 import timetrace.kdtree.Z
 import timetrace.kdtree.T
+import scala.collection.mutable.ArrayBuffer
 
 object KDTreeInMemory {
 
   implicit val ec: ExecutionContext = ExecutionContext.global
 
-  def buildNode(points: IndexedSeq[Photon]): Future[KDTreeNodeFlattened] = {
-    val computation = () => {
+  def buildNode(points: IndexedSeq[Photon]): Future[Array[KDTreeNodeFlattened]] = {
+    val computation : () => Array[KDTreeNodeFlattened] = () => {
       if (points.isEmpty) {
-        null
+        Array.empty
       } else if (points.size == 1) {
-        new KDTreeNodeFlattened( //
+        Array(new KDTreeNodeFlattened( //
           points.head.location.x.toFloat, //
           points.head.location.y.toFloat, //
           points.head.location.z.toFloat, //
@@ -38,7 +39,7 @@ object KDTreeInMemory {
           points.head.direction.y.toFloat, //
           points.head.direction.z.toFloat, //
           points.head.direction.t.toFloat, //
-          -1, null, null)
+          -1))
       } else {
         val splitDirection: Axis = decideSplitDirection(points)
         def sortByFn(p: PointLike) = splitDirection.extractor(p.location)
@@ -58,8 +59,7 @@ object KDTreeInMemory {
           case T => 4
         }
 
-        blocking {
-          new KDTreeNodeFlattened( //
+        val middleNode = new KDTreeNodeFlattened( //
             pivot.location.x.toFloat, //
             pivot.location.y.toFloat, //
             pivot.location.z.toFloat, //
@@ -68,8 +68,12 @@ object KDTreeInMemory {
             pivot.direction.y.toFloat, //
             pivot.direction.z.toFloat, //
             pivot.direction.t.toFloat, //
-            splitDirectionAsByte, //
+            splitDirectionAsByte)
+
+        blocking {
+          Array.concat( //
             Await.result(leftSubTree, Duration.Inf), //
+            Array(middleNode), //
             Await.result(rightSubTree, Duration.Inf))
         }
       }
@@ -96,9 +100,53 @@ object KDTreeInMemory {
 class KDTreeInMemory( //
     private val mins: Vector4, //
     private val maxs: Vector4, //
-    val rootNode: KDTreeNodeFlattened) extends KDTreeStructure[Photon] {
+    private val nodes: Array[KDTreeNodeFlattened]) extends KDTreeStructure[Photon] {
 
   def bounds() = (mins, maxs)
+
+  def rootNode(): KDTreeStructureNode[Photon] = {
+    new Wrapper(0, nodes.length)
+  }
+
+  private class Wrapper( //
+      private val indexBegin: Int, // inclusive 
+      private val indexEnd: Int // exclusive
+      ) extends KDTreeStructureNode[Photon] {
+    assert(indexBegin < indexEnd)
+
+    private def count(): Int = indexEnd - indexBegin
+    private def indexMiddle(): Int = indexBegin + (count / 2)
+
+    private def countOnLeft(): Int = indexMiddle - indexBegin
+    private def countOnRight(): Int = indexEnd - indexMiddle - 1
+
+    private def middleNode(): KDTreeNodeFlattened = nodes(indexMiddle)
+
+    def leftChild(): Option[KDTreeStructureNode[Photon]] = {
+      if (countOnLeft() == 0) {
+        None
+      } else {
+        Some(new Wrapper(indexBegin, indexMiddle()))
+      }
+    }
+
+    def rightChild(): Option[KDTreeStructureNode[Photon]] = {
+      if (countOnRight() == 0) {
+        None
+      } else {
+        Some(new Wrapper(indexMiddle() + 1, indexEnd))
+      }
+    }
+
+    def pivot(): Photon = {
+        middleNode.pivot
+      }
+
+    def splitAxis(): Axis = {
+      middleNode.splitAxis
+    }
+
+  }
 }
 
 class KDTreeNodeFlattened( //
@@ -110,9 +158,7 @@ class KDTreeNodeFlattened( //
     private val photonDirectionY: Float, //
     private val photonDirectionZ: Float, //
     private val photonDirectionT: Float, //
-    private val splitAxisAsByte: Byte, //
-    private val leftChildAsRef: KDTreeNodeFlattened, //
-    private val rightChildAsRef: KDTreeNodeFlattened) extends KDTreeStructureNode[Photon] {
+    private val splitAxisAsByte: Byte) {
 
   def splitAxis(): Axis =
     splitAxisAsByte match {
@@ -121,10 +167,6 @@ class KDTreeNodeFlattened( //
       case 3 => Z
       case 4 => T
     }
-
-  def leftChild(): Option[KDTreeStructureNode[Photon]] = Option(leftChildAsRef)
-
-  def rightChild(): Option[KDTreeStructureNode[Photon]] = Option(rightChildAsRef)
 
   def pivot(): Photon = {
     new Photon(location(), direction(), 0)

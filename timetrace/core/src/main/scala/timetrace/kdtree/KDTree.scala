@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicLong
 import timetrace.photon.Photon
 
 object KDTree {
-  def build[T <: RayLike](points: IndexedSeq[Photon]): KDTreeInMemory = {
+  def build(points: IndexedSeq[Photon]): KDTree[Photon] = {
     assert(!points.isEmpty)
 
     val pointLocations = points.map(_.location)
@@ -27,7 +27,7 @@ object KDTree {
     val result = new KDTreeInMemory(mins, maxs, Await.result(KDTreeInMemory.buildNode(points), Duration.Inf))
     println("Done building KD tree in memory")
 
-    result
+    new KDTree(result)
   }
 
 }
@@ -50,5 +50,7 @@ class KDTree[T <: RayLike](val tree: KDTreeStructure[T]) extends java.io.Seriali
     result
   }
 
-  def findClosestToImp(target: Vector4, n: Int, interestingHemisphere: Vector4): Seq[T]
+  private def findClosestToImp(target: Vector4, n: Int, interestingHemisphere: Vector4): Seq[T] = {
+    KDTreeSearch.findClosest(tree, target, n, interestingHemisphere)
+  }
 }

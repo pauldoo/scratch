@@ -7,9 +7,9 @@ import scala.collection.mutable.PriorityQueue
 import scala.annotation.tailrec
 
 // Abstract definitions of the structure of a KD-tree
-// separates in-memory representation from the algorithm of searching
+// separates in-memory representation (KDTreeInMemory) from the algorithm of searching (KDTreeSearch)
 
-trait KDTreeStructure[T <: PointLike] {
+trait KDTreeStructure[T <: PointLike] extends java.io.Serializable {
   def bounds(): (Vector4, Vector4)
 
   def rootNode(): KDTreeStructureNode[T]

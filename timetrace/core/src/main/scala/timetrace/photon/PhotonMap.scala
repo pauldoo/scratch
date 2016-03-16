@@ -4,8 +4,8 @@ import timetrace.kdtree.KDTree
 import timetrace.math.Vector4
 import timetrace.Color
 import timetrace.math.Vector3
-
 import scala.math.max
+import timetrace.kdtree.KDTreeStructure
 
 object PhotonMap {
   case class Contribution(val incomingDirection: Vector4, val color: Color) {

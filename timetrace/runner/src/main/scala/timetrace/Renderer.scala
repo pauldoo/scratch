@@ -31,7 +31,7 @@ import timetrace.shape.Fog
 import java.io.BufferedOutputStream
 import java.io.DataOutputStream
 import timetrace.kdtree.KDTreeInMemory
-import timetrace.kdtree.KDTreeGoneNative
+import timetrace.kdtree.KDTreeStructure
 
 object Renderer {
 
@@ -98,9 +98,9 @@ object Renderer {
       .parallelize(1 to PHOTON_SCATTERING_PARTITIONS, PHOTON_SCATTERING_PARTITIONS) //
       .flatMap(generatePhotonBatch(job))
 
-    val kdTreeInMemory: KDTreeInMemory = KDTree.build(photons.collect.toVector)
+    val kdTreeStructure: KDTree[Photon] = KDTree.build(photons.collect.toVector)
 
-    val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTreeInMemory)
+    val photonMap: PhotonMap = new PhotonMap(1.0 / job.photonCount, kdTreeStructure)
 
     sparkContext.broadcast(photonMap)
   }
