@@ -158,7 +158,7 @@ class KDTreeNodeFlattened( //
     private val photonDirectionY: Float, //
     private val photonDirectionZ: Float, //
     private val photonDirectionT: Float, //
-    private val splitAxisAsByte: Byte) {
+    private val splitAxisAsByte: Byte) extends Serializable {
 
   def splitAxis(): Axis =
     splitAxisAsByte match {
