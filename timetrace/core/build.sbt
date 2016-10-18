@@ -2,7 +2,7 @@ name := "timetrace-core"
 
 version := "1.0"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.1.1"
 
