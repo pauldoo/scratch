@@ -75,6 +75,24 @@ public class KMVTest {
 
     }
 
+    @Test
+    public void intersectionTest() {
+        final KMVBuilder<Long, BitSet> builderA = createBuilder(1000);
+        final KMVBuilder<Long, BitSet> builderB = createBuilder(1000);
+
+        for (int i = 0; i < 10_000; i++) {
+            final Long uid = uid();
+            builderA.add(uid);
+            builderB.add(uid);
+        }
+        for (int i = 10_000; i < 100_000; i++) {
+            builderA.add(uid());
+            builderB.add(uid());
+        }
+
+        System.out.println(KMV.intersect(builderA.build(), builderB.build()).distinctElementsEstimate());
+    }
+
     private KMVBuilder<Long, BitSet> createBuilder(final int k) {
         final KMVBuilder<Long, BitSet> builder = KMV.<Long, BitSet> builder(k, KMVTest::uidToHash,
                 KMVTest::hashComparator, KMVTest::hashToDouble);
