@@ -4,3 +4,6 @@ version = "0.1.0"
 authors = ["Paul Richards <paul.richards@gmail.com>"]
 
 [dependencies]
+memmap = "0.6.2"
+rand = "0.5.3"
+stopwatch = "0.0.7"
