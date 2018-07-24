@@ -13,9 +13,13 @@ use std::fs::OpenOptions;
 use rand::prelude::*;
 use stopwatch::Stopwatch;
 
+mod math;
+
 fn main() -> std::io::Result<()> {
   env_logger::init();
   info!("boop");
+
+  math::vector::foobar();
 
   let file_name = "test.data";
 
