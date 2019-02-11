@@ -13,18 +13,28 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Main {
 
     private static AtomicLong saving = new AtomicLong(0);
 
     public static void main(String[] args) throws IOException {
-        Path dir =FileSystems.getDefault().getPath(args[0]);
-        if (!Files.isDirectory(dir)) {
-            throw new IOException(MessageFormat.format("Path isn't a directory: {0}", dir));
-        }
-
-        Files.walk(dir)
+        Stream.of(args)
+                .map(arg -> {
+                    Path dir =FileSystems.getDefault().getPath(args[0]);
+                    if (!Files.isDirectory(dir)) {
+                        throw new RuntimeException(new IOException(MessageFormat.format("Path isn't a directory: {0}", dir)));
+                    }
+                    return dir;
+                })
+                .flatMap(dir -> {
+                    try {
+                        return Files.walk(dir);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .filter(p -> Files.isRegularFile(p, LinkOption.NOFOLLOW_LINKS))
                 .collect(Collectors.groupingBy(Main::weakHash))
                 .values()
