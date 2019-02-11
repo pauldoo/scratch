@@ -22,7 +22,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Stream.of(args)
                 .map(arg -> {
-                    Path dir =FileSystems.getDefault().getPath(args[0]);
+                    Path dir = FileSystems.getDefault().getPath(arg);
                     if (!Files.isDirectory(dir)) {
                         throw new RuntimeException(new IOException(MessageFormat.format("Path isn't a directory: {0}", dir)));
                     }
