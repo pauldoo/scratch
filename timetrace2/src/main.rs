@@ -29,8 +29,8 @@ fn main() -> std::io::Result<()> {
     let file_name = "test.data";
 
     {
-        let batch_size:u64 = 1000;
-        let batch_count:u64 = 1000;
+        let batch_size:u64 = 10;
+        let batch_count:u64 = 10;
         let photon_count :u64 = batch_size * batch_count;
 
         let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_name)?;

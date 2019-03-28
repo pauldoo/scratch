@@ -14,7 +14,7 @@ pub struct Vector4 {
     v: [f64; 4]
 }
 
-pub fn max_index(v: &Vector4) -> Dimension {
+pub fn max_index(v: Vector4) -> Dimension {
     let mut max_value = v.x();
     let mut result = Dimension::X;
 
@@ -69,7 +69,7 @@ impl Vector4 {
         }
     }
 
-    pub fn mins(a: &Vector4, b: &Vector4) -> Vector4 {
+    pub fn mins(a: Vector4, b: Vector4) -> Vector4 {
         Vector4 {
             v: [
                 a.x().min(b.x()),
@@ -80,7 +80,7 @@ impl Vector4 {
         }
     }
 
-    pub fn maxs(a: &Vector4, b: &Vector4) -> Vector4 {
+    pub fn maxs(a: Vector4, b: Vector4) -> Vector4 {
         Vector4 {
             v: [
                 a.x().max(b.x()),
