@@ -9,6 +9,8 @@ use std::mem::size_of;
 use math::vector::{Vector4, max_index};
 use math::Dimension;
 use rand::{thread_rng, Rng};
+use core::borrow::Borrow;
+use owning_ref::OwningRef;
 
 #[derive(Clone)]
 struct PhotonMapHeader {
@@ -25,9 +27,16 @@ struct Node {
 
 pub struct PhotonMapBuilder {
     capacity: u64,
+    file_name: String,
     file_rw: File,
     mmap_rw: MmapMut,
     usage: u64
+}
+
+pub struct PhotonMap {
+    file_ro: File,
+    data: OwningRef<Box<Mmap>, [Node]>,
+    header: PhotonMapHeader
 }
 
 const HEADER_SIZE_IN_BYTES: u64= size_of::<PhotonMapHeader>() as u64;
@@ -35,23 +44,26 @@ const NODE_SIZE_IN_BYTES: u64= size_of::<Node>() as u64;
 
 impl PhotonMapBuilder {
 
-    pub fn create(photon_count: u64, file_name: &str) -> std::io::Result<PhotonMapBuilder> {
+    pub fn create(photon_count: u64, file_name: &str) -> PhotonMapBuilder {
         let file_size_in_bytes : u64 = HEADER_SIZE_IN_BYTES + NODE_SIZE_IN_BYTES * photon_count;
         let file: File = OpenOptions::new()
             .read(true)
             .write(true)
             .create_new(true)
-            .open(file_name)?;
-        file.set_len(file_size_in_bytes)?;
+            .open(file_name)
+            .unwrap();
+        file.set_len(file_size_in_bytes)
+            .unwrap();
 
-        let mut mmap = unsafe { MmapOptions::new().map_mut(&file)? };
+        let mut mmap = unsafe { MmapOptions::new().map_mut(&file).unwrap() };
 
-        Ok(PhotonMapBuilder {
+        return PhotonMapBuilder {
             capacity: photon_count,
+            file_name: file_name.to_string(),
             file_rw: file,
             mmap_rw: mmap,
             usage: 0
-        })
+        };
     }
 
     fn header(&mut self) -> &mut PhotonMapHeader {
@@ -135,38 +147,54 @@ impl PhotonMapBuilder {
     */
     fn partition_by_axis(nodes: &mut [Node], axis: Dimension, pivotIndex: i64) -> () {
         info!("partition_by_axis {} {:?} {}", nodes.len(), axis, pivotIndex);
+        if nodes.len() <= 1 {
+            return;
+        }
+
+        if nodes.len() == 2 {
+            if nodes[0].photon.position.get(axis) > nodes[1].photon.position.get(axis) {
+                nodes.swap(0, 1);
+            }
+            return;
+        }
 
         assert!(0 <= pivotIndex);
         assert!( pivotIndex < (nodes.len() as i64));
 
-        let randomAxisIndex = thread_rng().gen_range(0, nodes.len());
-        nodes.swap(0, randomAxisIndex);
+        {
+            let randomAxisValueInitialIndex = thread_rng().gen_range(0, nodes.len());
+            nodes.swap(0, randomAxisValueInitialIndex);
+        }
         let randomAxisValue = nodes[0].photon.position.get(axis);
         // Now partition into all items < this value, and those >= to it.
         info!("{}", randomAxisValue);
 
-        let mut lower: i64 = 1;
-        let mut upper: i64 = (nodes.len() as i64) - 1;
+        let minIndex: i64 = 1;
+        let maxIndex: i64 = (nodes.len() as i64) - 1;
+        info!("D: {} {}", minIndex, maxIndex);
+        let mut lower: i64 = minIndex;
+        let mut upper: i64 = maxIndex;
+
 
         loop {
             info!("E: {} {}", lower, upper);
-            while lower < (nodes.len() as i64) &&
+            while lower <= maxIndex &&
                 nodes[lower as usize].photon.position.get(axis) <= randomAxisValue {
                 lower = lower + 1;
             }
 
-            while upper > 0 &&
+            while upper >= minIndex &&
                 nodes[upper as usize].photon.position.get(axis) >= randomAxisValue {
                 upper = upper - 1;
             }
 
             info!("F: {} {}", lower, upper);
 
-            if lower >= (nodes.len() as i64) {
+            if lower > maxIndex {
                 break;
             }
 
-            if upper <= 0 {
+            if upper < minIndex {
                 break;
             }
 
@@ -186,53 +214,90 @@ impl PhotonMapBuilder {
             }
         }
 
+        let randomAxisValueEventualIndex = upper;
 
-        if (upper > 0) {
+        if randomAxisValueEventualIndex > 0 {
             nodes.swap(0, upper as usize);
-            upper = upper - 1;
         }
-        // Items in [0, upper) are < randomAxisValue
-        // Items in [lower, nodes.len()) are > randomAxisValue
-
-        info!("{} {}", upper, lower);
-        info!("{}", randomAxisValue);
-
-        for _i in (upper - 2)..(lower+2) {
-            info!("  {} {}", _i, nodes[_i as usize].photon.position.get(axis));
-        }
-
-        assert!(upper < lower);
-        assert!((lower - upper) - 1 >= 1);
 
         {
-            for _i in 0..=upper {
-                assert!(nodes[_i as usize].photon.position.get(axis) < randomAxisValue);
+            for _i in 0..=randomAxisValueEventualIndex {
+                assert!(nodes[_i as usize].photon.position.get(axis) <= randomAxisValue);
             }
-            for _i in (upper+1)..lower {
-                assert!(nodes[_i as usize].photon.position.get(axis) == randomAxisValue);
-            }
-            for _i in lower..(nodes.len() as i64) {
-                assert!(nodes[_i as usize].photon.position.get(axis) > randomAxisValue);
+            // These two loops overlap by one index, namely randomAxisValueEventualIndex
+            for _i in randomAxisValueEventualIndex..(nodes.len() as i64) {
+                assert!(nodes[_i as usize].photon.position.get(axis) >= randomAxisValue);
             }
         }
 
 
         //assert!(false);
 
-        if pivotIndex <= upper {
+        if pivotIndex < randomAxisValueEventualIndex {
             // Recurse down the bottom half
-            PhotonMapBuilder::partition_by_axis(&mut nodes[..((upper+1) as usize)], axis, pivotIndex);
-        } else if pivotIndex >= lower {
-            PhotonMapBuilder::partition_by_axis(&mut nodes[(lower as usize)..], axis, pivotIndex - lower);
+            PhotonMapBuilder::partition_by_axis(
+                &mut nodes[..(randomAxisValueEventualIndex as usize)],
+                axis,
+                pivotIndex);
+        } else if pivotIndex > randomAxisValueEventualIndex {
+            PhotonMapBuilder::partition_by_axis(
+                &mut nodes[((randomAxisValueEventualIndex+1) as usize)..],
+                axis,
+                pivotIndex - (randomAxisValueEventualIndex+1));
         } else {
             // All done!
             return;
         }
     }
 
-    pub fn finish(&mut self) -> () {
+    pub fn finish(mut self) -> PhotonMap {
         assert_eq!(self.usage, self.capacity);
         let header = PhotonMapBuilder::do_sort(self.nodes_slice());
         *(self.header()) = header.unwrap();
+
+        {
+            let mmap = self.mmap_rw;
+        }
+        {
+            let file = self.file_rw;
+        }
+
+        return PhotonMap::openExistingMap(&self.file_name);
+    }
+}
+
+impl PhotonMap {
+    pub fn openExistingMap(file_name: &str) -> PhotonMap {
+        let file: File = OpenOptions::new()
+            .read(true)
+            .write(false)
+            .create_new(false)
+            .open(file_name)
+            .unwrap();
+
+        let mmap: Mmap = unsafe { MmapOptions::new().map(&file).unwrap() };
+
+        let header: PhotonMapHeader = unsafe { & *((mmap.as_ptr().offset(0)) as *const PhotonMapHeader) } .clone();
+
+        let data = OwningRef::new(Box::new(mmap));
+        let data: OwningRef<Box<Mmap>, [Node]> = data.map(|mm| unsafe { slice::from_raw_parts(
+            (mm.as_ptr().offset(HEADER_SIZE_IN_BYTES as isize) as *const Node),
+            header.capacity as usize
+        )} );
+
+        let result = PhotonMap {
+            file_ro: file,
+            data,
+            header
+        };
+
+        result.validate();
+
+        return result;
+    }
+
+
+    fn validate(&self) -> () {
+
     }
 }

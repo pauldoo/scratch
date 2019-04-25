@@ -3,6 +3,8 @@ extern crate rand;
 extern crate stopwatch;
 #[macro_use] extern crate log;
 extern crate env_logger;
+extern crate core;
+extern crate owning_ref;
 
 use memmap::MmapOptions;
 use memmap::MmapMut;
@@ -15,7 +17,7 @@ use math::vector::Vector4;
 use photon::Photon;
 use std::slice;
 use std::mem::size_of;
-use photonmap::PhotonMapBuilder;
+use photonmap::{PhotonMapBuilder, PhotonMap};
 
 mod math;
 mod photon;
@@ -27,13 +29,15 @@ fn main() -> std::io::Result<()> {
 
 
     let file_name = "test.data";
+    fs::remove_file(file_name)?;
+
 
     {
         let batch_size:u64 = 10;
         let batch_count:u64 = 10;
         let photon_count :u64 = batch_size * batch_count;
 
-        let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_name)?;
+        let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_name);
 
         let mut rng = thread_rng();
 
@@ -54,14 +58,14 @@ fn main() -> std::io::Result<()> {
         }
 
         info!("finishing");
-        map_builder.finish();
+        let map: PhotonMap = map_builder.finish();
 
         info!("closing files.");
     }
     info!("files closed, about to delete.");
 
     //fs::remove_file(file_name)?;
-    info!("Deleted.");
+    //info!("Deleted.");
 
     Ok(())
     //let mmap = unsafe { MmapOptions::new().map(&file)? };
