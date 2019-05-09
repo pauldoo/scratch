@@ -10,3 +10,6 @@ stopwatch = "0.0.7"
 log = "0.4.3"
 env_logger = "0.5.11"
 owning_ref = "0.4.0"
+
+[dev-dependencies]
+tempfile = "3.0.7"

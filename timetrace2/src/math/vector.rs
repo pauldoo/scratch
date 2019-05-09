@@ -1,13 +1,5 @@
-extern crate log;
-
 use math::Dimension;
-use std::cmp::max;
 use std::ops::{Add, Sub};
-use math::Dimension::X;
-
-pub fn foobar() {
-    info!("hello");
-}
 
 #[derive(Clone,Copy)]
 pub struct Vector4 {
@@ -18,18 +10,18 @@ pub fn max_index(v: Vector4) -> Dimension {
     let mut max_value = v.x();
     let mut result = Dimension::X;
 
-    if (v.y() > max_value) {
+    if v.y() > max_value {
         max_value = v.y();
         result = Dimension::Y;
     }
 
-    if (v.z() > max_value) {
+    if v.z() > max_value {
         max_value = v.z();
         result = Dimension::Z;
     }
 
-    if (v.t() > max_value) {
-        max_value = v.t();
+    if v.t() > max_value {
+        //max_value = v.t();
         result = Dimension::T;
     }
 
@@ -52,14 +44,14 @@ impl Vector4 {
 
     pub fn get(&self, dim: Dimension) -> f64 {
         match dim {
-            X => self.x(),
-            Y => self.y(),
-            Z => self.z(),
-            T => self.t()
+            Dimension::X => self.x(),
+            Dimension::Y => self.y(),
+            Dimension::Z => self.z(),
+            Dimension::T => self.t()
         }
     }
 
-    pub fn zero() -> Vector4 {
+    pub fn _zero() -> Vector4 {
         Vector4::create(0.0, 0.0, 0.0, 0.0)
     }
 
@@ -87,6 +79,21 @@ impl Vector4 {
                 a.y().max(b.y()),
                 a.z().max(b.z()),
                 a.t().max(b.t())
+            ]
+        }
+    }
+}
+
+impl Add for Vector4 {
+    type Output = Vector4;
+
+    fn add(self, b: Vector4) -> Vector4 {
+        Vector4 {
+            v: [
+                self.x() + b.x(),
+                self.y() + b.y(),
+                self.z() + b.z(),
+                self.t() + b.t()
             ]
         }
     }

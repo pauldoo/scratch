@@ -5,19 +5,15 @@ extern crate stopwatch;
 extern crate env_logger;
 extern crate core;
 extern crate owning_ref;
+#[cfg(test)]
+extern crate tempfile;
 
-use memmap::MmapOptions;
-use memmap::MmapMut;
 use std::fs;
-use std::fs::File;
-use std::fs::OpenOptions;
 use rand::prelude::*;
-use stopwatch::Stopwatch;
 use math::vector::Vector4;
 use photon::Photon;
-use std::slice;
-use std::mem::size_of;
 use photonmap::{PhotonMapBuilder, PhotonMap};
+use std::path::PathBuf;
 
 mod math;
 mod photon;
@@ -28,8 +24,8 @@ fn main() -> std::io::Result<()> {
     info!("boop");
 
 
-    let file_name = "test.data";
-    fs::remove_file(file_name)?;
+    let file_path: PathBuf = PathBuf::from("./test.data");
+    fs::remove_file(file_path.as_path()).ok();
 
 
     {
@@ -37,7 +33,7 @@ fn main() -> std::io::Result<()> {
         let batch_count:u64 = 10;
         let photon_count :u64 = batch_size * batch_count;
 
-        let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_name);
+        let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_path.as_path());
 
         let mut rng = thread_rng();
 
@@ -58,7 +54,7 @@ fn main() -> std::io::Result<()> {
         }
 
         info!("finishing");
-        let map: PhotonMap = map_builder.finish();
+        let _map: PhotonMap = map_builder.finish();
 
         info!("closing files.");
     }

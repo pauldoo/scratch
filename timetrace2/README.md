@@ -1,14 +1,20 @@
 
 ## Build and run
 
+### Test
+
+```
+RUST_LOG=timetrace2=debug cargo test
+```
+
 ### Debug
 
 ```
-cargo build && RUST_LOG=info ./target/debug/timetrace2
+RUST_LOG=timetrace2=debug cargo run
 ```
 
 ### Release
 
 ```
-cargo build --release && RUST_LOG=info ./target/release/timetrace2
+RUST_LOG=timetrace2=info cargo --release run
 ```
