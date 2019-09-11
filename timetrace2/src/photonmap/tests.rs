@@ -1,4 +1,3 @@
-#[cfg(test)]
 use super::*;
 use rand::prelude::*;
 use tempfile::TempDir;

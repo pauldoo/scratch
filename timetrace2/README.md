@@ -16,5 +16,5 @@ RUST_LOG=timetrace2=debug cargo run
 ### Release
 
 ```
-RUST_LOG=timetrace2=info cargo --release run
+RUST_LOG=timetrace2=info cargo run --release
 ```
