@@ -306,10 +306,14 @@ impl PhotonMap {
 
 
     fn validate(&self) -> () {
-
+        warn!("Photon map validation is not implemented.")
     }
 
     fn photon_count(&self) -> u64 {
         self.header.capacity
+    }
+
+    fn do_search(&self) -> () {
+        unimplemented!();
     }
 }

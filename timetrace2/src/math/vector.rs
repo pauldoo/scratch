@@ -51,11 +51,11 @@ impl Vector4 {
         }
     }
 
-    pub fn _zero() -> Vector4 {
+    pub const fn zero() -> Vector4 {
         Vector4::create(0.0, 0.0, 0.0, 0.0)
     }
 
-    pub fn create(x: f64, y: f64, z: f64, t: f64) -> Vector4 {
+    pub const fn create(x: f64, y: f64, z: f64, t: f64) -> Vector4 {
         Vector4 {
             v: [x, y, z, t]
         }
