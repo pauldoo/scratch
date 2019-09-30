@@ -7,7 +7,7 @@ use photon::Photon;
 use std::slice;
 use std::mem::size_of;
 use math::vector::{Vector4, max_index};
-use math::Dimension;
+use math::{Dimension, Bounds4};
 use rand::{thread_rng, Rng};
 use owning_ref::OwningRef;
 use std::path::{Path, PathBuf};
@@ -18,8 +18,7 @@ mod tests;
 #[derive(Clone)]
 struct PhotonMapHeader {
     capacity: u64,
-    min: Vector4,
-    max: Vector4
+    bounds: Bounds4
 }
 
 #[derive(Clone)]
@@ -111,19 +110,21 @@ impl PhotonMapBuilder {
 
         let mut header: PhotonMapHeader = PhotonMapHeader {
             capacity: nodes.len() as u64,
-            min: nodes.first().unwrap().photon.position,
-            max: nodes.first().unwrap().photon.position
+            bounds: Bounds4 {
+                min: nodes.first().unwrap().photon.position,
+                max: nodes.first().unwrap().photon.position
+            }
         };
 
         if nodes.len() >= 2 {
             let pivot_index: i64 = (nodes.len() as i64) / 2;
 
             for np in &nodes[..] {
-                header.min = Vector4::mins(header.min, np.photon.position);
-                header.max = Vector4::maxs(header.max, np.photon.position);
+                header.bounds.min = Vector4::mins(header.bounds.min, np.photon.position);
+                header.bounds.max = Vector4::maxs(header.bounds.max, np.photon.position);
             }
 
-            let split = max_index(header.max - header.min);
+            let split = max_index(header.bounds.max - header.bounds.min);
 
             PhotonMapBuilder::partition_by_axis(&mut nodes[..], split, pivot_index);
             nodes[pivot_index as usize].split_direction = split;
@@ -306,7 +307,34 @@ impl PhotonMap {
 
 
     fn validate(&self) -> () {
-        warn!("Photon map validation is not implemented.")
+        self.checkBounds(self.header.bounds, 0, self.header.capacity as usize);
+    }
+
+    fn checkBounds(&self, bounds: Bounds4, begin: usize, end: usize) -> () {
+        assert!(begin <= end);
+        let length = end - begin;
+        if length >= 1 {
+            let pivotIdx: usize = begin + (length / 2);
+            let pivotNode: &Node = &(&*(self._data))[pivotIdx];
+
+            debug!("{:?}", bounds);
+            debug!("{:?}", pivotNode.photon.position);
+            assert!(bounds.contains(pivotNode.photon.position));
+
+            let mut leftBounds = bounds;
+            let mut rightBounds = bounds;
+
+            leftBounds.max.set(
+                pivotNode.split_direction,
+                pivotNode.photon.position.get(pivotNode.split_direction));
+
+            rightBounds.min.set(
+                pivotNode.split_direction,
+                pivotNode.photon.position.get(pivotNode.split_direction));
+
+            self.checkBounds(leftBounds, begin, pivotIdx);
+            self.checkBounds(rightBounds, pivotIdx + 1, end);
+        }
     }
 
     fn photon_count(&self) -> u64 {

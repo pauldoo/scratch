@@ -1,7 +1,9 @@
 use math::Dimension;
 use std::ops::{Add, Sub};
+use std::fmt;
+use std::fmt::{Formatter, Error};
 
-#[derive(Clone,Copy)]
+#[derive(Clone,Copy,Debug)]
 pub struct Vector4 {
     v: [f64; 4]
 }
@@ -40,6 +42,15 @@ impl Vector4 {
     }
     pub fn t(&self) -> f64 {
         self.v[3]
+    }
+
+    pub fn set(&mut self, dim: Dimension, value: f64) -> () {
+        match dim {
+            Dimension::X => self.v[0] = value,
+            Dimension::Y => self.v[1] = value,
+            Dimension::Z => self.v[2] = value,
+            Dimension::T => self.v[3] = value
+        }
     }
 
     pub fn get(&self, dim: Dimension) -> f64 {
