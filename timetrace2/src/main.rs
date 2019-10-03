@@ -12,8 +12,9 @@ use std::fs;
 use rand::prelude::*;
 use math::vector::Vector4;
 use photon::Photon;
-use photonmap::{PhotonMapBuilder, PhotonMap};
+use photonmap::PhotonMap;
 use std::path::PathBuf;
+use photonmap::builder::PhotonMapBuilder;
 
 mod math;
 mod photon;

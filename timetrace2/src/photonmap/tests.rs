@@ -3,6 +3,7 @@ use rand::prelude::*;
 use tempfile::TempDir;
 use math::*;
 use math::vector::*;
+use photonmap::builder::PhotonMapBuilder;
 
 
 struct Config {
