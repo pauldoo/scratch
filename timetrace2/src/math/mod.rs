@@ -61,6 +61,11 @@ impl Bounds4 {
     }
 
     pub fn closest_point_to(&self, p: Vector4) -> Vector4 {
-        unimplemented!();
+        return Vector4::create(
+            p.x().max(self.min.x()).min(self.max.x()),
+            p.y().max(self.min.y()).min(self.max.y()),
+            p.z().max(self.min.z()).min(self.max.z()),
+            p.t().max(self.min.t()).min(self.max.t())
+        );
     }
 }

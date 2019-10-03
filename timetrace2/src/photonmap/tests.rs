@@ -67,6 +67,10 @@ fn create_test_map<R: Rng + ?Sized>(rng: &mut R) -> TestMap {
     };
 }
 
+fn brute_force_search(photons: &Vec<Photon>, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
+    unimplemented!();
+}
+
 #[test]
 pub fn photon_map_has_expected_photon_count() {
     let mut rng = rand::rngs::StdRng::seed_from_u64(42);
@@ -78,6 +82,9 @@ pub fn photon_map_has_expected_photon_count() {
     for _i in 0..100 {
         let random_search_point = random_vec_in_bounds(&mut rng, config().sample_bounds);
 
-        test_map.photon_map.do_search(random_search_point, 100);
+
+        let expected: Vec<Photon> = brute_force_search(&test_map.all_photons, random_search_point, 100);
+        let actual: Vec<Photon> = test_map.photon_map.do_search(random_search_point, 100);
+        assert_eq!(actual, expected);
     }
 }

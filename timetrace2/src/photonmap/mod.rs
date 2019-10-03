@@ -11,6 +11,7 @@ use std::path::Path;
 use math::vector::Vector4;
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
+use std::ops::Range;
 
 pub mod builder;
 
@@ -42,8 +43,8 @@ const NODE_SIZE_IN_BYTES: usize = size_of::<Node>();
 struct RangeToSearch {
     min_distance_to_search_point: f64,
     bounds: Bounds4,
-    begin: u64,
-    end: u64
+    begin: usize,
+    end: usize
 }
 
 impl PartialOrd for RangeToSearch {
@@ -72,7 +73,6 @@ impl Ord for RangeToSearch {
 impl Eq for RangeToSearch {
 
 }
-
 
 impl PhotonMap {
     pub fn open_existing_map(file_path: &Path) -> PhotonMap {
@@ -121,13 +121,13 @@ impl PhotonMap {
             debug!("{:?}", pivot_node.photon.position);
             assert!(bounds.contains(pivot_node.photon.position));
 
-            let mut left_bounds = Bounds4::new(
+            let left_bounds = Bounds4::new(
                 bounds.min(),
                 bounds.max().clone().set(
                     pivot_node.split_direction,
                     pivot_node.photon.position.get(pivot_node.split_direction))
             );
-            let mut right_bounds = Bounds4::new(
+            let right_bounds = Bounds4::new(
                 bounds.min().clone().set(
                     pivot_node.split_direction,
                     pivot_node.photon.position.get(pivot_node.split_direction)),
@@ -144,16 +144,77 @@ impl PhotonMap {
 
 
     fn do_search(&self, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
-        let mut result: Vec<Photon> = Vec::with_capacity(result_size_limit);
+        let enqueue_fn = |
+            begin: usize,
+            end: usize,
+            bounds: &Bounds4,
+            queue: &mut BinaryHeap<RangeToSearch>| -> () {
+            assert!(begin <= end);
+            if begin == end {
+                return;
+            }
 
-        let distance_fn = |bounds: Bounds4| {
             let closest_point = bounds.closest_point_to(search_point);
-            return (closest_point - search_point).l2norm();
+            let distance = (closest_point - search_point).l2norm();
+
+            let range = RangeToSearch {
+                min_distance_to_search_point: distance,
+                bounds: *bounds,
+                begin,
+                end
+            };
+
+            queue.push(range);
         };
 
         let mut queue: BinaryHeap<RangeToSearch> = BinaryHeap::new();
+        enqueue_fn(0, self.header.capacity, &self.header.bounds, &mut queue);
 
-        unimplemented!();
+        let mut result: Vec<Photon> = Vec::with_capacity(result_size_limit);
+        let nodes: &[Node] = &*self._data;
 
+        while result.len() < result_size_limit && !queue.is_empty() {
+            let next = queue.pop().unwrap();
+            assert!(next.begin <= next.end);
+            let length = next.end - next.begin;
+
+            if length == 1 {
+                // single photon
+                let photon = &nodes[next.begin].photon;
+                assert!(next.bounds.contains(photon.position));
+                result.push(photon.clone());
+            } else {
+                let pivot_idx = next.begin + (length / 2);
+                let pivot_node = &nodes[pivot_idx];
+                assert!(next.bounds.contains(pivot_node.photon.position));
+
+                let pivot_value = pivot_node.photon.position.get(pivot_node.split_direction);
+
+                let left_bounds = Bounds4::new(
+                    next.bounds.min(),
+                    next.bounds.max().clone().set(
+                        pivot_node.split_direction,
+                        pivot_value
+                        )
+                );
+
+                let center_bounds: Bounds4 = Bounds4::new(
+                    &pivot_node.photon.position,
+                    &pivot_node.photon.position
+                );
+
+                let right_bounds = Bounds4::new(
+                    next.bounds.min().clone().set(
+                        pivot_node.split_direction,
+                        pivot_value),
+                    next.bounds.max());
+
+                enqueue_fn(next.begin, pivot_idx, &left_bounds, &mut queue);
+                enqueue_fn(pivot_idx, pivot_idx + 1, &center_bounds, &mut queue);
+                enqueue_fn(pivot_idx+1, next.end, &right_bounds, &mut queue);
+            }
+        }
+
+        return result;
     }
 }
