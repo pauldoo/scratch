@@ -11,17 +11,19 @@ struct Config {
     sample_bounds: Bounds4
 }
 
-const CONFIG: Config = Config {
-    bounds: Bounds4 {
-        min: Vector4::create(-10.0, -10.0, -10.0, -10.0),
-        max: Vector4::create(10.0, 10.0, 10.0, 10.0)
-    },
+fn config() -> Config {
+    return Config {
+        bounds: Bounds4::new(
+            &Vector4::create(-10.0, -10.0, -10.0, -10.0),
+            &Vector4::create(10.0, 10.0, 10.0, 10.0)
+        ),
 
-    sample_bounds: Bounds4 {
-        min: Vector4::create(-20.0, -20.0, -20.0, -20.0),
-        max: Vector4::create(20.0, 20.0, 20.0, 20.0)
-    }
-};
+        sample_bounds: Bounds4::new(
+            &Vector4::create(-20.0, -20.0, -20.0, -20.0),
+            &Vector4::create(20.0, 20.0, 20.0, 20.0)
+        )
+    };
+}
 
 struct TestMap {
     _temp_dir: TempDir, // For RAII
@@ -31,10 +33,10 @@ struct TestMap {
 
 fn random_vec_in_bounds<R: Rng + ?Sized>(rng: &mut R, bounds: Bounds4) -> Vector4 {
     return Vector4::create(
-        rng.gen_range(bounds.min.x(), bounds.max.x()),
-        rng.gen_range(bounds.min.y(), bounds.max.y()),
-        rng.gen_range(bounds.min.z(), bounds.max.z()),
-        rng.gen_range(bounds.min.t(), bounds.max.t()));
+        rng.gen_range(bounds.min().x(), bounds.max().x()),
+        rng.gen_range(bounds.min().y(), bounds.max().y()),
+        rng.gen_range(bounds.min().z(), bounds.max().z()),
+        rng.gen_range(bounds.min().t(), bounds.max().t()));
 }
 
 fn create_test_map<R: Rng + ?Sized>(rng: &mut R) -> TestMap {
@@ -49,7 +51,7 @@ fn create_test_map<R: Rng + ?Sized>(rng: &mut R) -> TestMap {
 
     for _i in 0..photon_count {
         let random_photon = Photon{
-            position: random_vec_in_bounds(rng, CONFIG.bounds),
+            position: random_vec_in_bounds(rng, config().bounds),
             id: _i as u32
         };
         builder.add_photon(&random_photon);
@@ -74,8 +76,8 @@ pub fn photon_map_has_expected_photon_count() {
     assert_eq!(test_map.photon_map.photon_count(), test_map.all_photons.len());
 
     for _i in 0..100 {
-        let _random_search_point = random_vec_in_bounds(&mut rng, CONFIG.sample_bounds);
+        let random_search_point = random_vec_in_bounds(&mut rng, config().sample_bounds);
 
-        test_map.photon_map.do_search();
+        test_map.photon_map.do_search(random_search_point, 100);
     }
 }

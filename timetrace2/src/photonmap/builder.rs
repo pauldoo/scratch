@@ -82,21 +82,21 @@ impl PhotonMapBuilder {
 
         let mut header: PhotonMapHeader = PhotonMapHeader {
             capacity: nodes.len(),
-            bounds: Bounds4 {
-                min: nodes.first().unwrap().photon.position,
-                max: nodes.first().unwrap().photon.position
-            }
+            bounds: Bounds4::new(
+                &nodes.first().unwrap().photon.position,
+                &nodes.first().unwrap().photon.position
+            )
         };
 
         if nodes.len() >= 2 {
             let pivot_index: i64 = (nodes.len() as i64) / 2;
 
             for np in &nodes[..] {
-                header.bounds.min = Vector4::mins(header.bounds.min, np.photon.position);
-                header.bounds.max = Vector4::maxs(header.bounds.max, np.photon.position);
+                header.bounds.set_min(Vector4::mins(*header.bounds.min(), np.photon.position));
+                header.bounds.set_max(Vector4::maxs(*header.bounds.max(), np.photon.position));
             }
 
-            let split = max_index(header.bounds.max - header.bounds.min);
+            let split = max_index(*header.bounds.max() - *header.bounds.min());
 
             PhotonMapBuilder::partition_by_axis(&mut nodes[..], split, pivot_index);
             nodes[pivot_index as usize].split_direction = split;

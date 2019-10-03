@@ -9,11 +9,45 @@ pub enum Dimension {
 
 #[derive(Clone, Copy, Debug)]
 pub struct Bounds4 {
-    pub min: Vector4,
-    pub max: Vector4
+    min: Vector4,
+    max: Vector4
 }
 
 impl Bounds4 {
+    fn assert_consistency(&self) -> () {
+        assert!(self.min.x() <= self.max.x());
+        assert!(self.min.y() <= self.max.y());
+        assert!(self.min.z() <= self.max.z());
+        assert!(self.min.t() <= self.max.t());
+    }
+
+    pub fn new(min: &Vector4, max: &Vector4) -> Bounds4 {
+        let result = Bounds4 {
+            min: *min,
+            max: *max
+        };
+        result.assert_consistency();
+        return result;
+    }
+
+    pub fn min(&self) -> &Vector4 {
+        return &self.min;
+    }
+
+    pub fn set_min(&mut self, v: Vector4) -> () {
+        self.min = v;
+        self.assert_consistency();
+    }
+
+    pub fn max(&self) -> &Vector4 {
+        return &self.max;
+    }
+
+    pub fn set_max(&mut self, v: Vector4) -> () {
+        self.max = v;
+        self.assert_consistency();
+    }
+
     pub fn contains(&self, p: Vector4) -> bool {
         return
             self.min.x() <= p.x() &&
@@ -24,5 +58,9 @@ impl Bounds4 {
             p.y() <= self.max.y() &&
             p.z() <= self.max.z() &&
             p.t() <= self.max.t();
+    }
+
+    pub fn closest_point_to(&self, p: Vector4) -> Vector4 {
+        unimplemented!();
     }
 }

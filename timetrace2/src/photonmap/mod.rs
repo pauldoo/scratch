@@ -8,6 +8,9 @@ use std::mem::size_of;
 use math::{Dimension, Bounds4};
 use owning_ref::OwningRef;
 use std::path::Path;
+use math::vector::Vector4;
+use std::collections::BinaryHeap;
+use std::cmp::Ordering;
 
 pub mod builder;
 
@@ -35,6 +38,41 @@ pub struct PhotonMap {
 
 const HEADER_SIZE_IN_BYTES: usize = size_of::<PhotonMapHeader>();
 const NODE_SIZE_IN_BYTES: usize = size_of::<Node>();
+
+struct RangeToSearch {
+    min_distance_to_search_point: f64,
+    bounds: Bounds4,
+    begin: u64,
+    end: u64
+}
+
+impl PartialOrd for RangeToSearch {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        // Binary heap is a max-heap, and we want smaller distance ranges
+        // to be top, so this is a reverse ordering.
+        // rangeA is "greater than" rangeB if it is closer to the target.
+        return self.min_distance_to_search_point
+            .partial_cmp(&other.min_distance_to_search_point)
+            .map(|o| {o.reverse()});
+    }
+}
+
+impl PartialEq for RangeToSearch {
+    fn eq(&self, other: &Self) -> bool {
+        return self.begin == other.begin && self.end == other.end;
+    }
+}
+
+impl Ord for RangeToSearch {
+    fn cmp(&self, other: &Self) -> Ordering {
+        return self.partial_cmp(other).unwrap();
+    }
+}
+
+impl Eq for RangeToSearch {
+
+}
+
 
 impl PhotonMap {
     pub fn open_existing_map(file_path: &Path) -> PhotonMap {
@@ -83,16 +121,17 @@ impl PhotonMap {
             debug!("{:?}", pivot_node.photon.position);
             assert!(bounds.contains(pivot_node.photon.position));
 
-            let mut left_bounds = bounds;
-            let mut right_bounds = bounds;
-
-            left_bounds.max.set(
-                pivot_node.split_direction,
-                pivot_node.photon.position.get(pivot_node.split_direction));
-
-            right_bounds.min.set(
-                pivot_node.split_direction,
-                pivot_node.photon.position.get(pivot_node.split_direction));
+            let mut left_bounds = Bounds4::new(
+                bounds.min(),
+                bounds.max().clone().set(
+                    pivot_node.split_direction,
+                    pivot_node.photon.position.get(pivot_node.split_direction))
+            );
+            let mut right_bounds = Bounds4::new(
+                bounds.min().clone().set(
+                    pivot_node.split_direction,
+                    pivot_node.photon.position.get(pivot_node.split_direction)),
+                bounds.max());
 
             self.check_bounds(left_bounds, begin, pivot_idx);
             self.check_bounds(right_bounds, pivot_idx + 1, end);
@@ -103,7 +142,18 @@ impl PhotonMap {
         self.header.capacity
     }
 
-    fn do_search(&self) -> () {
+
+    fn do_search(&self, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
+        let mut result: Vec<Photon> = Vec::with_capacity(result_size_limit);
+
+        let distance_fn = |bounds: Bounds4| {
+            let closest_point = bounds.closest_point_to(search_point);
+            return (closest_point - search_point).l2norm();
+        };
+
+        let mut queue: BinaryHeap<RangeToSearch> = BinaryHeap::new();
+
         unimplemented!();
+
     }
 }

@@ -42,13 +42,15 @@ impl Vector4 {
         self.v[3]
     }
 
-    pub fn set(&mut self, dim: Dimension, value: f64) -> () {
+    pub fn set(&mut self, dim: Dimension, value: f64) -> &mut Vector4 {
         match dim {
             Dimension::X => self.v[0] = value,
             Dimension::Y => self.v[1] = value,
             Dimension::Z => self.v[2] = value,
             Dimension::T => self.v[3] = value
         }
+
+        return self;
     }
 
     pub fn get(&self, dim: Dimension) -> f64 {
@@ -90,6 +92,14 @@ impl Vector4 {
                 a.t().max(b.t())
             ]
         }
+    }
+
+    pub fn l2norm(&self) -> f64 {
+        return (
+            self.x() * self.x() +
+            self.y() * self.y() +
+            self.z() * self.z() +
+            self.t() * self.t()).sqrt();
     }
 }
 
