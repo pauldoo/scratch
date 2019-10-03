@@ -1,7 +1,5 @@
 use math::Dimension;
 use std::ops::{Add, Sub};
-use std::fmt;
-use std::fmt::{Formatter, Error};
 
 #[derive(Clone,Copy,Debug)]
 pub struct Vector4 {

@@ -9,7 +9,7 @@ use std::mem::size_of;
 use math::vector::{Vector4, max_index};
 use math::{Dimension, Bounds4};
 use rand::{thread_rng, Rng};
-use owning_ref::OwningRef;
+use owning_ref::{OwningRef, OwningRefMut};
 use std::path::{Path, PathBuf};
 
 #[cfg(test)]
@@ -17,7 +17,7 @@ mod tests;
 
 #[derive(Clone)]
 struct PhotonMapHeader {
-    capacity: u64,
+    capacity: usize,
     bounds: Bounds4
 }
 
@@ -28,11 +28,11 @@ struct Node {
 }
 
 pub struct PhotonMapBuilder {
-    capacity: u64,
+    capacity: usize,
     file_path: PathBuf,
     file_rw: File,
-    mmap_rw: MmapMut,
-    usage: u64
+    nodes: OwningRefMut<Box<MmapMut>, [Node]>,
+    usage: usize
 }
 
 pub struct PhotonMap {
@@ -41,65 +41,64 @@ pub struct PhotonMap {
     header: PhotonMapHeader
 }
 
-const HEADER_SIZE_IN_BYTES: u64= size_of::<PhotonMapHeader>() as u64;
-const NODE_SIZE_IN_BYTES: u64= size_of::<Node>() as u64;
+const HEADER_SIZE_IN_BYTES: usize = size_of::<PhotonMapHeader>();
+const NODE_SIZE_IN_BYTES: usize = size_of::<Node>();
 
 impl PhotonMapBuilder {
 
-    pub fn create(photon_count: u64, file_path: &Path) -> PhotonMapBuilder {
+    pub fn create(photon_count: usize, file_path: &Path) -> PhotonMapBuilder {
         info!("Creating new photon map at: {}", file_path.to_str().unwrap());
-        let file_size_in_bytes : u64 = HEADER_SIZE_IN_BYTES + NODE_SIZE_IN_BYTES * photon_count;
+        let file_size_in_bytes : usize = HEADER_SIZE_IN_BYTES + NODE_SIZE_IN_BYTES * photon_count;
         let file: File = OpenOptions::new()
             .read(true)
             .write(true)
             .create_new(true)
             .open(file_path)
             .unwrap();
-        file.set_len(file_size_in_bytes)
+        file.set_len(file_size_in_bytes as u64)
             .unwrap();
 
         let mmap = unsafe { MmapOptions::new().map_mut(&file).unwrap() };
+        let nodes = OwningRefMut::new(Box::new(mmap));
+        let nodes = nodes.map_mut(|mm| {
 
-        return PhotonMapBuilder {
+            let nodes: &mut [Node] = unsafe { slice::from_raw_parts_mut(
+                mm.as_mut_ptr().offset(HEADER_SIZE_IN_BYTES as isize) as *mut Node,
+                photon_count
+            )};
+
+            return nodes;
+        });
+
+
+        let result = PhotonMapBuilder {
             capacity: photon_count,
             file_path: file_path.to_path_buf(),
             file_rw: file,
-            mmap_rw: mmap,
+            nodes: nodes,
             usage: 0
         };
-    }
-
-    fn header(&mut self) -> &mut PhotonMapHeader {
-        unsafe { &mut *((self.mmap_rw.as_mut_ptr().offset(0)) as *mut PhotonMapHeader) }
-    }
-
-    fn nodes_slice(&mut self) -> &mut[Node] {
-        let result = unsafe { slice::from_raw_parts_mut(
-            self.mmap_rw.as_mut_ptr().offset(HEADER_SIZE_IN_BYTES as isize) as *mut Node,
-            self.capacity as usize
-        )};
-
-        assert_eq!(result.len() as u64, self.capacity);
-
+        assert_eq!(result.nodes.len(), result.capacity);
         return result;
     }
 
-    pub fn add_photons(&mut self, new_photons: &[Photon]) -> () {
-        let capacity = self.capacity;
-        let mut usage = self.usage;
+    fn header(&mut self) -> &mut PhotonMapHeader {
+        unsafe { &mut *((self.nodes.as_owner_mut().as_mut_ptr().offset(0)) as *mut PhotonMapHeader) }
+    }
+
+    fn nodes_slice(&mut self) -> &mut[Node] {
+        return &mut*(self.nodes);
+    }
+
+    pub fn add_photon(&mut self, photon: &Photon) -> () {
+        assert!(self.usage < self.capacity);
+        let usage = self.usage;
         {
-            let ptr: &mut [Node] = self.nodes_slice();
-
-            for np in new_photons {
-                assert!(usage < capacity);
-                let node: &mut Node = &mut(ptr[usage as usize]);
-                node.split_direction = Dimension::X;
-                node.photon = np.clone();
-                usage += 1;
-            }
+            let node: &mut Node = &mut self.nodes_slice()[usage];
+            node.split_direction = Dimension::X;
+            node.photon = photon.clone();
         }
-
-        self.usage = usage;
+        self.usage += 1;
     }
 
     fn do_sort(nodes: &mut [Node]) -> Option<PhotonMapHeader> {
@@ -109,7 +108,7 @@ impl PhotonMapBuilder {
         }
 
         let mut header: PhotonMapHeader = PhotonMapHeader {
-            capacity: nodes.len() as u64,
+            capacity: nodes.len(),
             bounds: Bounds4 {
                 min: nodes.first().unwrap().photon.position,
                 max: nodes.first().unwrap().photon.position
@@ -142,6 +141,7 @@ impl PhotonMapBuilder {
             PhotonMapBuilder::do_sort(&mut nodes[..(pivot_index as usize)]);
             PhotonMapBuilder::do_sort(&mut nodes[((pivot_index +1) as usize)..]);
         }
+
 
         return Some(header);
     }
@@ -263,7 +263,7 @@ impl PhotonMapBuilder {
 
         {
             // Close the memory mapping.
-            let _mmap = self.mmap_rw;
+            let _mmap: OwningRefMut<Box<MmapMut>, [Node]> = self.nodes;
         }
         {
             // Close the file.
@@ -307,37 +307,37 @@ impl PhotonMap {
 
 
     fn validate(&self) -> () {
-        self.checkBounds(self.header.bounds, 0, self.header.capacity as usize);
+        self.check_bounds(self.header.bounds, 0, self.header.capacity as usize);
     }
 
-    fn checkBounds(&self, bounds: Bounds4, begin: usize, end: usize) -> () {
+    fn check_bounds(&self, bounds: Bounds4, begin: usize, end: usize) -> () {
         assert!(begin <= end);
         let length = end - begin;
         if length >= 1 {
-            let pivotIdx: usize = begin + (length / 2);
-            let pivotNode: &Node = &(&*(self._data))[pivotIdx];
+            let pivot_idx: usize = begin + (length / 2);
+            let pivot_node: &Node = &(&*(self._data))[pivot_idx];
 
             debug!("{:?}", bounds);
-            debug!("{:?}", pivotNode.photon.position);
-            assert!(bounds.contains(pivotNode.photon.position));
+            debug!("{:?}", pivot_node.photon.position);
+            assert!(bounds.contains(pivot_node.photon.position));
 
-            let mut leftBounds = bounds;
-            let mut rightBounds = bounds;
+            let mut left_bounds = bounds;
+            let mut right_bounds = bounds;
 
-            leftBounds.max.set(
-                pivotNode.split_direction,
-                pivotNode.photon.position.get(pivotNode.split_direction));
+            left_bounds.max.set(
+                pivot_node.split_direction,
+                pivot_node.photon.position.get(pivot_node.split_direction));
 
-            rightBounds.min.set(
-                pivotNode.split_direction,
-                pivotNode.photon.position.get(pivotNode.split_direction));
+            right_bounds.min.set(
+                pivot_node.split_direction,
+                pivot_node.photon.position.get(pivot_node.split_direction));
 
-            self.checkBounds(leftBounds, begin, pivotIdx);
-            self.checkBounds(rightBounds, pivotIdx + 1, end);
+            self.check_bounds(left_bounds, begin, pivot_idx);
+            self.check_bounds(right_bounds, pivot_idx + 1, end);
         }
     }
 
-    fn photon_count(&self) -> u64 {
+    fn photon_count(&self) -> usize {
         self.header.capacity
     }
 

@@ -29,28 +29,22 @@ fn main() -> std::io::Result<()> {
 
 
     {
-        let batch_size:u64 = 10;
-        let batch_count:u64 = 10;
-        let photon_count :u64 = batch_size * batch_count;
+        let photon_count :usize = 100;
 
         let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_path.as_path());
 
         let mut rng = thread_rng();
 
-        for _i in 0..batch_count {
-            let mut vec:Vec<Photon> = Vec::new();
-            for _j in 0..batch_size {
-                let random_photon = Photon{
-                    position: Vector4::create(
-                        rng.gen_range(-10.0, 100.0),
-                        rng.gen_range(-10.0, 100.0),
-                        rng.gen_range(-10.0, 100.0),
-                        rng.gen_range(-10.0, 100.0)),
-                    id: ((_i * batch_size) + _j) as u32
-                };
-                vec.push(random_photon);
-            }
-            map_builder.add_photons(&vec);
+        for _i in 0..photon_count {
+            let random_photon = Photon{
+                position: Vector4::create(
+                    rng.gen_range(-10.0, 100.0),
+                    rng.gen_range(-10.0, 100.0),
+                    rng.gen_range(-10.0, 100.0),
+                    rng.gen_range(-10.0, 100.0)),
+                id: _i as u32
+            };
+            map_builder.add_photon(&random_photon);
         }
 
         info!("finishing");

@@ -4,17 +4,17 @@
 ### Test
 
 ```
-RUST_LOG=timetrace2=debug cargo test
+RUST_LOG=timetrace2=debug RUST_BACKTRACE=1 cargo test
 ```
 
 ### Debug
 
 ```
-RUST_LOG=timetrace2=debug cargo run
+RUST_LOG=timetrace2=debug RUST_BACKTRACE=1 cargo run
 ```
 
 ### Release
 
 ```
-RUST_LOG=timetrace2=info cargo run --release
+RUST_LOG=timetrace2=info RUST_BACKTRACE=1 cargo run --release
 ```

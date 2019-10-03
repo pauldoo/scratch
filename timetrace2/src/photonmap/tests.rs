@@ -37,27 +37,22 @@ fn random_vec_in_bounds<R: Rng + ?Sized>(rng: &mut R, bounds: Bounds4) -> Vector
 }
 
 fn create_test_map<R: Rng + ?Sized>(rng: &mut R) -> TestMap {
-    let batch_count = 100;
-    let batch_size = 100;
+    let photon_count = 10000;
 
     let temp_dir = tempfile::tempdir().unwrap();
     let temp_file = temp_dir.path().join("photonmap");
     info!("Using temp file: {}", temp_file.to_str().unwrap());
 
-    let mut builder: PhotonMapBuilder = PhotonMapBuilder::create(batch_count * batch_size, temp_file.as_path());
+    let mut builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, temp_file.as_path());
     let mut all_photons :Vec<Photon> = Vec::new();
 
-    for _i in 0..batch_count {
-        let mut batch : Vec<Photon> = Vec::new();
-        for _j in 0..batch_size {
-            let random_photon = Photon{
-                position: random_vec_in_bounds(rng, CONFIG.bounds),
-                id: ((_i * batch_size) + _j) as u32
-            };
-            batch.push(random_photon);
-        }
-        builder.add_photons(&batch);
-        all_photons.extend(batch);
+    for _i in 0..photon_count {
+        let random_photon = Photon{
+            position: random_vec_in_bounds(rng, CONFIG.bounds),
+            id: _i as u32
+        };
+        builder.add_photon(&random_photon);
+        all_photons.push(random_photon);
     }
 
     let photon_map = builder.finish();
@@ -75,10 +70,10 @@ pub fn photon_map_has_expected_photon_count() {
 
     let test_map = create_test_map(&mut rng);
 
-    assert_eq!(test_map.photon_map.photon_count(), test_map.all_photons.len() as u64);
+    assert_eq!(test_map.photon_map.photon_count(), test_map.all_photons.len());
 
     for _i in 0..100 {
-        let random_search_point = random_vec_in_bounds(&mut rng, CONFIG.sample_bounds);
+        let _random_search_point = random_vec_in_bounds(&mut rng, CONFIG.sample_bounds);
 
         test_map.photon_map.do_search();
     }
