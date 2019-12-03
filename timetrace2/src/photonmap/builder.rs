@@ -22,6 +22,7 @@ impl PhotonMapBuilder {
     pub fn create(photon_count: usize, file_path: &Path) -> PhotonMapBuilder {
         info!("Creating new photon map at: {}", file_path.to_str().unwrap());
         let file_size_in_bytes : usize = HEADER_SIZE_IN_BYTES + NODE_SIZE_IN_BYTES * photon_count;
+        info!("Size in bytes: header + {} * photons = {} + {} * {} = {}", photon_count, HEADER_SIZE_IN_BYTES, photon_count, NODE_SIZE_IN_BYTES, file_size_in_bytes);
         let file: File = OpenOptions::new()
             .read(true)
             .write(true)
@@ -75,7 +76,13 @@ impl PhotonMapBuilder {
     }
 
     fn do_sort(nodes: &mut [Node]) -> Option<PhotonMapHeader> {
+        let info_log = nodes.len() > 10000000;
+
         debug!("do_sort {}", nodes.len());
+        if info_log {
+            info!("do_sort {} start", nodes.len());
+        }
+
         if nodes.is_empty() {
             return None;
         }
@@ -95,10 +102,16 @@ impl PhotonMapBuilder {
                 header.bounds.set_min(Vector4::mins(*header.bounds.min(), np.photon.position));
                 header.bounds.set_max(Vector4::maxs(*header.bounds.max(), np.photon.position));
             }
+            if info_log {
+                info!("do_sort {} bounds measurement done", nodes.len());
+            }
 
             let split = max_index(*header.bounds.max() - *header.bounds.min());
 
             PhotonMapBuilder::partition_by_axis(&mut nodes[..], split, pivot_index);
+            if info_log {
+                info!("do_sort {} partition({:?}) done", nodes.len(), split);
+            }
             nodes[pivot_index as usize].split_direction = split;
 
             {
@@ -110,9 +123,19 @@ impl PhotonMapBuilder {
                     assert!(nodes[_i as usize].photon.position.get(split) >= pivot_value);
                 }
             }
+            if info_log {
+                info!("do_sort {} assertions validated", nodes.len());
+            }
 
             PhotonMapBuilder::do_sort(&mut nodes[..(pivot_index as usize)]);
+            if info_log {
+                info!("do_sort {} left recursion done", nodes.len());
+            }
+
             PhotonMapBuilder::do_sort(&mut nodes[((pivot_index +1) as usize)..]);
+            if info_log {
+                info!("do_sort {} right recursion done", nodes.len());
+            }
         }
 
 

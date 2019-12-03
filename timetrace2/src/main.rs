@@ -30,7 +30,7 @@ fn main() -> std::io::Result<()> {
 
 
     {
-        let photon_count :usize = 100;
+        let photon_count :usize = 100 * 1000 * 1000;
 
         let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_path.as_path());
 

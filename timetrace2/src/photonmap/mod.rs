@@ -101,6 +101,7 @@ impl PhotonMap {
         };
 
         result.validate();
+        info!("Validation complete");
 
         return result;
     }
