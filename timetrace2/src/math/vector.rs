@@ -1,7 +1,7 @@
 use math::Dimension;
 use std::ops::{Add, Sub};
 
-#[derive(Clone,Copy,Debug)]
+#[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Vector4 {
     v: [f64; 4]
 }

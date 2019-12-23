@@ -68,7 +68,20 @@ fn create_test_map<R: Rng + ?Sized>(rng: &mut R) -> TestMap {
 }
 
 fn brute_force_search(photons: &Vec<Photon>, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
-    unimplemented!();
+    let mut sorted_photons:Vec<Photon> = photons.clone();
+
+    let cmp = |
+    a: &Photon,
+    b: &Photon | -> Ordering {
+        let da =(a.position - search_point).l2norm();
+        let db = (b.position - search_point).l2norm();
+
+        return da.partial_cmp(&db).unwrap();
+    };
+
+    sorted_photons.sort_by(cmp);
+    sorted_photons.truncate(result_size_limit);
+    return sorted_photons;
 }
 
 #[test]
@@ -85,6 +98,7 @@ pub fn photon_map_has_expected_photon_count() {
 
         let expected: Vec<Photon> = brute_force_search(&test_map.all_photons, random_search_point, 100);
         let actual: Vec<Photon> = test_map.photon_map.do_search(random_search_point, 100);
+
         assert_eq!(actual, expected);
     }
 }

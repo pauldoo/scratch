@@ -11,7 +11,6 @@ use std::path::Path;
 use math::vector::Vector4;
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
-use std::ops::Range;
 
 pub mod builder;
 
@@ -145,6 +144,25 @@ impl PhotonMap {
 
 
     fn do_search(&self, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
+        let nodes: &[Node] = &*self._data;
+
+        let enqueue_single = |
+            idx: usize,
+            queue: &mut BinaryHeap<RangeToSearch>| -> () {
+
+            let node_position = &nodes[idx].photon.position;
+            let distance = (*node_position - search_point).l2norm();
+
+            let range = RangeToSearch {
+                min_distance_to_search_point: distance,
+                bounds: Bounds4::new(node_position, node_position),
+                begin: idx,
+                end: idx+1
+            };
+
+            queue.push(range);
+        };
+
         let enqueue_fn = |
             begin: usize,
             end: usize,
@@ -152,6 +170,11 @@ impl PhotonMap {
             queue: &mut BinaryHeap<RangeToSearch>| -> () {
             assert!(begin <= end);
             if begin == end {
+                return;
+            }
+
+            if (end - begin) == 1 {
+                enqueue_single(begin, queue);
                 return;
             }
 
@@ -172,7 +195,6 @@ impl PhotonMap {
         enqueue_fn(0, self.header.capacity, &self.header.bounds, &mut queue);
 
         let mut result: Vec<Photon> = Vec::with_capacity(result_size_limit);
-        let nodes: &[Node] = &*self._data;
 
         while result.len() < result_size_limit && !queue.is_empty() {
             let next = queue.pop().unwrap();
@@ -211,7 +233,7 @@ impl PhotonMap {
                     next.bounds.max());
 
                 enqueue_fn(next.begin, pivot_idx, &left_bounds, &mut queue);
-                enqueue_fn(pivot_idx, pivot_idx + 1, &center_bounds, &mut queue);
+                enqueue_single(pivot_idx, &mut queue);
                 enqueue_fn(pivot_idx+1, next.end, &right_bounds, &mut queue);
             }
         }
