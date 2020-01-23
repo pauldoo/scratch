@@ -30,25 +30,25 @@ impl Bounds4 {
         return result;
     }
 
-    pub fn min(&self) -> &Vector4 {
-        return &self.min;
+    pub fn min(&self) -> Vector4 {
+        return self.min;
     }
 
-    pub fn set_min(&mut self, v: Vector4) -> () {
-        self.min = v;
+    pub fn set_min(&mut self, v: &Vector4) -> () {
+        self.min = *v;
         self.assert_consistency();
     }
 
-    pub fn max(&self) -> &Vector4 {
-        return &self.max;
+    pub fn max(&self) -> Vector4 {
+        return self.max;
     }
 
-    pub fn set_max(&mut self, v: Vector4) -> () {
-        self.max = v;
+    pub fn set_max(&mut self, v: &Vector4) -> () {
+        self.max = *v;
         self.assert_consistency();
     }
 
-    pub fn contains(&self, p: Vector4) -> bool {
+    pub fn contains_point(&self, p: &Vector4) -> bool {
         return
             self.min.x() <= p.x() &&
             self.min.y() <= p.y() &&
@@ -60,7 +60,11 @@ impl Bounds4 {
             p.t() <= self.max.t();
     }
 
-    pub fn closest_point_to(&self, p: Vector4) -> Vector4 {
+    pub fn contains_bounds(&self, other: &Bounds4) -> bool {
+        return self.contains_point(&other.min()) && self.contains_point(&other.max());
+    }
+
+    pub fn closest_point_to(&self, p: &Vector4) -> Vector4 {
         return Vector4::create(
             p.x().max(self.min.x()).min(self.max.x()),
             p.y().max(self.min.y()).min(self.max.y()),

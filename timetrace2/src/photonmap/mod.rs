@@ -8,10 +8,9 @@ use std::mem::size_of;
 use math::{Dimension, Bounds4};
 use owning_ref::OwningRef;
 use std::path::Path;
-use math::vector::Vector4;
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
-
+use math::vector::{Vector4, max_index};
 pub mod builder;
 
 #[cfg(test)]
@@ -25,10 +24,8 @@ struct PhotonMapHeader {
 
 #[derive(Clone)]
 struct Node {
-    split_direction: Dimension,
     photon: Photon
 }
-
 
 pub struct PhotonMap {
     _file_ro: File,
@@ -110,6 +107,10 @@ impl PhotonMap {
         self.check_bounds(self.header.bounds, 0, self.header.capacity as usize);
     }
 
+    fn split_direction(bounds: Bounds4) -> Dimension {
+        return max_index(bounds.max() - bounds.min());
+    }
+
     fn check_bounds(&self, bounds: Bounds4, begin: usize, end: usize) -> () {
         assert!(begin <= end);
         let length = end - begin;
@@ -119,19 +120,14 @@ impl PhotonMap {
 
             debug!("{:?}", bounds);
             debug!("{:?}", pivot_node.photon.position);
-            assert!(bounds.contains(pivot_node.photon.position));
+            assert!(bounds.contains_point(&pivot_node.photon.position));
 
-            let left_bounds = Bounds4::new(
-                bounds.min(),
-                bounds.max().clone().set(
-                    pivot_node.split_direction,
-                    pivot_node.photon.position.get(pivot_node.split_direction))
-            );
-            let right_bounds = Bounds4::new(
-                bounds.min().clone().set(
-                    pivot_node.split_direction,
-                    pivot_node.photon.position.get(pivot_node.split_direction)),
-                bounds.max());
+            let split_direction: Dimension = PhotonMap::split_direction(bounds);
+
+            let left_bounds = PhotonMap::split_left(bounds, split_direction, pivot_node.photon.position);
+            let right_bounds = PhotonMap::split_right(bounds, split_direction, pivot_node.photon.position);
+            assert!(bounds.contains_bounds(&left_bounds));
+            assert!(bounds.contains_bounds(&right_bounds));
 
             self.check_bounds(left_bounds, begin, pivot_idx);
             self.check_bounds(right_bounds, pivot_idx + 1, end);
@@ -178,7 +174,7 @@ impl PhotonMap {
                 return;
             }
 
-            let closest_point = bounds.closest_point_to(search_point);
+            let closest_point = bounds.closest_point_to(&search_point);
             let distance = (closest_point - search_point).l2norm();
 
             let range = RangeToSearch {
@@ -204,33 +200,16 @@ impl PhotonMap {
             if length == 1 {
                 // single photon
                 let photon = &nodes[next.begin].photon;
-                assert!(next.bounds.contains(photon.position));
+                assert!(next.bounds.contains_point(&photon.position));
                 result.push(photon.clone());
             } else {
                 let pivot_idx = next.begin + (length / 2);
-                let pivot_node = &nodes[pivot_idx];
-                assert!(next.bounds.contains(pivot_node.photon.position));
+                let pivot_position = nodes[pivot_idx].photon.position;
+                assert!(next.bounds.contains_point(&pivot_position));
 
-                let pivot_value = pivot_node.photon.position.get(pivot_node.split_direction);
-
-                let left_bounds = Bounds4::new(
-                    next.bounds.min(),
-                    next.bounds.max().clone().set(
-                        pivot_node.split_direction,
-                        pivot_value
-                        )
-                );
-
-                let center_bounds: Bounds4 = Bounds4::new(
-                    &pivot_node.photon.position,
-                    &pivot_node.photon.position
-                );
-
-                let right_bounds = Bounds4::new(
-                    next.bounds.min().clone().set(
-                        pivot_node.split_direction,
-                        pivot_value),
-                    next.bounds.max());
+                let split_direction = PhotonMap::split_direction(next.bounds);
+                let left_bounds = PhotonMap::split_left(next.bounds, split_direction, pivot_position);
+                let right_bounds = PhotonMap::split_right(next.bounds, split_direction, pivot_position);
 
                 enqueue_fn(next.begin, pivot_idx, &left_bounds, &mut queue);
                 enqueue_single(pivot_idx, &mut queue);
@@ -239,5 +218,23 @@ impl PhotonMap {
         }
 
         return result;
+    }
+
+    fn split_left(bounds: Bounds4, split: Dimension, pivot: Vector4) -> Bounds4 {
+        return Bounds4::new(
+            &bounds.min(),
+            bounds.max().clone().set(
+                split,
+                pivot.get(split))
+        );
+    }
+
+    fn split_right(bounds: Bounds4, split: Dimension, pivot: Vector4) -> Bounds4 {
+        return Bounds4::new(
+            bounds.min().clone().set(
+                split,
+                pivot.get(split)),
+            &bounds.max()
+        );
     }
 }

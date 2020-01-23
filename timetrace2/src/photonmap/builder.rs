@@ -69,77 +69,72 @@ impl PhotonMapBuilder {
         let usage = self.usage;
         {
             let node: &mut Node = &mut self.nodes_slice()[usage];
-            node.split_direction = Dimension::X;
             node.photon = photon.clone();
         }
         self.usage += 1;
     }
 
-    fn do_sort(nodes: &mut [Node]) -> Option<PhotonMapHeader> {
+    fn do_sort(nodes: &mut[Node]) -> PhotonMapHeader {
+        let mut bounds: Bounds4 = Bounds4::new(&nodes[0].photon.position, &nodes[0].photon.position);
+        for np in &nodes[..] {
+            bounds.set_min(&Vector4::mins(bounds.min(), np.photon.position));
+            bounds.set_max(&Vector4::maxs(bounds.max(), np.photon.position));
+        }
+
+        info!("do_sort {} bounds measurement done", nodes.len());
+
+        PhotonMapBuilder::do_sort_internal(nodes, bounds);
+
+        return PhotonMapHeader {
+            capacity: nodes.len(),
+            bounds
+        };
+    }
+
+    fn do_sort_internal(nodes: &mut [Node], bounds: Bounds4) -> () {
         let info_log = nodes.len() > 10000000;
 
-        debug!("do_sort {}", nodes.len());
+        debug!("do_sort_internal {}", nodes.len());
         if info_log {
-            info!("do_sort {} start", nodes.len());
+            info!("do_sort_internal {} start", nodes.len());
         }
 
-        if nodes.is_empty() {
-            return None;
+        if nodes.len() <= 1 {
+            return;
         }
 
-        let mut header: PhotonMapHeader = PhotonMapHeader {
-            capacity: nodes.len(),
-            bounds: Bounds4::new(
-                &nodes.first().unwrap().photon.position,
-                &nodes.first().unwrap().photon.position
-            )
-        };
+        let pivot_index: i64 = (nodes.len() as i64) / 2;
 
-        if nodes.len() >= 2 {
-            let pivot_index: i64 = (nodes.len() as i64) / 2;
+        let split = PhotonMap::split_direction(bounds);
 
-            for np in &nodes[..] {
-                header.bounds.set_min(Vector4::mins(*header.bounds.min(), np.photon.position));
-                header.bounds.set_max(Vector4::maxs(*header.bounds.max(), np.photon.position));
-            }
-            if info_log {
-                info!("do_sort {} bounds measurement done", nodes.len());
-            }
-
-            let split = max_index(*header.bounds.max() - *header.bounds.min());
-
-            PhotonMapBuilder::partition_by_axis(&mut nodes[..], split, pivot_index);
-            if info_log {
-                info!("do_sort {} partition({:?}) done", nodes.len(), split);
-            }
-            nodes[pivot_index as usize].split_direction = split;
-
-            {
-                let pivot_value = nodes[pivot_index as usize].photon.position.get(split);
-                for _i in 0..=pivot_index {
-                    assert!(nodes[_i as usize].photon.position.get(split) <= pivot_value);
-                }
-                for _i in pivot_index..(nodes.len() as i64) {
-                    assert!(nodes[_i as usize].photon.position.get(split) >= pivot_value);
-                }
-            }
-            if info_log {
-                info!("do_sort {} assertions validated", nodes.len());
-            }
-
-            PhotonMapBuilder::do_sort(&mut nodes[..(pivot_index as usize)]);
-            if info_log {
-                info!("do_sort {} left recursion done", nodes.len());
-            }
-
-            PhotonMapBuilder::do_sort(&mut nodes[((pivot_index +1) as usize)..]);
-            if info_log {
-                info!("do_sort {} right recursion done", nodes.len());
-            }
+        PhotonMapBuilder::partition_by_axis(&mut nodes[..], split, pivot_index);
+        if info_log {
+            info!("do_sort_internal {} partition({:?}) done", nodes.len(), split);
         }
 
+        let pivot_point : Vector4 = nodes[pivot_index as usize].photon.position;
+        {
+            let pivot_value = pivot_point.get(split);
+            for _i in 0..=pivot_index {
+                assert!(nodes[_i as usize].photon.position.get(split) <= pivot_value);
+            }
+            for _i in pivot_index..(nodes.len() as i64) {
+                assert!(nodes[_i as usize].photon.position.get(split) >= pivot_value);
+            }
+        }
+        if info_log {
+            info!("do_sort_internal {} assertions validated", nodes.len());
+        }
 
-        return Some(header);
+        PhotonMapBuilder::do_sort_internal(&mut nodes[..(pivot_index as usize)], PhotonMap::split_left(bounds, split, pivot_point));
+        if info_log {
+            info!("do_sort_internal {} left recursion done", nodes.len());
+        }
+
+        PhotonMapBuilder::do_sort_internal(&mut nodes[((pivot_index +1) as usize)..], PhotonMap::split_right(bounds, split, pivot_point));
+        if info_log {
+            info!("do_sort_internal {} right recursion done", nodes.len());
+        }
     }
 
     /*
@@ -221,7 +216,7 @@ impl PhotonMapBuilder {
             nodes.swap(0, upper as usize);
         }
 
-        {
+        if (false) {
             for _i in 0..=random_axis_value_eventual_index {
                 assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
             }
@@ -255,7 +250,7 @@ impl PhotonMapBuilder {
         info!("Sorting and closing the photon map.");
         assert_eq!(self.usage, self.capacity);
         let header = PhotonMapBuilder::do_sort(self.nodes_slice());
-        *(self.header()) = header.unwrap();
+        *(self.header()) = header;
 
         {
             // Close the memory mapping.
