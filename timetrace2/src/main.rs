@@ -15,10 +15,15 @@ use photon::Photon;
 use photonmap::PhotonMap;
 use std::path::PathBuf;
 use photonmap::builder::PhotonMapBuilder;
+use scene::Scene;
 
 mod math;
 mod photon;
 mod photonmap;
+mod scene;
+mod camera;
+mod lights;
+mod surfaces;
 
 fn main() -> std::io::Result<()> {
     env_logger::init();
@@ -30,7 +35,7 @@ fn main() -> std::io::Result<()> {
 
 
     {
-        let photon_count :usize = 100 * 1000 * 1000;
+        let photon_count :usize = 10 * 1000 * 1000;
 
         let mut map_builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, file_path.as_path());
 
@@ -55,6 +60,11 @@ fn main() -> std::io::Result<()> {
     }
     info!("files closed, about to delete.");
 
+
+    {
+        let scene: Scene;
+        unimplemented!();
+    }
     //fs::remove_file(file_name)?;
     //info!("Deleted.");
 
