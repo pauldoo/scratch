@@ -2,15 +2,17 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use memmap::MmapOptions;
 use memmap::Mmap;
-use photon::Photon;
+use crate::photon::Photon;
 use std::slice;
 use std::mem::size_of;
-use math::{Dimension, Bounds4};
+use crate::math::{Dimension, Bounds4};
 use owning_ref::OwningRef;
 use std::path::Path;
 use std::collections::BinaryHeap;
 use std::cmp::Ordering;
-use math::vector::{Vector4, max_index};
+use crate::math::vector::{Vector4, max_index};
+use log::{info, debug};
+
 pub mod builder;
 
 #[cfg(test)]

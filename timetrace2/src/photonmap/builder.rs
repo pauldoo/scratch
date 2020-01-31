@@ -2,12 +2,13 @@ use std::path::{PathBuf, Path};
 use std::fs::{File, OpenOptions};
 use owning_ref::OwningRefMut;
 use memmap::{MmapMut, MmapOptions};
-use photonmap::{Node, HEADER_SIZE_IN_BYTES, NODE_SIZE_IN_BYTES, PhotonMapHeader, PhotonMap};
+use crate::photonmap::{Node, HEADER_SIZE_IN_BYTES, NODE_SIZE_IN_BYTES, PhotonMapHeader, PhotonMap};
 use std::slice;
-use photon::Photon;
-use math::vector::{Vector4, max_index};
-use math::{Dimension, Bounds4};
+use crate::photon::Photon;
+use crate::math::vector::Vector4;
+use crate::math::{Dimension, Bounds4};
 use rand::{thread_rng, Rng};
+use log::{info, debug};
 
 pub struct PhotonMapBuilder {
     capacity: usize,
@@ -216,7 +217,7 @@ impl PhotonMapBuilder {
             nodes.swap(0, upper as usize);
         }
 
-        if (false) {
+        if false {
             for _i in 0..=random_axis_value_eventual_index {
                 assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
             }

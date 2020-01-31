@@ -1,4 +1,5 @@
-use math::Dimension;
+use crate::math::Dimension;
+
 use std::ops::{Add, Sub};
 
 #[derive(Clone,Copy,Debug,PartialEq)]

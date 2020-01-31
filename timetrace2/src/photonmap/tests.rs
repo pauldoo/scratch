@@ -1,10 +1,9 @@
 use super::*;
 use rand::prelude::*;
 use tempfile::TempDir;
-use math::*;
-use math::vector::*;
-use photonmap::builder::PhotonMapBuilder;
-
+use crate::math::vector::Vector4;
+use crate::math::Bounds4;
+use crate::photonmap::builder::PhotonMapBuilder;
 
 struct Config {
     bounds: Bounds4,

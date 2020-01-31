@@ -2,6 +2,7 @@
 name = "timetrace2"
 version = "0.1.0"
 authors = ["Paul Richards <paul.richards@gmail.com>"]
+edition = "2018"
 
 [dependencies]
 memmap = "0.7"

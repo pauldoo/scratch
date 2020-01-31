@@ -1,4 +1,4 @@
-use math::vector::Vector4;
+use crate::math::vector::Vector4;
 
 pub mod vector;
 
