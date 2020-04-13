@@ -65,21 +65,21 @@ impl PhotonMapBuilder {
         return &mut*(self.nodes);
     }
 
-    pub fn add_photon(&mut self, photon: &Photon) -> () {
+    pub fn add_photon(&mut self, photon: Photon) -> () {
         assert!(self.usage < self.capacity);
         let usage = self.usage;
         {
             let node: &mut Node = &mut self.nodes_slice()[usage];
-            node.photon = photon.clone();
+            node.photon = photon;
         }
         self.usage += 1;
     }
 
     fn do_sort(nodes: &mut[Node]) -> PhotonMapHeader {
-        let mut bounds: Bounds4 = Bounds4::new(&nodes[0].photon.position, &nodes[0].photon.position);
+        let mut bounds: Bounds4 = Bounds4::new(nodes[0].photon.position, nodes[0].photon.position);
         for np in &nodes[..] {
-            bounds.set_min(&Vector4::mins(bounds.min(), np.photon.position));
-            bounds.set_max(&Vector4::maxs(bounds.max(), np.photon.position));
+            bounds.set_min(Vector4::mins(bounds.min(), np.photon.position));
+            bounds.set_max(Vector4::maxs(bounds.max(), np.photon.position));
         }
 
         info!("do_sort {} bounds measurement done", nodes.len());

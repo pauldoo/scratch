@@ -2,12 +2,12 @@ use crate::math::vector::Vector4;
 
 pub mod vector;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Copy,Clone,Debug)]
 pub enum Dimension {
     X, Y, Z, T
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Copy,Clone,Debug)]
 pub struct Bounds4 {
     min: Vector4,
     max: Vector4
@@ -21,10 +21,10 @@ impl Bounds4 {
         assert!(self.min.t() <= self.max.t());
     }
 
-    pub fn new(min: &Vector4, max: &Vector4) -> Bounds4 {
+    pub fn new(min: Vector4, max: Vector4) -> Bounds4 {
         let result = Bounds4 {
-            min: *min,
-            max: *max
+            min,
+            max
         };
         result.assert_consistency();
         return result;
@@ -34,8 +34,8 @@ impl Bounds4 {
         return self.min;
     }
 
-    pub fn set_min(&mut self, v: &Vector4) -> () {
-        self.min = *v;
+    pub fn set_min(&mut self, v: Vector4) -> () {
+        self.min = v;
         self.assert_consistency();
     }
 
@@ -43,12 +43,12 @@ impl Bounds4 {
         return self.max;
     }
 
-    pub fn set_max(&mut self, v: &Vector4) -> () {
-        self.max = *v;
+    pub fn set_max(&mut self, v: Vector4) -> () {
+        self.max = v;
         self.assert_consistency();
     }
 
-    pub fn contains_point(&self, p: &Vector4) -> bool {
+    pub fn contains_point(&self, p: Vector4) -> bool {
         return
             self.min.x() <= p.x() &&
             self.min.y() <= p.y() &&
@@ -60,11 +60,11 @@ impl Bounds4 {
             p.t() <= self.max.t();
     }
 
-    pub fn contains_bounds(&self, other: &Bounds4) -> bool {
-        return self.contains_point(&other.min()) && self.contains_point(&other.max());
+    pub fn contains_bounds(&self, other: Bounds4) -> bool {
+        return self.contains_point(other.min()) && self.contains_point(other.max());
     }
 
-    pub fn closest_point_to(&self, p: &Vector4) -> Vector4 {
+    pub fn closest_point_to(&self, p: Vector4) -> Vector4 {
         return Vector4::create(
             p.x().max(self.min.x()).min(self.max.x()),
             p.y().max(self.min.y()).min(self.max.y()),

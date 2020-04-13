@@ -2,7 +2,7 @@ use crate::math::Dimension;
 
 use std::ops::{Add, Sub};
 
-#[derive(Clone,Copy,Debug,PartialEq)]
+#[derive(Copy,Clone,Debug,PartialEq)]
 pub struct Vector4 {
     v: [f64; 4]
 }
@@ -41,6 +41,10 @@ impl Vector4 {
     }
     pub fn t(&self) -> f64 {
         self.v[3]
+    }
+
+    pub fn with(&self, dim:Dimension, value: f64) -> Vector4 {
+        return *(self.clone().set(dim, value));
     }
 
     pub fn set(&mut self, dim: Dimension, value: f64) -> &mut Vector4 {

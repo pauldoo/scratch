@@ -73,7 +73,7 @@ fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> Pho
                 rng.gen_range(-10.0, 100.0)),
             id: _i as u32
         };
-        map_builder.add_photon(&random_photon);
+        map_builder.add_photon(random_photon);
     }
 
     info!("finishing");

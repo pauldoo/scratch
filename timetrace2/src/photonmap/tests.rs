@@ -13,13 +13,13 @@ struct Config {
 fn config() -> Config {
     return Config {
         bounds: Bounds4::new(
-            &Vector4::create(-10.0, -10.0, -10.0, -10.0),
-            &Vector4::create(10.0, 10.0, 10.0, 10.0)
+            Vector4::create(-10.0, -10.0, -10.0, -10.0),
+            Vector4::create(10.0, 10.0, 10.0, 10.0)
         ),
 
         sample_bounds: Bounds4::new(
-            &Vector4::create(-20.0, -20.0, -20.0, -20.0),
-            &Vector4::create(20.0, 20.0, 20.0, 20.0)
+            Vector4::create(-20.0, -20.0, -20.0, -20.0),
+            Vector4::create(20.0, 20.0, 20.0, 20.0)
         )
     };
 }
@@ -53,7 +53,7 @@ fn create_test_map<R: Rng + ?Sized>(rng: &mut R) -> TestMap {
             position: random_vec_in_bounds(rng, config().bounds),
             id: _i as u32
         };
-        builder.add_photon(&random_photon);
+        builder.add_photon(random_photon);
         all_photons.push(random_photon);
     }
 
