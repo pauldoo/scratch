@@ -1,5 +1,8 @@
-#include <iostream.h>
-#include <string.h>
+#include <iostream>
+#include <string>
+#include <cstring>
+
+using namespace std;
 
 #define RD(p,a,b,c,d) (*((p) + (a)*(2*3*3) + (b)*(3*3) + (c)*(3) + (d)))
 
