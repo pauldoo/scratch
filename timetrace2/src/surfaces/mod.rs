@@ -5,7 +5,8 @@ pub trait Surface {
 }
 
 pub struct StaticPlane {
-
+    point_on_plane: Vector4,
+    normal: Vector4
 }
 
 impl StaticPlane {
@@ -13,6 +14,13 @@ impl StaticPlane {
         point_on_plane: Vector4,
         normal: Vector4
     ) -> Box<dyn Surface> {
-        unimplemented!();
+        return Box::new(StaticPlane {
+            point_on_plane,
+            normal
+        });
     }
+}
+
+impl Surface for StaticPlane {
+
 }

@@ -5,7 +5,8 @@ pub trait Light {
 }
 
 pub struct IntervalLight {
-
+    from: Vector4,
+    to: Vector4
 }
 
 impl IntervalLight {
@@ -13,6 +14,12 @@ impl IntervalLight {
         from: Vector4,
         to: Vector4
     ) -> Box<dyn Light> {
-        unimplemented!();
+        return Box::new(IntervalLight {
+            from, to
+        });
     }
+}
+
+impl Light for IntervalLight {
+
 }

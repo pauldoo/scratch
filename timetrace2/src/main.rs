@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use photonmap::builder::PhotonMapBuilder;
 use scene::Scene;
 use log::{info};
+use image::{ImageBuffer};
 
 mod math;
 mod photon;
@@ -54,7 +55,8 @@ struct Config {
     photon_count: usize,
     frame_count: usize,
     width: usize,
-    height: usize
+    height: usize,
+    output_directory: PathBuf
 }
 
 fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> PhotonMap {
@@ -81,7 +83,23 @@ fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> Pho
 }
 
 fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
-    unimplemented!();
+    info!("Doing the raytrace");
+    for frame in 0..(config.frame_count) {
+        info!("Frame: {}", frame);
+        let mut img = ImageBuffer::new(config.width as u32, config.height as u32);
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            let r = (0.3 * x as f32) as u8;
+            let b = (0.3 * y as f32) as u8;
+            *pixel = image::Rgb([r, 0, b]);
+        }
+
+        info!("Saving frame");
+        let filename = PathBuf::from(format!("frame_{:06}.png", frame));
+        let full_frame_path = config.output_directory.join(filename);
+        img.save(&full_frame_path).unwrap();
+        info!("Frame saved");
+    }
+    info!("All frames done!")
 }
 
 fn main() -> std::io::Result<()> {
@@ -92,8 +110,13 @@ fn main() -> std::io::Result<()> {
         photon_count: 10 * 1000 * 1000,
         frame_count: 100,
         width: 320,
-        height: 320
+        height: 240,
+        output_directory: PathBuf::from("./output")
     };
+    if !config.output_directory.exists() {
+        fs::create_dir(&config.output_directory);
+    }
+    assert!(config.output_directory.is_dir(), "Output directory should exist");
 
     let scene: Scene = create_scene();
 

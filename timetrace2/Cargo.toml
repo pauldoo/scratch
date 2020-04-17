@@ -11,6 +11,7 @@ stopwatch = "0.0.7"
 log = "0.4"
 env_logger = "0.7"
 owning_ref = "0.4"
+image = "0.23"
 
 [dev-dependencies]
 tempfile = "3.0"
