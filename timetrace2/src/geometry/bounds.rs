@@ -1,16 +1,12 @@
-use crate::math::vector::Vector4;
+use crate::geometry::vector::Vector4;
 
-pub mod vector;
+#[cfg(test)]
+mod tests;
 
-#[derive(Copy,Clone,Debug)]
-pub enum Dimension {
-    X, Y, Z, T
-}
-
-#[derive(Copy,Clone,Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Bounds4 {
     min: Vector4,
-    max: Vector4
+    max: Vector4,
 }
 
 impl Bounds4 {
@@ -22,10 +18,7 @@ impl Bounds4 {
     }
 
     pub fn new(min: Vector4, max: Vector4) -> Bounds4 {
-        let result = Bounds4 {
-            min,
-            max
-        };
+        let result = Bounds4 { min, max };
         result.assert_consistency();
         return result;
     }
@@ -49,15 +42,14 @@ impl Bounds4 {
     }
 
     pub fn contains_point(&self, p: Vector4) -> bool {
-        return
-            self.min.x() <= p.x() &&
-            self.min.y() <= p.y() &&
-            self.min.z() <= p.z() &&
-            self.min.t() <= p.t() &&
-            p.x() <= self.max.x() &&
-            p.y() <= self.max.y() &&
-            p.z() <= self.max.z() &&
-            p.t() <= self.max.t();
+        return self.min.x() <= p.x()
+            && self.min.y() <= p.y()
+            && self.min.z() <= p.z()
+            && self.min.t() <= p.t()
+            && p.x() <= self.max.x()
+            && p.y() <= self.max.y()
+            && p.z() <= self.max.z()
+            && p.t() <= self.max.t();
     }
 
     pub fn contains_bounds(&self, other: Bounds4) -> bool {
@@ -69,7 +61,7 @@ impl Bounds4 {
             p.x().max(self.min.x()).min(self.max.x()),
             p.y().max(self.min.y()).min(self.max.y()),
             p.z().max(self.min.z()).min(self.max.z()),
-            p.t().max(self.min.t()).min(self.max.t())
+            p.t().max(self.min.t()).min(self.max.t()),
         );
     }
 }

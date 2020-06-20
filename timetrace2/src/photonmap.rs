@@ -1,38 +1,39 @@
+use crate::geometry::bounds::Bounds4;
+use crate::geometry::vector::{max_index, Vector4};
+use crate::geometry::Dimension;
+use crate::photon::Photon;
+use log::{debug, info};
+use memmap::Mmap;
+use memmap::MmapOptions;
+use owning_ref::OwningRef;
+use std::cmp::Ordering;
+use std::collections::BinaryHeap;
 use std::fs::File;
 use std::fs::OpenOptions;
-use memmap::MmapOptions;
-use memmap::Mmap;
-use crate::photon::Photon;
-use std::slice;
 use std::mem::size_of;
-use crate::math::{Dimension, Bounds4};
-use owning_ref::OwningRef;
 use std::path::Path;
-use std::collections::BinaryHeap;
-use std::cmp::Ordering;
-use crate::math::vector::{Vector4, max_index};
-use log::{info, debug};
+use std::slice;
 
 pub mod builder;
 
 #[cfg(test)]
 mod tests;
 
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 struct PhotonMapHeader {
     capacity: usize,
-    bounds: Bounds4
+    bounds: Bounds4,
 }
 
-#[derive(Copy,Clone)]
+#[derive(Copy, Clone)]
 struct Node {
-    photon: Photon
+    photon: Photon,
 }
 
 pub struct PhotonMap {
     _file_ro: File,
     _data: OwningRef<Box<Mmap>, [Node]>,
-    header: PhotonMapHeader
+    header: PhotonMapHeader,
 }
 
 const HEADER_SIZE_IN_BYTES: usize = size_of::<PhotonMapHeader>();
@@ -42,7 +43,7 @@ struct RangeToSearch {
     min_distance_to_search_point: f64,
     bounds: Bounds4,
     begin: usize,
-    end: usize
+    end: usize,
 }
 
 impl PartialOrd for RangeToSearch {
@@ -50,9 +51,10 @@ impl PartialOrd for RangeToSearch {
         // Binary heap is a max-heap, and we want smaller distance ranges
         // to be top, so this is a reverse ordering.
         // rangeA is "greater than" rangeB if it is closer to the target.
-        return self.min_distance_to_search_point
+        return self
+            .min_distance_to_search_point
             .partial_cmp(&other.min_distance_to_search_point)
-            .map(|o| {o.reverse()});
+            .map(|o| o.reverse());
     }
 }
 
@@ -68,13 +70,14 @@ impl Ord for RangeToSearch {
     }
 }
 
-impl Eq for RangeToSearch {
-
-}
+impl Eq for RangeToSearch {}
 
 impl PhotonMap {
     pub fn open_existing_map(file_path: &Path) -> PhotonMap {
-        info!("Opening photon map read-only: {}", file_path.to_str().unwrap());
+        info!(
+            "Opening photon map read-only: {}",
+            file_path.to_str().unwrap()
+        );
         let file: File = OpenOptions::new()
             .read(true)
             .write(false)
@@ -84,18 +87,21 @@ impl PhotonMap {
 
         let mmap: Mmap = unsafe { MmapOptions::new().map(&file).unwrap() };
 
-        let header: PhotonMapHeader = unsafe { & *((mmap.as_ptr().offset(0)) as *const PhotonMapHeader) } .clone();
+        let header: PhotonMapHeader =
+            unsafe { &*((mmap.as_ptr().offset(0)) as *const PhotonMapHeader) }.clone();
 
         let data = OwningRef::new(Box::new(mmap));
-        let data: OwningRef<Box<Mmap>, [Node]> = data.map(|mm| unsafe { slice::from_raw_parts(
-            mm.as_ptr().offset(HEADER_SIZE_IN_BYTES as isize) as *const Node,
-            header.capacity as usize
-        )} );
+        let data: OwningRef<Box<Mmap>, [Node]> = data.map(|mm| unsafe {
+            slice::from_raw_parts(
+                mm.as_ptr().offset(HEADER_SIZE_IN_BYTES as isize) as *const Node,
+                header.capacity as usize,
+            )
+        });
 
         let result = PhotonMap {
             _file_ro: file,
             _data: data,
-            header
+            header,
         };
 
         result.validate();
@@ -103,7 +109,6 @@ impl PhotonMap {
 
         return result;
     }
-
 
     fn validate(&self) -> () {
         self.check_bounds(self.header.bounds, 0, self.header.capacity as usize);
@@ -126,8 +131,10 @@ impl PhotonMap {
 
             let split_direction: Dimension = PhotonMap::split_direction(bounds);
 
-            let left_bounds = PhotonMap::split_left(bounds, split_direction, pivot_node.photon.position);
-            let right_bounds = PhotonMap::split_right(bounds, split_direction, pivot_node.photon.position);
+            let left_bounds =
+                PhotonMap::split_left(bounds, split_direction, pivot_node.photon.position);
+            let right_bounds =
+                PhotonMap::split_right(bounds, split_direction, pivot_node.photon.position);
             assert!(bounds.contains_bounds(left_bounds));
             assert!(bounds.contains_bounds(right_bounds));
 
@@ -140,14 +147,10 @@ impl PhotonMap {
         self.header.capacity
     }
 
-
     fn do_search(&self, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
         let nodes: &[Node] = &*self._data;
 
-        let enqueue_single = |
-            idx: usize,
-            queue: &mut BinaryHeap<RangeToSearch>| -> () {
-
+        let enqueue_single = |idx: usize, queue: &mut BinaryHeap<RangeToSearch>| -> () {
             let node_position = nodes[idx].photon.position;
             let distance = (node_position - search_point).l2norm();
 
@@ -155,17 +158,17 @@ impl PhotonMap {
                 min_distance_to_search_point: distance,
                 bounds: Bounds4::new(node_position, node_position),
                 begin: idx,
-                end: idx+1
+                end: idx + 1,
             };
 
             queue.push(range);
         };
 
-        let enqueue_fn = |
-            begin: usize,
-            end: usize,
-            bounds: Bounds4,
-            queue: &mut BinaryHeap<RangeToSearch>| -> () {
+        let enqueue_fn = |begin: usize,
+                          end: usize,
+                          bounds: Bounds4,
+                          queue: &mut BinaryHeap<RangeToSearch>|
+         -> () {
             assert!(begin <= end);
             if begin == end {
                 return;
@@ -183,7 +186,7 @@ impl PhotonMap {
                 min_distance_to_search_point: distance,
                 bounds,
                 begin,
-                end
+                end,
             };
 
             queue.push(range);
@@ -210,12 +213,14 @@ impl PhotonMap {
                 assert!(next.bounds.contains_point(pivot_position));
 
                 let split_direction = PhotonMap::split_direction(next.bounds);
-                let left_bounds = PhotonMap::split_left(next.bounds, split_direction, pivot_position);
-                let right_bounds = PhotonMap::split_right(next.bounds, split_direction, pivot_position);
+                let left_bounds =
+                    PhotonMap::split_left(next.bounds, split_direction, pivot_position);
+                let right_bounds =
+                    PhotonMap::split_right(next.bounds, split_direction, pivot_position);
 
                 enqueue_fn(next.begin, pivot_idx, left_bounds, &mut queue);
                 enqueue_single(pivot_idx, &mut queue);
-                enqueue_fn(pivot_idx+1, next.end, right_bounds, &mut queue);
+                enqueue_fn(pivot_idx + 1, next.end, right_bounds, &mut queue);
             }
         }
 
@@ -223,20 +228,10 @@ impl PhotonMap {
     }
 
     fn split_left(bounds: Bounds4, split: Dimension, pivot: Vector4) -> Bounds4 {
-        return Bounds4::new(
-            bounds.min(),
-            bounds.max().with(
-                split,
-                pivot.get(split))
-        );
+        return Bounds4::new(bounds.min(), bounds.max().with(split, pivot.get(split)));
     }
 
     fn split_right(bounds: Bounds4, split: Dimension, pivot: Vector4) -> Bounds4 {
-        return Bounds4::new(
-            bounds.min().with(
-                split,
-                pivot.get(split)),
-            bounds.max()
-        );
+        return Bounds4::new(bounds.min().with(split, pivot.get(split)), bounds.max());
     }
 }
