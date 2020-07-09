@@ -1,5 +1,5 @@
 use crate::geometry::{Dimension, ERROR_EPSILON};
-use std::ops::{Add, Div, Mul, Sub};
+use std::ops::{Add, Div, Mul, Sub, Neg};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector4 {
@@ -150,6 +150,21 @@ impl Sub for Vector4 {
 
     fn sub(self, rhs: Vector4) -> Vector4 {
         return Vector4::element_wise_op(self, rhs, |a, b| a - b);
+    }
+}
+
+impl Neg for Vector4 {
+    type Output = Vector4;
+
+    fn neg(self) -> Vector4 {
+        return Vector4 {
+            v: [
+                - self.x(),
+                - self.y(),
+                - self.z(),
+                - self.t(),
+            ]
+        };
     }
 }
 

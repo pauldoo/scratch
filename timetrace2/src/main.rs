@@ -5,6 +5,7 @@ use photonmap::PhotonMap;
 use scene::Scene;
 use std::fs;
 use std::path::PathBuf;
+use crate::geometry::normal::Normal;
 
 mod camera;
 mod geometry;
@@ -26,7 +27,7 @@ fn create_scene() -> scene::Scene {
 fn create_surfaces() -> Vec<Box<dyn surfaces::Surface>> {
     let floor = surfaces::StaticPlane::new(
         Vector4::create(0.0, -1.0, 0.0, 0.0),
-        Vector4::create(0.0, 1.0, 0.0, 0.0),
+        Normal::fromVec(Vector4::create(0.0, 1.0, 0.0, 0.0)),
     );
 
     return vec![floor];

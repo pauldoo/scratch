@@ -3,6 +3,7 @@ pub mod direction;
 pub mod impact;
 pub mod ray;
 pub mod vector;
+pub mod normal;
 
 const ERROR_EPSILON: f64 = 1e-10;
 
