@@ -10,15 +10,16 @@ use image::ImageBuffer;
 use log::info;
 use rand::thread_rng;
 use std::path::PathBuf;
+use crate::geometry::vector::Vector4;
+use crate::photon::Photon;
+use ordered_float::OrderedFloat;
 
 fn trace_light_ray(ray: Ray, surfaces: &Vec<Box<dyn Surface>>) -> Option<Impact> {
-    let mut result: Option<Impact> = Option::None;
+    let raySign = Vector4::from(ray.direction).t().signum();
 
-    for s in surfaces {
-        unimplemented!();
-    }
-
-    return result;
+    surfaces.iter()
+        .flat_map(|s| s.intersect(ray))
+        .min_by_key(|i| OrderedFloat(i.location.t() * raySign))
 }
 
 pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> PhotonMap {
@@ -34,9 +35,14 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
     while map_builder.has_capacity() {
         let ray = light.emit(&mut rng);
 
-        trace_light_ray(ray, &scene.surfaces);
+        let impact = trace_light_ray(ray, &scene.surfaces);
 
-        //map_builder.add_photon(random_photon);
+        if impact.is_some() {
+            map_builder.add_photon(Photon {
+                position: impact.unwrap().location,
+                id: 0
+            });
+        }
     }
 
     info!("finishing");
@@ -53,6 +59,8 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
             let b = (0.3 * y as f32) as u8;
             *pixel = image::Rgb([r, 0, b]);
         }
+
+        unimplemented!();
 
         info!("Saving frame");
         let filename = PathBuf::from(format!("frame_{:06}.png", frame));
