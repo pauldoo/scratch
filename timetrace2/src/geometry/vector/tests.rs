@@ -1,4 +1,4 @@
-use crate::geometry::vector::{Vector4, dot};
+use crate::geometry::vector::Vector4;
 use crate::geometry::Dimension::{T, X, Y, Z};
 
 #[test]
@@ -84,5 +84,13 @@ pub fn dot_product() -> () {
     let a= Vector4::create(1.0, 2.0, 3.0, 4.0);
     let b= Vector4::create(5.0, 6.0, 7.0, 8.0);
 
-    assert_eq!( dot(a, b), 5.0 + 12.0 + 21.0 + 32.0);
+    assert_eq!( Vector4::dot(a, b), 5.0 + 12.0 + 21.0 + 32.0);
+}
+
+#[test]
+pub fn cross_product_3() -> () {
+    let a= Vector4::create(2.0, 3.0, 4.0, 0.0);
+    let b= Vector4::create(5.0, 6.0, 7.0, 0.0);
+
+    assert_eq!( Vector4::cross_3(a, b), Vector4::create(-3.0,6.0,-3.0,0.0));
 }

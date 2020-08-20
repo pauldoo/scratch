@@ -6,6 +6,7 @@ use scene::Scene;
 use std::fs;
 use std::path::PathBuf;
 use crate::geometry::normal::Normal;
+use crate::geometry::direction::Direction;
 
 mod camera;
 mod geometry;
@@ -43,18 +44,18 @@ fn create_lights() -> Vec<Box<dyn lights::Light>> {
 fn create_camera() -> Box<dyn camera::Camera> {
     return camera::StaticCamera::new(
         Vector4::create(0.0, 0.0, 0.0, 0.0),
-        Vector4::create(0.0, 0.0, 1.0, 0.0),
-        Vector4::create(0.0, 1.0, 0.0, 0.0),
-        0.0,
-        100.0,
+        Normal::fromVec(Vector4::create(0.0, 0.0, 1.0, 0.0)),
+        Normal::fromVec(Vector4::create(0.0, 1.0, 0.0, 0.0))
     );
 }
 
 pub struct Config {
-    photon_count: usize,
-    frame_count: usize,
-    width: usize,
-    height: usize,
+    photon_count: u64,
+    frame_count: u32,
+    width: u32,
+    height: u32,
+    min_t: f64,
+    max_t: f64,
     output_directory: PathBuf,
 }
 
@@ -67,6 +68,8 @@ fn main() -> std::io::Result<()> {
         frame_count: 100,
         width: 320,
         height: 240,
+        min_t: 0.0,
+        max_t: 10.0,
         output_directory: PathBuf::from("./output"),
     };
     if !config.output_directory.exists() {

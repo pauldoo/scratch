@@ -1,4 +1,4 @@
-use crate::geometry::vector::{Vector4, dot};
+use crate::geometry::vector::Vector4;
 use crate::geometry::ray::Ray;
 use crate::geometry::impact::Impact;
 use crate::geometry::normal::Normal;
@@ -27,8 +27,8 @@ impl StaticPlane {
 
 impl Surface for StaticPlane {
     fn intersect(&self, ray: Ray) -> Option<Impact> {
-        let distance_to_surface = dot(self.point_on_plane - ray.start, self.normal.into());
-        let rate_of_approach = dot(ray.direction.into(), self.normal.into());
+        let distance_to_surface = Vector4::dot(self.point_on_plane - ray.start, self.normal.into());
+        let rate_of_approach = Vector4::dot(ray.direction.into(), self.normal.into());
 
         let time_to_approach = distance_to_surface / rate_of_approach;
 

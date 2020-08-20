@@ -1,5 +1,5 @@
 use crate::geometry::bounds::Bounds4;
-use crate::geometry::vector::{max_index, Vector4};
+use crate::geometry::vector::Vector4;
 use crate::geometry::Dimension;
 use crate::photon::Photon;
 use log::{debug, info};
@@ -115,7 +115,7 @@ impl PhotonMap {
     }
 
     fn split_direction(bounds: Bounds4) -> Dimension {
-        return max_index(bounds.max() - bounds.min());
+        return Vector4::max_index(bounds.max() - bounds.min());
     }
 
     fn check_bounds(&self, bounds: Bounds4, begin: usize, end: usize) -> () {
@@ -143,11 +143,11 @@ impl PhotonMap {
         }
     }
 
-    fn photon_count(&self) -> usize {
+    pub fn photon_count(&self) -> usize {
         self.header.capacity
     }
 
-    fn do_search(&self, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
+    pub fn do_search(&self, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
         let nodes: &[Node] = &*self._data;
 
         let enqueue_single = |idx: usize, queue: &mut BinaryHeap<RangeToSearch>| -> () {

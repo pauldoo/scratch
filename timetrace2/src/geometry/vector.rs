@@ -6,32 +6,6 @@ pub struct Vector4 {
     v: [f64; 4],
 }
 
-pub fn max_index(v: Vector4) -> Dimension {
-    let mut max_value = v.x();
-    let mut result = Dimension::X;
-
-    if v.y() > max_value {
-        max_value = v.y();
-        result = Dimension::Y;
-    }
-
-    if v.z() > max_value {
-        max_value = v.z();
-        result = Dimension::Z;
-    }
-
-    if v.t() > max_value {
-        //max_value = v.t();
-        result = Dimension::T;
-    }
-
-    return result;
-}
-
-pub fn dot(lhs: Vector4, rhs: Vector4) -> f64 {
-    return lhs.v.iter().zip(rhs.v.iter()).map(|e| e.0 * e.1 ).sum();
-}
-
 impl Vector4 {
     pub fn x(&self) -> f64 {
         self.v[0]
@@ -107,6 +81,44 @@ impl Vector4 {
 
     pub const fn create(x: f64, y: f64, z: f64, t: f64) -> Vector4 {
         Vector4 { v: [x, y, z, t] }
+    }
+
+    pub fn max_index(v: Vector4) -> Dimension {
+        let mut max_value = v.x();
+        let mut result = Dimension::X;
+
+        if v.y() > max_value {
+            max_value = v.y();
+            result = Dimension::Y;
+        }
+
+        if v.z() > max_value {
+            max_value = v.z();
+            result = Dimension::Z;
+        }
+
+        if v.t() > max_value {
+            //max_value = v.t();
+            result = Dimension::T;
+        }
+
+        return result;
+    }
+
+    pub fn dot(lhs: Vector4, rhs: Vector4) -> f64 {
+        return lhs.v.iter().zip(rhs.v.iter()).map(|e| e.0 * e.1 ).sum();
+    }
+
+    pub fn cross_3(lhs: Vector4, rhs: Vector4) -> Vector4 {
+        assert_eq!(lhs.t(), 0.0);
+        assert_eq!(rhs.t(), 0.0);
+
+        return Vector4::create(
+            lhs.y() * rhs.z() - lhs.z() * rhs.y(),
+            lhs.z() * rhs.x() - lhs.x() * rhs.z(),
+            lhs.x() * rhs.y() - lhs.y() * rhs.x(),
+            0.0
+        );
     }
 
     fn element_wise_op(lhs: Vector4, rhs: Vector4, op: fn(f64, f64) -> f64) -> Vector4 {
