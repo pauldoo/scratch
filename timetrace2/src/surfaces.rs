@@ -43,3 +43,24 @@ impl Surface for StaticPlane {
         return Option::None;
     }
 }
+
+pub struct StaticSphere {
+    center: Vector4,
+    radius: f64
+}
+
+impl StaticSphere {
+    pub fn new(center: Vector4, radius: f64) -> Box<dyn Surface> {
+        assert_eq!(center.t(), 0.0); // t value is redundant.
+        return Box::new( StaticSphere {
+            center,
+            radius
+        });
+    }
+}
+
+impl Surface for StaticSphere {
+    fn intersect(&self, ray: Ray) -> Option<Impact> {
+        unimplemented!();
+    }
+}

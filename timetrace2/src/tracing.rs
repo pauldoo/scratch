@@ -15,6 +15,9 @@ use crate::photon::Photon;
 use ordered_float::OrderedFloat;
 use std::cmp::min;
 
+#[cfg(test)]
+mod tests;
+
 fn trace_single_ray(ray: Ray, surfaces: &Vec<Box<dyn Surface>>) -> Option<Impact> {
     let raySign = Vector4::from(ray.direction).t().signum();
 
@@ -59,9 +62,15 @@ fn query_photon_map_intensity(map: &PhotonMap, hit: &Impact) -> f64 {
     let distance = (hit.location - furthest_closest_photon.position).l2norm();
 
     // TODO: do this calculation properly.
-    let intensity = (1.0 / (distance.powf(2.0))) / (map.photon_count() as f64);
+    let intensity = (1.0 / (distance.powf(3.0))) / (map.photon_count() as f64);
 
     return intensity;
+}
+
+fn expose(d: f64, b: f64) -> u8 {
+    assert!(d >= 0.0);
+
+    return ((1.0 - (-d*b).exp())* 255.0) as u8;
 }
 
 pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
@@ -70,7 +79,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
 
     let background_colour: Rgb<u8> = image::Rgb([255u8, 128u8, 128u8]);
 
-    for frame in 0..(config.frame_count) {
+    let render_frame = |frame| {
         let t = config.min_t + (frame as f64 / (config.frame_count - 1) as f64) * (config.max_t - config.min_t);
         info!("Frame: {} (t={})", frame, t);
         let half_size: f64 = (min(config.width, config.height) as f64) / 2.0;
@@ -89,7 +98,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
 
             if impact.is_some() {
                 let d: f64 = query_photon_map_intensity(map, &impact.unwrap());
-                let b = ((1.0 - (-d).exp())* 255.0) as u8;
+                let b = expose(d, config.brightness);
                 *pixel = image::Rgb([b, b, b])
             } else {
                 *pixel = background_colour;
@@ -101,6 +110,10 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
         let full_frame_path = config.output_directory.join(filename);
         img.save(&full_frame_path).unwrap();
         info!("Frame saved");
-    }
+    };
+
+    (0..(config.frame_count))
+        .for_each(render_frame);
+
     info!("All frames done!")
 }

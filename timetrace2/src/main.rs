@@ -1,12 +1,12 @@
 use crate::tracing::{create_photon_map, do_raytrace};
 use geometry::vector::Vector4;
-use log::info;
+use log::{info, warn};
 use photonmap::PhotonMap;
 use scene::Scene;
 use std::fs;
 use std::path::PathBuf;
 use crate::geometry::normal::Normal;
-use crate::geometry::direction::Direction;
+use clap::{App, Arg, ArgMatches};
 
 mod camera;
 mod geometry;
@@ -37,7 +37,7 @@ fn create_surfaces() -> Vec<Box<dyn surfaces::Surface>> {
 fn create_lights() -> Vec<Box<dyn lights::Light>> {
     return vec![lights::IntervalLight::new(
         Vector4::create(1.0, 2.0, 0.0, 0.0),
-        Vector4::create(1.0, 2.0, 0.0, 1.0),
+        Vector4::create(1.0, 2.0, 0.0, 0.1),
     )];
 }
 
@@ -56,6 +56,7 @@ pub struct Config {
     height: u32,
     min_t: f64,
     max_t: f64,
+    brightness: f64,
     output_directory: PathBuf,
 }
 
@@ -63,13 +64,38 @@ fn main() -> std::io::Result<()> {
     env_logger::init();
     info!("Starting.");
 
+    let skip_building_photon_map_arg_name = "skip-building-photon-map";
+    let quick_arg_name = "quick";
+
+    let matches: ArgMatches = App::new("Timetrace 2")
+        .version("1.0")
+        .arg(Arg::with_name(skip_building_photon_map_arg_name)
+                 .long("skip-building-photon-map")
+                 .takes_value(false)
+                 .help("If provided, skips building the photon map and we assume the one on disk is good."))
+
+        .arg( Arg::with_name(quick_arg_name)
+            .long("quick")
+            .takes_value(false)
+            .help("If provided, tweaks quality settings to go faster.")
+        )
+        .get_matches();
+
+    let quick_factor = if matches.is_present(quick_arg_name) {
+        warn!("Quick mode is go!");
+        4
+    } else {
+        1
+    };
+
     let config: Config = Config {
         photon_count: 10 * 1000 * 1000,
-        frame_count: 100,
-        width: 320,
-        height: 240,
+        frame_count: 100 / quick_factor,
+        width: 320 / quick_factor,
+        height: 240 / quick_factor,
         min_t: 0.0,
         max_t: 10.0,
+        brightness: 1e4f64,
         output_directory: PathBuf::from("./output"),
     };
     if !config.output_directory.exists() {
@@ -82,10 +108,17 @@ fn main() -> std::io::Result<()> {
 
     let scene: Scene = create_scene();
 
-    let file_path: PathBuf = PathBuf::from("./test.data");
+    let file_path: PathBuf = PathBuf::from("./output/test.data");
     fs::remove_file(file_path.as_path()).ok();
 
-    let map: PhotonMap = create_photon_map(&config, &file_path, &scene);
+    let map: PhotonMap = if matches.is_present(skip_building_photon_map_arg_name) {
+        warn!("Not building a new photon map. YOLO.");
+        let map = PhotonMap::open_existing_map(&file_path);
+        assert_eq!(map.photon_count(), config.photon_count as usize);
+        map
+    } else {
+        create_photon_map(&config, &file_path, &scene)
+    };
 
     do_raytrace(&config, &map, &scene);
 
