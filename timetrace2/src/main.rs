@@ -31,13 +31,18 @@ fn create_surfaces() -> Vec<Box<dyn surfaces::Surface>> {
         Normal::fromVec(Vector4::create(0.0, 1.0, 0.0, 0.0)),
     );
 
-    return vec![floor];
+    let sphere = surfaces::StaticSphere::new(
+        Vector4::create(0.0, 0.0, 2.5, 0.0),
+        1.0
+    );
+
+    return vec![floor, sphere];
 }
 
 fn create_lights() -> Vec<Box<dyn lights::Light>> {
     return vec![lights::IntervalLight::new(
-        Vector4::create(1.0, 2.0, 0.0, 0.0),
-        Vector4::create(1.0, 2.0, 0.0, 0.1),
+        Vector4::create(2.0, 2.0, 1.0, 0.0),
+        Vector4::create(2.0, 2.0, 1.0, 0.1),
     )];
 }
 
@@ -95,7 +100,7 @@ fn main() -> std::io::Result<()> {
         height: 240 / quick_factor,
         min_t: 0.0,
         max_t: 10.0,
-        brightness: 1e4f64,
+        brightness: 2e3f64,
         output_directory: PathBuf::from("./output"),
     };
     if !config.output_directory.exists() {

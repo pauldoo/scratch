@@ -67,6 +67,42 @@ fn create_test_map(rng: &mut impl Rng) -> TestMap {
     };
 }
 
+fn create_test_map_common_plane(rng: &mut impl Rng) -> TestMap {
+    let photon_count = 100000;
+
+    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_file = temp_dir.path().join("photonmap");
+    info!("Using temp file: {}", temp_file.to_str().unwrap());
+
+    let mut builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, temp_file.as_path());
+    let mut all_photons: Vec<Photon> = Vec::new();
+
+
+    let photon_off_plane = Photon {
+        position: Vector4::create(0.0, 1000.0, 0.0, 0.0),
+        id: 0
+    };
+    builder.add_photon(photon_off_plane);
+    all_photons.push(photon_off_plane);
+
+    for _i in 1..photon_count {
+        let random_photon = Photon {
+            position: random_vec_in_bounds(rng, config().bounds).with_y(0.0),
+            id: _i as u32,
+        };
+        builder.add_photon(random_photon);
+        all_photons.push(random_photon);
+    }
+
+    let photon_map = builder.finish();
+
+    return TestMap {
+        _temp_dir: temp_dir,
+        all_photons,
+        photon_map,
+    };
+}
+
 fn brute_force_search(
     photons: &Vec<Photon>,
     search_point: Vector4,
@@ -91,6 +127,33 @@ pub fn photon_map_finds_correct_points() {
     let mut rng = rand::rngs::StdRng::seed_from_u64(42);
 
     let test_map = create_test_map(&mut rng);
+
+    assert_eq!(
+        test_map.photon_map.photon_count(),
+        test_map.all_photons.len()
+    );
+
+    for _i in 0..100 {
+        let random_search_point = random_vec_in_bounds(&mut rng, config().sample_bounds);
+
+        let expected: Vec<Photon> =
+            brute_force_search(&test_map.all_photons, random_search_point, 100);
+        let actual: Vec<Photon> = test_map.photon_map.do_search(random_search_point, 100);
+
+        assert_eq!(actual, expected);
+    }
+}
+
+#[test]
+pub fn photon_map_works_with_points_on_common_plane() {
+    // From a stack overflow..
+    // Create lots of points sharing the same Y value, and verify that
+    // partitioning about the Y dimension doesn't cause stack overflow.
+    // To cause a partition about the Y dimension we need at least one point
+    // far off the plane of the others.
+    let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+
+    let test_map = create_test_map_common_plane(&mut rng);
 
     assert_eq!(
         test_map.photon_map.photon_count(),

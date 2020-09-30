@@ -13,6 +13,8 @@ use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::slice;
 
+const enable_expensive_asserts:bool = false;
+
 pub struct PhotonMapBuilder {
     capacity: usize,
     file_path: PathBuf,
@@ -247,13 +249,35 @@ impl PhotonMapBuilder {
             }
         }
 
-        let random_axis_value_eventual_index = upper;
+        // "lower" is the lowest index which has a photon above the pivot value. (or one-off the end if that does not exist.)
+        // "upper" is the highest index which has a photon below the pivot value. (or one-off the end if that does not exist.)
+        // When all pivot values are unique, normally "lower = upper + 1".
 
-        if random_axis_value_eventual_index > 0 {
-            nodes.swap(0, upper as usize);
+        // All photons in the [inclusive, exclusive) range should be <= the pivot axis (and safe to swap
+        // to index zero).
+        assert!(upper < lower);
+        if enable_expensive_asserts {
+            for _i in upper..lower {
+                if _i >= min_index {
+                    assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
+                }
+            }
+            for _i in (upper + 1)..=lower {
+                if _i <= max_index {
+                    assert!(nodes[_i as usize].photon.position.get(axis) >= random_axis_value)
+                }
+            }
         }
 
-        if false {
+        let random_axis_value_eventual_index = (upper + lower) / 2;
+        assert!(random_axis_value_eventual_index >= upper);
+        assert!(random_axis_value_eventual_index < lower);
+
+        if random_axis_value_eventual_index > 0 {
+            nodes.swap(0, random_axis_value_eventual_index as usize);
+        }
+
+        if enable_expensive_asserts {
             for _i in 0..=random_axis_value_eventual_index {
                 assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
             }

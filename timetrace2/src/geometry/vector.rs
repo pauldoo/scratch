@@ -140,8 +140,12 @@ impl Vector4 {
         return Vector4::element_wise_op(a, b, f64::max);
     }
 
+    pub fn l2norm_squared(&self) -> f64 {
+        return self.v.iter().map(|v| v * v).sum::<f64>();
+    }
+
     pub fn l2norm(&self) -> f64 {
-        return self.v.iter().map(|v| v * v).sum::<f64>().sqrt();
+        return self.l2norm_squared().sqrt();
     }
 
     pub fn is_normalized(&self) -> bool {

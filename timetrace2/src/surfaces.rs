@@ -2,11 +2,14 @@ use crate::geometry::vector::Vector4;
 use crate::geometry::ray::Ray;
 use crate::geometry::impact::Impact;
 use crate::geometry::normal::Normal;
+use std::cmp::{min, max};
+use ordered_float::OrderedFloat;
+use log::{debug};
 
 #[cfg(test)]
 mod tests;
 
-pub trait Surface {
+pub trait Surface : Sync {
     fn intersect(&self, ray: Ray) -> Option<Impact>;
 }
 
@@ -59,8 +62,40 @@ impl StaticSphere {
     }
 }
 
+fn lowest_positive_quadratic_solution(a: f64, b: f64, c: f64) -> Option<f64> {
+    let det = (b*b) - (4.0*a*c);
+    if det >= 0.0 {
+        let detSqrt = det.sqrt();
+        let x1 = OrderedFloat((-detSqrt - b) / (2.0*a));
+        let x2 = OrderedFloat((detSqrt - b) / (2.0 * a));
+        if min(x1, x2).0 > 0.0 {
+            return Some(min(x1, x2).0);
+        }
+        if max(x1, x2).0 > 0.0 {
+            return Some(max(x1, x2).0);
+        }
+    }
+    return None;
+}
+
 impl Surface for StaticSphere {
     fn intersect(&self, ray: Ray) -> Option<Impact> {
-        unimplemented!();
+        let offset = ray.start.with_t(0.0) - self.center;
+        let a = Vector4::from(ray.direction).with_t(0.0).l2norm_squared();
+        let b= 2.0 * Vector4::dot(Vector4::from(ray.direction).with_t(0.0), offset);
+        let c = offset.l2norm_squared() - (self.radius * self.radius);
+
+        let sol = lowest_positive_quadratic_solution(a, b, c);
+
+        return sol.map(|t| {
+            let hit_location = ray.start + (Vector4::from(ray.direction) * t);
+            debug!("{:?}", hit_location);
+            debug!("{}", (hit_location.with_t(0.0) - self.center).l2norm());
+            return Impact {
+                location: hit_location,
+                surface_normal: Normal::fromVec((hit_location.with_t(0.0) - self.center) / self.radius)
+            };
+        });
     }
+
 }

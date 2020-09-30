@@ -51,10 +51,9 @@ impl PartialOrd for RangeToSearch {
         // Binary heap is a max-heap, and we want smaller distance ranges
         // to be top, so this is a reverse ordering.
         // rangeA is "greater than" rangeB if it is closer to the target.
-        return self
+        return other
             .min_distance_to_search_point
-            .partial_cmp(&other.min_distance_to_search_point)
-            .map(|o| o.reverse());
+            .partial_cmp(&self.min_distance_to_search_point)
     }
 }
 

@@ -4,7 +4,7 @@ use crate::geometry::vector::Vector4;
 use rand::prelude::ThreadRng;
 use rand::Rng;
 
-pub trait Light {
+pub trait Light  : Sync {
     fn emit(&self, rng: &mut ThreadRng) -> Ray;
 }
 

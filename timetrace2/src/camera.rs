@@ -4,7 +4,7 @@ use crate::geometry::direction::Direction;
 use crate::geometry::normal::Normal;
 use crate::geometry::ERROR_EPSILON;
 
-pub trait Camera {
+pub trait Camera : Sync {
     fn emit(&self, xfrac: f64, yfrac: f64, t: f64) -> Ray;
 }
 

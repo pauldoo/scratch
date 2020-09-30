@@ -14,6 +14,8 @@ use crate::geometry::vector::Vector4;
 use crate::photon::Photon;
 use ordered_float::OrderedFloat;
 use std::cmp::min;
+use rand::seq::SliceRandom;
+use rayon::prelude::*;
 
 #[cfg(test)]
 mod tests;
@@ -55,7 +57,7 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
 }
 
 fn query_photon_map_intensity(map: &PhotonMap, hit: &Impact) -> f64 {
-    let closest_photons = map.do_search(hit.location, 50);
+    let closest_photons = map.do_search(hit.location, 20);
 
     let furthest_closest_photon = closest_photons.last().unwrap();
 
@@ -79,7 +81,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
 
     let background_colour: Rgb<u8> = image::Rgb([255u8, 128u8, 128u8]);
 
-    let render_frame = |frame| {
+    let render_frame = |frame : u32| {
         let t = config.min_t + (frame as f64 / (config.frame_count - 1) as f64) * (config.max_t - config.min_t);
         info!("Frame: {} (t={})", frame, t);
         let half_size: f64 = (min(config.width, config.height) as f64) / 2.0;
@@ -112,8 +114,11 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
         info!("Frame saved");
     };
 
-    (0..(config.frame_count))
-        .for_each(render_frame);
+    let mut frame_numbers :Vec<u32> = (0..(config.frame_count)).collect();
+    frame_numbers.shuffle(&mut thread_rng());
+    frame_numbers
+        .par_iter() // Replace with ".iter()" to disable threading.
+        .for_each(|f| render_frame(*f));
 
     info!("All frames done!")
 }
