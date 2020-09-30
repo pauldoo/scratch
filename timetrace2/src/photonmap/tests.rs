@@ -4,10 +4,12 @@ use crate::geometry::vector::Vector4;
 use crate::photonmap::builder::PhotonMapBuilder;
 use rand::prelude::*;
 use tempfile::TempDir;
+use std::collections::BTreeSet;
 
 struct Config {
     bounds: Bounds4,
     sample_bounds: Bounds4,
+    max_search_range: f64
 }
 
 fn config() -> Config {
@@ -21,6 +23,8 @@ fn config() -> Config {
             Vector4::create(-20.0, -20.0, -20.0, -20.0),
             Vector4::create(20.0, 20.0, 20.0, 20.0),
         ),
+
+        max_search_range: 30.0
     };
 }
 
@@ -107,19 +111,24 @@ fn brute_force_search(
     photons: &Vec<Photon>,
     search_point: Vector4,
     result_size_limit: usize,
+    max_distance: f64
 ) -> Vec<Photon> {
     let mut sorted_photons: Vec<Photon> = photons.clone();
 
-    let cmp = |a: &Photon, b: &Photon| -> Ordering {
-        let da = (a.position - search_point).l2norm();
-        let db = (b.position - search_point).l2norm();
+    let d = |p : &Photon| -> f64 {
+        (p.position - search_point).l2norm()
+    };
 
-        return da.partial_cmp(&db).unwrap();
+    let cmp = |a: &Photon, b: &Photon| -> Ordering {
+        return d(a).partial_cmp(&d(b)).unwrap();
     };
 
     sorted_photons.sort_by(cmp);
-    sorted_photons.truncate(result_size_limit);
-    return sorted_photons;
+    return sorted_photons.iter()
+        .take(result_size_limit)
+        .filter(|p| d(p) < max_distance)
+        .map(|p| *p)
+        .collect();
 }
 
 #[test]
@@ -128,20 +137,7 @@ pub fn photon_map_finds_correct_points() {
 
     let test_map = create_test_map(&mut rng);
 
-    assert_eq!(
-        test_map.photon_map.photon_count(),
-        test_map.all_photons.len()
-    );
-
-    for _i in 0..100 {
-        let random_search_point = random_vec_in_bounds(&mut rng, config().sample_bounds);
-
-        let expected: Vec<Photon> =
-            brute_force_search(&test_map.all_photons, random_search_point, 100);
-        let actual: Vec<Photon> = test_map.photon_map.do_search(random_search_point, 100);
-
-        assert_eq!(actual, expected);
-    }
+    do_random_searches(&test_map, &mut rng);
 }
 
 #[test]
@@ -155,18 +151,28 @@ pub fn photon_map_works_with_points_on_common_plane() {
 
     let test_map = create_test_map_common_plane(&mut rng);
 
+    do_random_searches(&test_map, &mut rng);
+}
+
+fn do_random_searches(test_map: &TestMap, rng: &mut impl Rng) -> () {
     assert_eq!(
         test_map.photon_map.photon_count(),
         test_map.all_photons.len()
     );
 
     for _i in 0..100 {
-        let random_search_point = random_vec_in_bounds(&mut rng, config().sample_bounds);
+        let random_search_point = random_vec_in_bounds(rng, config().sample_bounds);
+        let random_search_limit: f64 = rng.gen_range(0.0, config().max_search_range);
 
         let expected: Vec<Photon> =
-            brute_force_search(&test_map.all_photons, random_search_point, 100);
-        let actual: Vec<Photon> = test_map.photon_map.do_search(random_search_point, 100);
+            brute_force_search(&test_map.all_photons, random_search_point, 100, random_search_limit);
+        let actual: Vec<Photon> = test_map.photon_map.do_search(random_search_point, 100, random_search_limit);
 
         assert_eq!(actual, expected);
+
+        let expected_ids = expected.iter().map(|p| p.id).collect::<BTreeSet<_>>();
+        let actual_ids = actual.iter().map(|p| p.id).collect::<BTreeSet<_>>();
+
+        assert_eq!(actual_ids, expected_ids);
     }
 }

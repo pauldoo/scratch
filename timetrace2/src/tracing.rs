@@ -57,7 +57,7 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
 }
 
 fn query_photon_map_intensity(map: &PhotonMap, hit: &Impact) -> f64 {
-    let closest_photons = map.do_search(hit.location, 20);
+    let closest_photons = map.do_search(hit.location, 20, unimplemented!());
 
     let furthest_closest_photon = closest_photons.last().unwrap();
 

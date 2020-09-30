@@ -146,12 +146,16 @@ impl PhotonMap {
         self.header.capacity
     }
 
-    pub fn do_search(&self, search_point: Vector4, result_size_limit: usize) -> Vec<Photon> {
+    pub fn do_search(&self, search_point: Vector4, result_size_limit: usize, distance_limit: f64) -> Vec<Photon> {
         let nodes: &[Node] = &*self._data;
 
         let enqueue_single = |idx: usize, queue: &mut BinaryHeap<RangeToSearch>| -> () {
             let node_position = nodes[idx].photon.position;
             let distance = (node_position - search_point).l2norm();
+
+            if distance > distance_limit {
+                return;
+            }
 
             let range = RangeToSearch {
                 min_distance_to_search_point: distance,
@@ -178,11 +182,13 @@ impl PhotonMap {
                 return;
             }
 
-            let closest_point = bounds.closest_point_to(search_point);
-            let distance = (closest_point - search_point).l2norm();
+            let min_distance = (bounds.closest_point_to(search_point) - search_point).l2norm();
+            if min_distance > distance_limit {
+                return;
+            }
 
             let range = RangeToSearch {
-                min_distance_to_search_point: distance,
+                min_distance_to_search_point: min_distance,
                 bounds,
                 begin,
                 end,

@@ -64,4 +64,15 @@ impl Bounds4 {
             p.t().max(self.min.t()).min(self.max.t()),
         );
     }
+
+    pub fn farthest_point_from(&self, p: Vector4) -> Vector4 {
+        let center = (self.min + self.max) / 2.0;
+
+        return Vector4::create(
+            if p.x() < center.x() { self.max.x() } else { self.min.x() },
+            if p.y() <= center.y() { self.max.y() } else { self.min.y() },
+            if p.z() <= center.z() { self.max.z() } else { self.min.z() },
+            if p.t() <= center.t() { self.max.t() } else { self.min.t() }
+        );
+    }
 }
