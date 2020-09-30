@@ -29,3 +29,16 @@ cargo build --release && \
   perf record -g --call-graph dwarf --freq 100 \
   ./target/release/timetrace2 --quick
 ```
+
+### ffmpeg
+
+```
+ffmpeg \
+  -framerate 10 \
+  -i ./output/frame_%06d.png \
+  -pix_fmt yuv420p \
+  -c:a none \
+  -c:v libx264 -profile:v baseline -preset slow -crf 20 \
+  -f mp4 \
+  render.mp4
+```
