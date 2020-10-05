@@ -96,8 +96,8 @@ fn main() -> std::io::Result<()> {
     let config: Config = Config {
         photon_count: 10 * 1000 * 1000,
         frame_count: 100 / quick_factor,
-        width: 320 / quick_factor,
-        height: 240 / quick_factor,
+        width: 1280 / quick_factor,
+        height: 720 / quick_factor,
         min_t: 0.0,
         max_t: 10.0,
         brightness: 2e3f64,
