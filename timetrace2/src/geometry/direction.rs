@@ -10,7 +10,7 @@ pub struct Direction {
 }
 
 impl Direction {
-    pub fn fromVec(v: Vector4) -> Direction {
+    pub fn from_vec(v: Vector4) -> Direction {
         assert!(v.t() == -1.0 || v.t() == 1.0);
         assert!(
             v.with_t(0.0).is_normalized(),
@@ -34,7 +34,7 @@ impl Direction {
             let len = v.l2norm();
 
             if len >= 0.1 && len <= 1.0 {
-                return Direction::fromVec(*(v / len).set_t(t));
+                return Direction::from_vec(*(v / len).set_t(t));
             }
         }
     }

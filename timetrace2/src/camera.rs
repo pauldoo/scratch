@@ -2,7 +2,7 @@ use crate::geometry::vector::Vector4;
 use crate::geometry::ray::Ray;
 use crate::geometry::direction::Direction;
 use crate::geometry::normal::Normal;
-use crate::geometry::ERROR_EPSILON;
+use crate::constants::SMALL_DISTANCE;
 
 pub trait Camera : Sync {
     fn emit(&self, xfrac: f64, yfrac: f64, t: f64) -> Ray;
@@ -20,7 +20,7 @@ impl StaticCamera {
         look_direction: Normal,
         up_direction: Normal
     ) -> Box<dyn Camera> {
-        assert!(Vector4::dot(look_direction.into(), up_direction.into()) <= ERROR_EPSILON);
+        assert!(Vector4::dot(look_direction.into(), up_direction.into()) <= SMALL_DISTANCE);
         return Box::new(StaticCamera {
             position,
             look_direction,
@@ -29,7 +29,7 @@ impl StaticCamera {
     }
 
     fn right_direction(&self) -> Normal {
-        return Normal::fromVec(
+        return Normal::from_vec(
             Vector4::cross_3(
                     Vector4::from(self.look_direction),
                     Vector4::from(self.up_direction)));
@@ -45,7 +45,7 @@ impl Camera for StaticCamera {
 
         return Ray {
             start: self.position.with_t(t),
-            direction: Direction::fromVec(
+            direction: Direction::from_vec(
                 *(direction * ( 1.0 / direction.l2norm())).set_t(-1.0) )
         };
     }

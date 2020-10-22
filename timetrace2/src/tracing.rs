@@ -6,7 +6,7 @@ use crate::photonmap::PhotonMap;
 use crate::scene::Scene;
 use crate::surfaces::Surface;
 use crate::Config;
-use image::{ImageBuffer, Rgb};
+use image::{ImageBuffer, Rgb, RgbImage};
 use log::info;
 use rand::thread_rng;
 use std::path::PathBuf;
@@ -21,18 +21,18 @@ use rayon::prelude::*;
 mod tests;
 
 fn trace_single_ray(ray: Ray, surfaces: &Vec<Box<dyn Surface>>) -> Option<Impact> {
-    let raySign = Vector4::from(ray.direction).t().signum();
+    let ray_sign = Vector4::from(ray.direction).t().signum();
 
     surfaces.iter()
         .flat_map(|s| s.intersect(ray))
-        .min_by_key(|i| OrderedFloat(i.location.t() * raySign))
+        .min_by_key(|i| OrderedFloat(i.location.t() * ray_sign))
 }
 
 pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> PhotonMap {
     assert_eq!(scene.lights.len(), 1);
 
     let mut map_builder: PhotonMapBuilder =
-        PhotonMapBuilder::create(config.photon_count as usize, file_path.as_path());
+        PhotonMapBuilder::create(config.photon_map_size as usize, file_path.as_path());
 
     let mut rng = thread_rng();
 
@@ -43,6 +43,7 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
         assert_eq!(Vector4::from(ray.direction).t(), 1.0);
 
         let impact = trace_single_ray(ray, &scene.surfaces);
+        map_builder.increment_emitted_photon_count(1);
 
         if impact.is_some() {
             map_builder.add_photon(Photon {
@@ -56,29 +57,29 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
     return map_builder.finish();
 }
 
-fn query_photon_map_intensity(map: &PhotonMap, hit: &Impact, brightness :f64) -> u8 {
-    let photon_energy = 1.0 / (map.photon_count() as f64);
-    let max_distance = intensity_to_max_distance(expose_inv(1u8, brightness), photon_energy);
-    let result_size_limit = 20;
+fn query_photon_map_intensity(map: &PhotonMap, hit: &Impact, brightness :f64, sample_size: u32) -> u8 {
+    let sampled_energy = (sample_size as f64) / (map.emitted_photon_count() as f64);
+    let max_distance = intensity_to_max_distance(expose_inv(1u8, brightness), sampled_energy);
 
-    let closest_photons = map.do_search(hit.location, result_size_limit, max_distance);
-    if closest_photons.len() == result_size_limit {
+    let closest_photons = map.do_search(hit.location, sample_size as usize, max_distance);
+
+    if closest_photons.len() == (sample_size as usize) {
         let furthest_closest_photon = closest_photons.last().unwrap();
         let distance = (hit.location - furthest_closest_photon.position).l2norm();
 
-        return expose(max_distance_to_intensity(distance, photon_energy), brightness);
+        return expose(max_distance_to_intensity(distance, sampled_energy), brightness);
     } else {
         return 0u8;
     }
 }
 
-fn max_distance_to_intensity(distance: f64, photon_energy: f64) -> f64 {
+fn max_distance_to_intensity(distance: f64, energy: f64) -> f64 {
     // TODO: do this calculation properly.
-    return photon_energy / (distance.powf(3.0));
+    return energy / (distance.powf(3.0));
 }
 
-fn intensity_to_max_distance(intensity: f64, photon_energy: f64) -> f64 {
-    return (photon_energy / intensity).powf(1.0 / 3.0);
+fn intensity_to_max_distance(intensity: f64, energy: f64) -> f64 {
+    return (energy / intensity).powf(1.0 / 3.0);
 }
 
 fn expose(d: f64, b: f64) -> u8 {
@@ -103,7 +104,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
         info!("Frame: {} (t={})", frame, t);
         let half_size: f64 = (min(config.width, config.height) as f64) / 2.0;
 
-        let mut img = ImageBuffer::new(config.width, config.height);
+        let mut img: RgbImage = ImageBuffer::new(config.width, config.height);
         for (x, y, pixel) in img.enumerate_pixels_mut() {
 
             let xfrac: f64 = ((x as f64 + 0.5) - (config.width as f64 / 2.0)) / half_size;
@@ -116,7 +117,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
             let impact  = trace_single_ray(ray, &scene.surfaces);
 
             if impact.is_some() {
-                let b: u8 = query_photon_map_intensity(map, &impact.unwrap(), config.brightness);
+                let b: u8 = query_photon_map_intensity(map, &impact.unwrap(), config.brightness, config.sample_size);
                 *pixel = image::Rgb([b, b, b])
             } else {
                 *pixel = background_colour;

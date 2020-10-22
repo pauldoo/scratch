@@ -38,7 +38,6 @@ ffmpeg \
   -i ./output/frame_%06d.png \
   -pix_fmt yuv420p \
   -c:a none \
-  -c:v libx264 -profile:v baseline -preset slow -crf 20 \
-  -f mp4 \
-  render.mp4
+  -f webm \
+  render.webm
 ```

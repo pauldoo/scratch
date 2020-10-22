@@ -5,6 +5,7 @@ use crate::photonmap::builder::PhotonMapBuilder;
 use rand::prelude::*;
 use tempfile::TempDir;
 use std::collections::BTreeSet;
+use crate::geometry::direction::Direction;
 
 struct Config {
     bounds: Bounds4,
@@ -61,6 +62,7 @@ fn create_test_map(rng: &mut impl Rng) -> TestMap {
         builder.add_photon(random_photon);
         all_photons.push(random_photon);
     }
+    builder.increment_emitted_photon_count(1000);
 
     let photon_map = builder.finish();
 
@@ -69,6 +71,39 @@ fn create_test_map(rng: &mut impl Rng) -> TestMap {
         all_photons,
         photon_map,
     };
+}
+
+fn create_test_map_sphere(rng: &mut impl Rng) -> TestMap {
+    let photon_count = 100000;
+
+    let temp_dir = tempfile::tempdir().unwrap();
+    let temp_file = temp_dir.path().join("photonmap");
+    info!("Using temp file: {}", temp_file.to_str().unwrap());
+
+    let mut builder: PhotonMapBuilder = PhotonMapBuilder::create(photon_count, temp_file.as_path());
+    let mut all_photons: Vec<Photon> = Vec::new();
+
+    for _i in 0..photon_count {
+        let mut position = Vector4::from(Direction::random(rng, 1.0));
+        position = position * 10.0;
+        position.set_t(rng.gen_range(-10.0, 10.0));
+
+        let random_photon = Photon {
+            position,
+            id: _i as u32,
+        };
+        builder.add_photon(random_photon);
+        all_photons.push(random_photon);
+    }
+
+    let photon_map = builder.finish();
+
+    return TestMap {
+    _temp_dir: temp_dir,
+    all_photons,
+    photon_map,
+    };
+
 }
 
 fn create_test_map_common_plane(rng: &mut impl Rng) -> TestMap {
@@ -137,6 +172,8 @@ pub fn photon_map_finds_correct_points() {
 
     let test_map = create_test_map(&mut rng);
 
+    assert_eq!(test_map.photon_map.emitted_photon_count(), 1000);
+
     do_random_searches(&test_map, &mut rng);
 }
 
@@ -154,9 +191,19 @@ pub fn photon_map_works_with_points_on_common_plane() {
     do_random_searches(&test_map, &mut rng);
 }
 
+#[test]
+pub fn photon_map_works_with_points_on_a_sphere() {
+    // Create lots of points on the surface of a sphere.
+    let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+
+    let test_map = create_test_map_sphere(&mut rng);
+
+    do_random_searches(&test_map, &mut rng);
+}
+
 fn do_random_searches(test_map: &TestMap, rng: &mut impl Rng) -> () {
     assert_eq!(
-        test_map.photon_map.photon_count(),
+        test_map.photon_map.collected_photon_count(),
         test_map.all_photons.len()
     );
 

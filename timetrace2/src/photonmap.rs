@@ -21,7 +21,8 @@ mod tests;
 
 #[derive(Copy, Clone)]
 struct PhotonMapHeader {
-    capacity: usize,
+    emitted_photon_count: usize,
+    collected_photon_count: usize,
     bounds: Bounds4,
 }
 
@@ -35,6 +36,7 @@ pub struct PhotonMap {
     _data: OwningRef<Box<Mmap>, [Node]>,
     header: PhotonMapHeader,
 }
+
 
 const HEADER_SIZE_IN_BYTES: usize = size_of::<PhotonMapHeader>();
 const NODE_SIZE_IN_BYTES: usize = size_of::<Node>();
@@ -93,7 +95,7 @@ impl PhotonMap {
         let data: OwningRef<Box<Mmap>, [Node]> = data.map(|mm| unsafe {
             slice::from_raw_parts(
                 mm.as_ptr().offset(HEADER_SIZE_IN_BYTES as isize) as *const Node,
-                header.capacity as usize,
+                header.collected_photon_count as usize,
             )
         });
 
@@ -103,6 +105,11 @@ impl PhotonMap {
             header,
         };
 
+        info!(
+            "Opened photon map containing {} collected photons ({} emitted)",
+            result.header.collected_photon_count,
+            result.header.emitted_photon_count);
+        info!("Photon map bounds: {:?}", result.header.bounds);
         result.validate();
         info!("Validation complete");
 
@@ -110,7 +117,7 @@ impl PhotonMap {
     }
 
     fn validate(&self) -> () {
-        self.check_bounds(self.header.bounds, 0, self.header.capacity as usize);
+        self.check_bounds(self.header.bounds, 0, self.header.collected_photon_count as usize);
     }
 
     fn split_direction(bounds: Bounds4) -> Dimension {
@@ -142,8 +149,12 @@ impl PhotonMap {
         }
     }
 
-    pub fn photon_count(&self) -> usize {
-        self.header.capacity
+    pub fn emitted_photon_count(&self) -> usize {
+        return self.header.emitted_photon_count;
+    }
+
+    pub fn collected_photon_count(&self) -> usize {
+        return self.header.collected_photon_count;
     }
 
     pub fn do_search(&self, search_point: Vector4, result_size_limit: usize, distance_limit: f64) -> Vec<Photon> {
@@ -198,7 +209,7 @@ impl PhotonMap {
         };
 
         let mut queue: BinaryHeap<RangeToSearch> = BinaryHeap::new();
-        enqueue_fn(0, self.header.capacity, self.header.bounds, &mut queue);
+        enqueue_fn(0, self.header.collected_photon_count, self.header.bounds, &mut queue);
 
         let mut result: Vec<Photon> = Vec::with_capacity(result_size_limit);
 

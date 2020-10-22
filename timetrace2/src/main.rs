@@ -16,6 +16,10 @@ mod photonmap;
 mod scene;
 mod surfaces;
 mod tracing;
+mod constants;
+
+#[macro_use]
+extern crate approx;
 
 fn create_scene() -> scene::Scene {
     return Scene {
@@ -28,7 +32,7 @@ fn create_scene() -> scene::Scene {
 fn create_surfaces() -> Vec<Box<dyn surfaces::Surface>> {
     let floor = surfaces::StaticPlane::new(
         Vector4::create(0.0, -1.0, 0.0, 0.0),
-        Normal::fromVec(Vector4::create(0.0, 1.0, 0.0, 0.0)),
+        Normal::from_vec(Vector4::create(0.0, 1.0, 0.0, 0.0)),
     );
 
     let sphere = surfaces::StaticSphere::new(
@@ -42,26 +46,27 @@ fn create_surfaces() -> Vec<Box<dyn surfaces::Surface>> {
 fn create_lights() -> Vec<Box<dyn lights::Light>> {
     return vec![lights::IntervalLight::new(
         Vector4::create(2.0, 2.0, 1.0, 0.0),
-        Vector4::create(2.0, 2.0, 1.0, 0.1),
+        Vector4::create(2.0, 2.0, 1.0, 0.2),
     )];
 }
 
 fn create_camera() -> Box<dyn camera::Camera> {
     return camera::StaticCamera::new(
         Vector4::create(0.0, 0.0, 0.0, 0.0),
-        Normal::fromVec(Vector4::create(0.0, 0.0, 1.0, 0.0)),
-        Normal::fromVec(Vector4::create(0.0, 1.0, 0.0, 0.0))
+        Normal::from_vec(Vector4::create(0.0, 0.0, 1.0, 0.0)),
+        Normal::from_vec(Vector4::create(0.0, 1.0, 0.0, 0.0))
     );
 }
 
 pub struct Config {
-    photon_count: u64,
+    photon_map_size: u64,
     frame_count: u32,
     width: u32,
     height: u32,
     min_t: f64,
     max_t: f64,
     brightness: f64,
+    sample_size: u32,
     output_directory: PathBuf,
 }
 
@@ -88,40 +93,40 @@ fn main() -> std::io::Result<()> {
 
     let quick_factor = if matches.is_present(quick_arg_name) {
         warn!("Quick mode is go!");
-        4
+        2
     } else {
         1
     };
 
     let config: Config = Config {
-        photon_count: 10 * 1000 * 1000,
-        frame_count: 100 / quick_factor,
-        width: 1280 / quick_factor,
-        height: 720 / quick_factor,
+        photon_map_size: 20 * 1000 * 1000,
+        frame_count: 200 / quick_factor,
+        width: 1920 / quick_factor,
+        height: 1080 / quick_factor,
         min_t: 0.0,
         max_t: 10.0,
-        brightness: 2e3f64,
+        brightness: 10.0,
+        sample_size: 50,
         output_directory: PathBuf::from("./output"),
     };
     if !config.output_directory.exists() {
-        fs::create_dir(&config.output_directory);
+        fs::create_dir(&config.output_directory).ok();
     }
-    assert!(
-        config.output_directory.is_dir(),
+    assert!(config.output_directory.is_dir(),
         "Output directory should exist"
     );
 
     let scene: Scene = create_scene();
 
     let file_path: PathBuf = PathBuf::from("./output/test.data");
-    fs::remove_file(file_path.as_path()).ok();
 
     let map: PhotonMap = if matches.is_present(skip_building_photon_map_arg_name) {
         warn!("Not building a new photon map. YOLO.");
         let map = PhotonMap::open_existing_map(&file_path);
-        assert_eq!(map.photon_count(), config.photon_count as usize);
+        assert_eq!(map.collected_photon_count(), config.photon_map_size as usize);
         map
     } else {
+        fs::remove_file(file_path.as_path()).ok();
         create_photon_map(&config, &file_path, &scene)
     };
 

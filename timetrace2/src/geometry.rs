@@ -5,8 +5,6 @@ pub mod ray;
 pub mod vector;
 pub mod normal;
 
-pub const ERROR_EPSILON: f64 = 1e-10;
-
 #[derive(Copy, Clone, Debug)]
 pub enum Dimension {
     X,

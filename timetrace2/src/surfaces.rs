@@ -35,7 +35,7 @@ impl Surface for StaticPlane {
 
         let time_to_approach = distance_to_surface / rate_of_approach;
 
-        if time_to_approach.is_finite() && time_to_approach >= 1e-3 {
+        if time_to_approach.is_finite() && time_to_approach >= 0.0 {
             let normal: Normal = if distance_to_surface.is_sign_positive() { self.normal.flip() } else { self.normal };
             return Option::Some(Impact{
                 location: ray.start + (Vector4::from(ray.direction) * time_to_approach),
@@ -65,9 +65,9 @@ impl StaticSphere {
 fn lowest_positive_quadratic_solution(a: f64, b: f64, c: f64) -> Option<f64> {
     let det = (b*b) - (4.0*a*c);
     if det >= 0.0 {
-        let detSqrt = det.sqrt();
-        let x1 = OrderedFloat((-detSqrt - b) / (2.0*a));
-        let x2 = OrderedFloat((detSqrt - b) / (2.0 * a));
+        let det_sqrt = det.sqrt();
+        let x1 = OrderedFloat((-b - det_sqrt) / (2.0 * a));
+        let x2 = OrderedFloat((-b + det_sqrt) / (2.0 * a));
         if min(x1, x2).0 > 0.0 {
             return Some(min(x1, x2).0);
         }
@@ -93,7 +93,7 @@ impl Surface for StaticSphere {
             debug!("{}", (hit_location.with_t(0.0) - self.center).l2norm());
             return Impact {
                 location: hit_location,
-                surface_normal: Normal::fromVec((hit_location.with_t(0.0) - self.center) / self.radius)
+                surface_normal: Normal::from_vec((hit_location.with_t(0.0) - self.center) / self.radius)
             };
         });
     }

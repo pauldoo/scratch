@@ -13,7 +13,7 @@ use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::slice;
 
-const enable_expensive_asserts:bool = false;
+const ENABLE_EXPENSIVE_ASSERTS:bool = false;
 
 pub struct PhotonMapBuilder {
     capacity: usize,
@@ -21,6 +21,7 @@ pub struct PhotonMapBuilder {
     file_rw: File,
     nodes: OwningRefMut<Box<MmapMut>, [Node]>,
     usage: usize,
+    emitted_photon_count: usize
 }
 
 impl PhotonMapBuilder {
@@ -65,6 +66,7 @@ impl PhotonMapBuilder {
             file_rw: file,
             nodes: nodes,
             usage: 0,
+            emitted_photon_count: 0
         };
         assert_eq!(result.nodes.len(), result.capacity);
         return result;
@@ -90,11 +92,15 @@ impl PhotonMapBuilder {
         self.usage += 1;
     }
 
+    pub fn increment_emitted_photon_count(&mut self, count: usize) -> () {
+        self.emitted_photon_count += count;
+    }
+
     pub fn has_capacity(&self) -> bool {
         return self.usage < self.capacity;
     }
 
-    fn do_sort(nodes: &mut [Node]) -> PhotonMapHeader {
+    fn do_sort(nodes: &mut [Node]) -> Bounds4 {
         let mut bounds: Bounds4 = Bounds4::new(nodes[0].photon.position, nodes[0].photon.position);
         for np in &nodes[..] {
             bounds.set_min(Vector4::mins(bounds.min(), np.photon.position));
@@ -105,10 +111,7 @@ impl PhotonMapBuilder {
 
         PhotonMapBuilder::do_sort_internal(nodes, bounds);
 
-        return PhotonMapHeader {
-            capacity: nodes.len(),
-            bounds,
-        };
+        return bounds;
     }
 
     fn do_sort_internal(nodes: &mut [Node], bounds: Bounds4) -> () {
@@ -256,7 +259,7 @@ impl PhotonMapBuilder {
         // All photons in the [inclusive, exclusive) range should be <= the pivot axis (and safe to swap
         // to index zero).
         assert!(upper < lower);
-        if enable_expensive_asserts {
+        if ENABLE_EXPENSIVE_ASSERTS {
             for _i in upper..lower {
                 if _i >= min_index {
                     assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
@@ -277,7 +280,7 @@ impl PhotonMapBuilder {
             nodes.swap(0, random_axis_value_eventual_index as usize);
         }
 
-        if enable_expensive_asserts {
+        if ENABLE_EXPENSIVE_ASSERTS {
             for _i in 0..=random_axis_value_eventual_index {
                 assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
             }
@@ -311,8 +314,12 @@ impl PhotonMapBuilder {
     pub fn finish(mut self) -> PhotonMap {
         info!("Sorting and closing the photon map.");
         assert_eq!(self.usage, self.capacity);
-        let header = PhotonMapBuilder::do_sort(self.nodes_slice());
-        *(self.header()) = header;
+        let bounds = PhotonMapBuilder::do_sort(self.nodes_slice());
+        *(self.header()) = PhotonMapHeader {
+            emitted_photon_count: self.emitted_photon_count,
+            collected_photon_count: self.capacity,
+            bounds,
+        };
 
         {
             // Close the memory mapping.

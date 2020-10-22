@@ -1,5 +1,10 @@
-use crate::geometry::{Dimension, ERROR_EPSILON};
+use crate::geometry::Dimension;
 use std::ops::{Add, Div, Mul, Sub, Neg};
+use approx::AbsDiffEq;
+use crate::constants::SMALL_DISTANCE;
+
+#[cfg(test)]
+mod tests;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector4 {
@@ -149,7 +154,7 @@ impl Vector4 {
     }
 
     pub fn is_normalized(&self) -> bool {
-        return (self.l2norm() - 1.0).abs() <= ERROR_EPSILON;
+        return (self.l2norm() - 1.0).abs() <= SMALL_DISTANCE;
     }
 }
 
@@ -214,5 +219,18 @@ impl Div<f64> for Vector4 {
     }
 }
 
-#[cfg(test)]
-mod tests;
+impl AbsDiffEq for Vector4 where {
+    type Epsilon = f64;
+
+    fn default_epsilon() -> Self::Epsilon {
+        return SMALL_DISTANCE;
+    }
+
+    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
+        return
+            self.x().abs_diff_eq(&other.x(), epsilon) &&
+                self.y().abs_diff_eq(&other.y(), epsilon) &&
+                self.z().abs_diff_eq(&other.z(), epsilon) &&
+                self.t().abs_diff_eq(&other.t(), epsilon);
+    }
+}
