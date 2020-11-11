@@ -4,7 +4,6 @@ use crate::geometry::impact::Impact;
 use crate::geometry::normal::Normal;
 use std::cmp::{min, max};
 use ordered_float::OrderedFloat;
-use log::{debug};
 
 #[cfg(test)]
 mod tests;
@@ -89,8 +88,6 @@ impl Surface for StaticSphere {
 
         return sol.map(|t| {
             let hit_location = ray.start + (Vector4::from(ray.direction) * t);
-            debug!("{:?}", hit_location);
-            debug!("{}", (hit_location.with_t(0.0) - self.center).l2norm());
             return Impact {
                 location: hit_location,
                 surface_normal: Normal::from_vec((hit_location.with_t(0.0) - self.center) / self.radius)

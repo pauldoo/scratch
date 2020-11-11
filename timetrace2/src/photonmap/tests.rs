@@ -6,6 +6,7 @@ use rand::prelude::*;
 use tempfile::TempDir;
 use std::collections::BTreeSet;
 use crate::geometry::direction::Direction;
+use test_env_log::test;
 
 struct Config {
     bounds: Bounds4,
@@ -199,6 +200,29 @@ pub fn photon_map_works_with_points_on_a_sphere() {
     let test_map = create_test_map_sphere(&mut rng);
 
     do_random_searches(&test_map, &mut rng);
+}
+
+#[test]
+pub fn partition_by_axis_test() {
+    // Test for a very specific crash (stack overflow).
+    let mut rng = rand::rngs::StdRng::seed_from_u64(42);
+
+    let photon_count = 100000;
+    let mut nodes: Vec<Node> = Vec::new();
+
+    for _i in 0..photon_count {
+        let zero_or_one: f64 = rng.gen_range(0, 2) as f64;
+        assert!(zero_or_one == 0.0 || zero_or_one == 1.0);
+        let photon = Photon {
+            position: random_vec_in_bounds(&mut rng, config().bounds)
+                .with_y(zero_or_one),
+            id: _i as u32,
+        };
+        nodes.push(Node { photon });
+    }
+
+    PhotonMapBuilder::partition_by_axis(&mut nodes, Dimension::Y, 10000);
+    PhotonMapBuilder::partition_by_axis(&mut nodes, Dimension::Y, photon_count - 10000);
 }
 
 fn do_random_searches(test_map: &TestMap, rng: &mut impl Rng) -> () {

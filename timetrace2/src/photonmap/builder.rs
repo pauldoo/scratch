@@ -5,15 +5,14 @@ use crate::photon::Photon;
 use crate::photonmap::{
     Node, PhotonMap, PhotonMapHeader, HEADER_SIZE_IN_BYTES, NODE_SIZE_IN_BYTES,
 };
-use log::{debug, info};
+use log::info;
 use memmap::{MmapMut, MmapOptions};
 use owning_ref::OwningRefMut;
 use rand::{thread_rng, Rng};
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::slice;
-
-const ENABLE_EXPENSIVE_ASSERTS:bool = false;
+use crate::constants::ENABLE_EXPENSIVE_ASSERTS;
 
 pub struct PhotonMapBuilder {
     capacity: usize,
@@ -117,7 +116,6 @@ impl PhotonMapBuilder {
     fn do_sort_internal(nodes: &mut [Node], bounds: Bounds4) -> () {
         let info_log = nodes.len() > 10000000;
 
-        debug!("do_sort_internal {}", nodes.len());
         if info_log {
             info!("do_sort_internal {} start", nodes.len());
         }
@@ -174,125 +172,125 @@ impl PhotonMapBuilder {
         Partition the nodes by the given dimension, so that all those prior to the pivotIndex
         come before all those after the pivotIndex.
     */
+    pub(crate)
     fn partition_by_axis(nodes: &mut [Node], axis: Dimension, pivot_index: i64) -> () {
-        debug!(
-            "partition_by_axis {} {:?} {}",
-            nodes.len(),
-            axis,
-            pivot_index
-        );
-        if nodes.len() <= 1 {
-            return;
-        }
+        let info_log = nodes.len() > 1000;
 
-        if nodes.len() == 2 {
-            if nodes[0].photon.position.get(axis) > nodes[1].photon.position.get(axis) {
-                nodes.swap(0, 1);
-            }
-            return;
+        if info_log {
+            info!(
+                "partition_by_axis {} {:?} {}",
+                nodes.len(),
+                axis,
+                pivot_index
+            );
         }
 
         assert!(0 <= pivot_index);
         assert!(pivot_index < (nodes.len() as i64));
 
+        if nodes.len() <= 1 {
+            return;
+        }
+
+        let extract = |nodes : &[Node], i:usize| {
+            nodes[i].photon.position.get(axis)
+        };
+
+        if nodes.len() == 2 {
+            if extract(nodes, 0) > extract(nodes, 1) {
+                nodes.swap(0, 1);
+            }
+            return;
+        }
+
+
+        let random_axis_value = {
+            let random_axis_value_initial = thread_rng().gen_range(0, nodes.len());
+            extract(nodes, random_axis_value_initial)
+        };
+
+        // Now partition into all items < this value, those == to it, and those > than it.
+        if info_log {
+            info!("random_axis_value: {}", random_axis_value);
+        }
+
+        // 1st pass, put all nodes < on the bottom
+        let mut lower: usize = 0;
         {
-            let random_axis_value_initial_index = thread_rng().gen_range(0, nodes.len());
-            nodes.swap(0, random_axis_value_initial_index);
-        }
-        let random_axis_value = nodes[0].photon.position.get(axis);
-        // Now partition into all items < this value, and those >= to it.
-        debug!("{}", random_axis_value);
-
-        let min_index: i64 = 1;
-        let max_index: i64 = (nodes.len() as i64) - 1;
-        let mut lower: i64 = min_index;
-        let mut upper: i64 = max_index;
-
-        loop {
-            while lower <= max_index
-                && nodes[lower as usize].photon.position.get(axis) <= random_axis_value
-            {
-                lower = lower + 1;
-            }
-
-            while upper >= min_index
-                && nodes[upper as usize].photon.position.get(axis) >= random_axis_value
-            {
-                upper = upper - 1;
-            }
-
-            if lower > max_index {
-                break;
-            }
-
-            if upper < min_index {
-                break;
-            }
-
-            if lower < upper {
-                assert!(
-                    nodes[lower as usize].photon.position.get(axis)
-                        > nodes[upper as usize].photon.position.get(axis),
-                    "The photons about to be swapped should be in the wrong order"
-                );
-
-                nodes.swap(lower as usize, upper as usize);
-
-                assert!(
-                    nodes[lower as usize].photon.position.get(axis) < random_axis_value,
-                    "Lower node should now be below the random axis value"
-                );
-                assert!(
-                    nodes[upper as usize].photon.position.get(axis) > random_axis_value,
-                    "Upper node should now be above the random axis value"
-                );
-            } else {
-                // slice is now partitioned about the axis.
-                break;
-            }
-        }
-
-        // "lower" is the lowest index which has a photon above the pivot value. (or one-off the end if that does not exist.)
-        // "upper" is the highest index which has a photon below the pivot value. (or one-off the end if that does not exist.)
-        // When all pivot values are unique, normally "lower = upper + 1".
-
-        // All photons in the [inclusive, exclusive) range should be <= the pivot axis (and safe to swap
-        // to index zero).
-        assert!(upper < lower);
-        if ENABLE_EXPENSIVE_ASSERTS {
-            for _i in upper..lower {
-                if _i >= min_index {
-                    assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
+            let mut upper: usize = nodes.len() - 1;
+            loop {
+                while lower < upper && extract(nodes, lower) < random_axis_value {
+                    lower = lower + 1;
                 }
-            }
-            for _i in (upper + 1)..=lower {
-                if _i <= max_index {
-                    assert!(nodes[_i as usize].photon.position.get(axis) >= random_axis_value)
+
+                while lower < upper && extract(nodes, upper) >= random_axis_value {
+                    upper = upper - 1;
+                }
+
+                if upper > lower {
+                    assert!(extract(nodes, lower) >= random_axis_value);
+                    assert!(extract(nodes, upper) < random_axis_value);
+                    nodes.swap(lower, upper);
+                } else {
+                    break;
                 }
             }
         }
-
-        let random_axis_value_eventual_index = (upper + lower) / 2;
-        assert!(random_axis_value_eventual_index >= upper);
-        assert!(random_axis_value_eventual_index < lower);
-
-        if random_axis_value_eventual_index > 0 {
-            nodes.swap(0, random_axis_value_eventual_index as usize);
-        }
-
+        // Now the nodes in positions [0, lower) are < axis value.
         if ENABLE_EXPENSIVE_ASSERTS {
-            for _i in 0..=random_axis_value_eventual_index {
-                assert!(nodes[_i as usize].photon.position.get(axis) <= random_axis_value);
+            for i in 0..lower {
+                assert!(extract(nodes, i) < random_axis_value);
             }
-            // These two loops overlap by one index, namely random_axis_value_eventual_index
-            for _i in random_axis_value_eventual_index..(nodes.len() as i64) {
-                assert!(nodes[_i as usize].photon.position.get(axis) >= random_axis_value);
+            for i in lower..(nodes.len()) {
+                assert!(extract(nodes, i) >= random_axis_value);
             }
         }
 
-        //assert!(false);
+        // 2nd pass, put all nodes > on the top
+        let mut upper: usize = nodes.len() - 1;
+        {
+            let mut lower = lower;
+            loop {
+                while lower < upper && extract(nodes, upper) > random_axis_value {
+                    upper = upper - 1;
+                }
+                while lower < upper && extract(nodes, lower) <= random_axis_value {
+                    lower = lower + 1;
+                }
 
-        if pivot_index < random_axis_value_eventual_index {
+                if upper > lower {
+                    assert!(extract(nodes, lower) > random_axis_value);
+                    assert!(extract(nodes, upper) <= random_axis_value);
+                    nodes.swap(lower, upper);
+                } else {
+                    break;
+                }
+            }
+        }
+        upper = upper + 1;
+
+        // Now the nodes in positions [0, lower) are < axis value.
+        // AND nodes in the positions [lower, upper) are == axis value,
+        // AND nodes in the positions [upper, max) are > axis value.
+        if ENABLE_EXPENSIVE_ASSERTS {
+            for i in 0..lower {
+                assert!(extract(nodes, i) < random_axis_value);
+            }
+            for i in lower..upper {
+                assert_eq!(extract(nodes, i), random_axis_value);
+            }
+            for i in upper..(nodes.len()) {
+                assert!(extract(nodes, i) > random_axis_value);
+            }
+        }
+
+        let random_axis_value_eventual_index = ((lower + upper) / 2) as i64;
+        assert!(lower as i64 <= random_axis_value_eventual_index);
+        assert!(random_axis_value_eventual_index < upper as i64);
+
+        if pivot_index == random_axis_value_eventual_index {
+            return;
+        } else if pivot_index < random_axis_value_eventual_index {
             // Recurse down the bottom half
             PhotonMapBuilder::partition_by_axis(
                 &mut nodes[..(random_axis_value_eventual_index as usize)],
@@ -306,8 +304,7 @@ impl PhotonMapBuilder {
                 pivot_index - (random_axis_value_eventual_index + 1),
             );
         } else {
-            // All done!
-            return;
+            panic!("Should be unreachable.");
         }
     }
 

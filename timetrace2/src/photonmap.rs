@@ -27,7 +27,7 @@ struct PhotonMapHeader {
 }
 
 #[derive(Copy, Clone)]
-struct Node {
+pub(crate) struct Node {
     photon: Photon,
 }
 

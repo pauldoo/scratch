@@ -11,6 +11,11 @@ pub struct Vector4 {
     v: [f64; 4],
 }
 
+fn check_finite(v: f64) -> f64 {
+    debug_assert!(v.is_finite());
+    return v;
+}
+
 impl Vector4 {
     pub fn x(&self) -> f64 {
         self.v[0]
@@ -26,22 +31,22 @@ impl Vector4 {
     }
 
     pub fn set_x(&mut self, value: f64) -> &mut Vector4 {
-        self.v[0] = value;
+        self.v[0] = check_finite(value);
         return self;
     }
 
     pub fn set_y(&mut self, value: f64) -> &mut Vector4 {
-        self.v[1] = value;
+        self.v[1] = check_finite(value);
         return self;
     }
 
     pub fn set_z(&mut self, value: f64) -> &mut Vector4 {
-        self.v[2] = value;
+        self.v[2] = check_finite(value);
         return self;
     }
 
     pub fn set_t(&mut self, value: f64) -> &mut Vector4 {
-        self.v[3] = value;
+        self.v[3] = check_finite(value);
         return self;
     }
 
@@ -80,12 +85,12 @@ impl Vector4 {
         }
     }
 
-    pub const fn zero() -> Vector4 {
+    pub fn zero() -> Vector4 {
         Vector4::create(0.0, 0.0, 0.0, 0.0)
     }
 
-    pub const fn create(x: f64, y: f64, z: f64, t: f64) -> Vector4 {
-        Vector4 { v: [x, y, z, t] }
+    pub fn create(x: f64, y: f64, z: f64, t: f64) -> Vector4 {
+        Vector4 { v: [check_finite(x), check_finite(y), check_finite(z), check_finite(t)] }
     }
 
     pub fn max_index(v: Vector4) -> Dimension {
@@ -119,20 +124,20 @@ impl Vector4 {
         assert_eq!(rhs.t(), 0.0);
 
         return Vector4::create(
-            lhs.y() * rhs.z() - lhs.z() * rhs.y(),
-            lhs.z() * rhs.x() - lhs.x() * rhs.z(),
-            lhs.x() * rhs.y() - lhs.y() * rhs.x(),
-            0.0
+        check_finite(lhs.y() * rhs.z() - lhs.z() * rhs.y()),
+        check_finite(lhs.z() * rhs.x() - lhs.x() * rhs.z()),
+        check_finite(lhs.x() * rhs.y() - lhs.y() * rhs.x()),
+        0.0
         );
     }
 
     fn element_wise_op(lhs: Vector4, rhs: Vector4, op: fn(f64, f64) -> f64) -> Vector4 {
         return Vector4 {
             v: [
-                op(lhs.x(), rhs.x()),
-                op(lhs.y(), rhs.y()),
-                op(lhs.z(), rhs.z()),
-                op(lhs.t(), rhs.t()),
+                check_finite(op(lhs.x(), rhs.x())),
+                check_finite(op(lhs.y(), rhs.y())),
+                check_finite(op(lhs.z(), rhs.z())),
+                check_finite(op(lhs.t(), rhs.t())),
             ],
         };
     }
@@ -180,10 +185,10 @@ impl Neg for Vector4 {
     fn neg(self) -> Vector4 {
         return Vector4 {
             v: [
-                - self.x(),
-                - self.y(),
-                - self.z(),
-                - self.t(),
+                check_finite(- self.x()),
+                check_finite(- self.y()),
+                check_finite(- self.z()),
+                check_finite(- self.t()),
             ]
         };
     }
@@ -195,10 +200,10 @@ impl Mul<f64> for Vector4 {
     fn mul(self, rhs: f64) -> Vector4 {
         return Vector4 {
             v: [
-                self.x() * rhs,
-                self.y() * rhs,
-                self.z() * rhs,
-                self.t() * rhs,
+                check_finite(self.x() * rhs),
+                check_finite(self.y() * rhs),
+                check_finite(self.z() * rhs),
+                check_finite(self.t() * rhs),
             ],
         };
     }
@@ -210,10 +215,10 @@ impl Div<f64> for Vector4 {
     fn div(self, rhs: f64) -> Vector4 {
         return Vector4 {
             v: [
-                self.x() / rhs,
-                self.y() / rhs,
-                self.z() / rhs,
-                self.t() / rhs,
+                check_finite(self.x() / rhs),
+                check_finite(self.y() / rhs),
+                check_finite(self.z() / rhs),
+                check_finite(self.t() / rhs),
             ],
         };
     }

@@ -99,8 +99,8 @@ fn main() -> std::io::Result<()> {
     };
 
     let config: Config = Config {
-        photon_map_size: 20 * 1000 * 1000,
-        frame_count: 200 / quick_factor,
+        photon_map_size: 100 * 1000 * 1000,
+        frame_count: 2000 / quick_factor,
         width: 1920 / quick_factor,
         height: 1080 / quick_factor,
         min_t: 0.0,
