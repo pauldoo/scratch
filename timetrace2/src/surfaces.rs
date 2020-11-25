@@ -36,10 +36,7 @@ impl Surface for StaticPlane {
 
         if time_to_approach.is_finite() && time_to_approach >= 0.0 {
             let normal: Normal = if distance_to_surface.is_sign_positive() { self.normal.flip() } else { self.normal };
-            return Option::Some(Impact{
-                location: ray.start + (Vector4::from(ray.direction) * time_to_approach),
-                surface_normal: normal
-            });
+            return Option::Some(Impact::create(time_to_approach, normal));
         }
 
         return Option::None;
@@ -87,11 +84,8 @@ impl Surface for StaticSphere {
         let sol = lowest_positive_quadratic_solution(a, b, c);
 
         return sol.map(|t| {
-            let hit_location = ray.start + (Vector4::from(ray.direction) * t);
-            return Impact {
-                location: hit_location,
-                surface_normal: Normal::from_vec((hit_location.with_t(0.0) - self.center) / self.radius)
-            };
+            let hit_location = ray.march(t).with_t(0.0);
+            return Impact::create(t, Normal::from_vec((hit_location - self.center) / self.radius));
         });
     }
 

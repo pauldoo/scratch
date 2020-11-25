@@ -2,11 +2,26 @@ use crate::geometry::vector::Vector4;
 use crate::geometry::normal::Normal;
 use approx::AbsDiffEq;
 use crate::constants::SMALL_DISTANCE;
+use crate::geometry::ray::Ray;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Impact {
-    pub location: Vector4, // TODO: Return only the "time to hit"
-    pub surface_normal: Normal
+    time_to_hit: f64,
+    surface_normal: Normal
+}
+
+impl Impact {
+    pub fn create(time_to_hit: f64, surface_normal: Normal) -> Impact {
+        assert!(time_to_hit > 0.0);
+        return Impact {
+            time_to_hit,
+            surface_normal
+        };
+    }
+
+    pub fn time_to_hit(&self) -> f64 {
+        return self.time_to_hit;
+    }
 }
 
 impl AbsDiffEq for Impact where {
@@ -18,7 +33,7 @@ impl AbsDiffEq for Impact where {
 
     fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
         return
-            self.location.abs_diff_eq(&other.location, epsilon) &&
+            self.time_to_hit.abs_diff_eq(&other.time_to_hit, epsilon) &&
             self.surface_normal.abs_diff_eq(&other.surface_normal, epsilon);
     }
 }
