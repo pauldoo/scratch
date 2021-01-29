@@ -21,11 +21,9 @@ use rayon::prelude::*;
 mod tests;
 
 fn trace_single_ray(ray: Ray, surfaces: &Vec<Box<dyn Surface>>) -> Option<Impact> {
-    let ray_sign = Vector4::from(ray.direction).t().signum();
-
     surfaces.iter()
         .flat_map(|s| s.intersect(ray))
-        .min_by_key(|i| OrderedFloat(i.location.t() * ray_sign))
+        .min_by_key(|i| OrderedFloat(i.time_to_hit()))
 }
 
 pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> PhotonMap {
@@ -45,11 +43,14 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
         let impact = trace_single_ray(ray, &scene.surfaces);
         map_builder.increment_emitted_photon_count(1);
 
-        if impact.is_some() {
-            map_builder.add_photon(Photon {
-                position: impact.unwrap().location,
-                id: 0
-            });
+        match impact {
+            Some(impact) => {
+                map_builder.add_photon(Photon {
+                    position: ray.march(impact.time_to_hit()),
+                    id: 0
+                });
+            }
+            None => {}
         }
     }
 
@@ -57,15 +58,15 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
     return map_builder.finish();
 }
 
-fn query_photon_map_intensity(map: &PhotonMap, hit: &Impact, brightness :f64, sample_size: u32) -> u8 {
+fn query_photon_map_intensity(map: &PhotonMap, location: Vector4, brightness :f64, sample_size: u32) -> u8 {
     let sampled_energy = (sample_size as f64) / (map.emitted_photon_count() as f64);
     let max_distance = intensity_to_max_distance(expose_inv(1u8, brightness), sampled_energy);
 
-    let closest_photons = map.do_search(hit.location, sample_size as usize, max_distance);
+    let closest_photons = map.do_search(location, sample_size as usize, max_distance);
 
     if closest_photons.len() == (sample_size as usize) {
         let furthest_closest_photon = closest_photons.last().unwrap();
-        let distance = (hit.location - furthest_closest_photon.position).l2norm();
+        let distance = (location - furthest_closest_photon.position).l2norm();
 
         return expose(max_distance_to_intensity(distance, sampled_energy), brightness);
     } else {
@@ -116,12 +117,17 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
 
             let impact  = trace_single_ray(ray, &scene.surfaces);
 
-            if impact.is_some() {
-                let b: u8 = query_photon_map_intensity(map, &impact.unwrap(), config.brightness, config.sample_size);
-                *pixel = image::Rgb([b, b, b])
-            } else {
-                *pixel = background_colour;
+            match impact {
+                None => {
+                    *pixel = background_colour;
+                }
+                Some(impact) => {
+                    let location = ray.march(impact.time_to_hit());
+                    let b: u8 = query_photon_map_intensity(map, location, config.brightness, config.sample_size);
+                    *pixel = image::Rgb([b, b, b])
+                }
             }
+
         }
 
         info!("Saving frame");
