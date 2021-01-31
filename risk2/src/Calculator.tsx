@@ -1,92 +1,51 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
-import { MersenneTwister19937, Engine } from 'random-js';
-import { Simulate } from 'react-dom/test-utils';
-import { assert } from 'console';
+import { OutcomeDistribution, simulate, State } from './Simulation';
 
 export interface Props {
 
 }
 
-type State = {
-    attackerCount: number,
-    defenderCount: number
-}
-
-type OutcomeDistribution = {
-    likelihoods: Map<number, number>
-}
-
-class Simulation {
-    rng = MersenneTwister19937.autoSeed();
-
-    private simulateLosses(attackerDiceCount: number, defenderDiceCount: number) {
-        assert(attackerDiceCount >= 1 && attackerDiceCount <= 3);
-        assert(defenderDiceCount >= 1 && defenderDiceCount <= 2);
-    
-        const attacker:number[] = [];
-        const defender:number[] = [];
-    
-        for (let i = 0; i < attackerDiceCount; i++) {
-            attacker.push()
-        }
-    
-    }
-
-    private simulateOne(s: State): State {
-        if (s.attackerCount >= 2) {
-            simulateLosses(
-                min(3, s.attackerCount - 1),
-                min(2, s.defenderCount)
-            );
-
-
-        } else {
-            return s;
-        }
-    }
-
-   
-    calculate(initialState: State, rng: Engine) : OutcomeDistribution {
-
-        const trialCount = 1000;
-    
-        
-    
-        for (let i = 0; i < trialCount; i++) {
-            const endState = simulateOne(initialState, rng);
-        }
-    
-    }    
-}
-
-
-
-
-
 const Outcomes: React.FC<State> = (props) => {
     
+    const simData: OutcomeDistribution = useMemo( () => {
+        return simulate(props); 
+    }, [props.attackerCount, props.defenderCount]);
 
+    const labels :string[] = simData.outcomes.map( (e) => {
+        return e.state.attackerCount + " - " + e.state.defenderCount;
+    });
+
+    const values : number[] = simData.outcomes.map( (e) => {
+        return (100 * e.count) / simData.totalCount;
+    });
 
     const data = {
-        labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+        labels: labels,
         datasets: [
           {
-            label: 'My First dataset',
+            label: 'Liklihood game ends with <attacker> vs <defender>',
             backgroundColor: 'rgba(255,99,132,0.2)',
             borderColor: 'rgba(255,99,132,1)',
             borderWidth: 1,
             hoverBackgroundColor: 'rgba(255,99,132,0.4)',
             hoverBorderColor: 'rgba(255,99,132,1)',
-            data: [65, 59, 80, 81, 56, 55, 40]
+            data: values
           }
         ]
       };
 
     return (
         <div>
-            <p>{props.attackerCount} attacking {props.defenderCount}</p>
+            <h2></h2>
+            <p>All out attacks with {props.attackerCount} against {props.defenderCount}</p>
             <Bar data={data} />
+            <p>Liklihood attacker wins: {(100 * simData.attackerWinCount) / simData.totalCount}%</p>
+            <p>Liklihood defender wins: {(100 * simData.defenderWinCount) / simData.totalCount}%</p>
+            <p>p25: {simData.p25.attackerCount} - {simData.p25.defenderCount}</p>
+            <p>p50: {simData.p50.attackerCount} - {simData.p50.defenderCount}</p>
+            <p>p75: {simData.p75.attackerCount} - {simData.p75.defenderCount}</p>
+            <p>(Simulated {simData.totalCount} tials in {simData.simulationTimeMs}ms.)</p>
         </div>
     )
 }
@@ -96,13 +55,20 @@ export const Calculator: React.FC<Props> = (props) => {
     const [attackerCount, setAttackerCount] = useState(5);
     const [defenderCount, setDefenderCount] = useState(5);
 
+    let calculator;
+    if (attackerCount >= 2 && defenderCount >= 1) {
+        calculator = <Outcomes attackerCount={attackerCount} defenderCount={defenderCount}/>;
+    } else {
+        calculator = <div />
+    }
+
     return (
         <div>
             <div>
                 Attackers:
                 <input
                     type="number"
-                    min="1"
+                    min="2"
                     max="100"
                     value={attackerCount}
                     onChange={(e) => setAttackerCount(Number(e.target.value))}
@@ -118,7 +84,7 @@ export const Calculator: React.FC<Props> = (props) => {
                 />
             
             </div>
-            <Outcomes attackerCount={attackerCount} defenderCount={defenderCount}/>
+            {calculator}
         </div>
     )
 }
