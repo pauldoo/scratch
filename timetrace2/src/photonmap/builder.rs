@@ -138,7 +138,7 @@ impl PhotonMapBuilder {
         }
 
         let pivot_point: Vector4 = nodes[pivot_index as usize].photon.position;
-        {
+        if ENABLE_EXPENSIVE_ASSERTS {
             let pivot_value = pivot_point.get(split);
             for _i in 0..=pivot_index {
                 assert!(nodes[_i as usize].photon.position.get(split) <= pivot_value);
@@ -146,9 +146,9 @@ impl PhotonMapBuilder {
             for _i in pivot_index..(nodes.len() as i64) {
                 assert!(nodes[_i as usize].photon.position.get(split) >= pivot_value);
             }
-        }
-        if info_log {
-            info!("do_sort_internal {} assertions validated", nodes.len());
+            if info_log {
+                info!("do_sort_internal {} assertions validated", nodes.len());
+            }
         }
 
         PhotonMapBuilder::do_sort_internal(
@@ -174,7 +174,7 @@ impl PhotonMapBuilder {
     */
     pub(crate)
     fn partition_by_axis(nodes: &mut [Node], axis: Dimension, pivot_index: i64) -> () {
-        let info_log = nodes.len() > 1000;
+        let info_log = nodes.len() > 10000;
 
         if info_log {
             info!(

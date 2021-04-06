@@ -67,6 +67,7 @@ pub struct Config {
     max_t: f64,
     brightness: f64,
     sample_size: u32,
+    reflectiveness: f64,
     output_directory: PathBuf,
 }
 
@@ -93,7 +94,7 @@ fn main() -> std::io::Result<()> {
 
     let quick_factor = if matches.is_present(quick_arg_name) {
         warn!("Quick mode is go!");
-        2
+        3
     } else {
         1
     };
@@ -107,6 +108,7 @@ fn main() -> std::io::Result<()> {
         max_t: 10.0,
         brightness: 10.0,
         sample_size: 50,
+        reflectiveness: 0.8,
         output_directory: PathBuf::from("./output"),
     };
     if !config.output_directory.exists() {

@@ -22,6 +22,8 @@ impl Impact {
     pub fn time_to_hit(&self) -> f64 {
         return self.time_to_hit;
     }
+
+    pub fn surface_normal(&self) -> Normal { return self.surface_normal; }
 }
 
 impl AbsDiffEq for Impact where {

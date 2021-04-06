@@ -8,7 +8,7 @@ use crate::surfaces::Surface;
 use crate::Config;
 use image::{ImageBuffer, Rgb, RgbImage};
 use log::info;
-use rand::thread_rng;
+use rand::{thread_rng, Rng};
 use std::path::PathBuf;
 use crate::geometry::vector::Vector4;
 use crate::photon::Photon;
@@ -16,6 +16,8 @@ use ordered_float::OrderedFloat;
 use std::cmp::min;
 use rand::seq::SliceRandom;
 use rayon::prelude::*;
+use crate::geometry::direction::Direction;
+use crate::constants::SMALL_DISTANCE;
 
 #[cfg(test)]
 mod tests;
@@ -37,20 +39,40 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
     let light: &dyn Light = scene.lights.get(0).unwrap().as_ref();
 
     while map_builder.has_capacity() {
-        let ray = light.emit(&mut rng);
-        assert_eq!(Vector4::from(ray.direction).t(), 1.0);
-
-        let impact = trace_single_ray(ray, &scene.surfaces);
+        let mut ray_option: Option<Ray> = Option::Some(light.emit(&mut rng));
         map_builder.increment_emitted_photon_count(1);
 
-        match impact {
-            Some(impact) => {
-                map_builder.add_photon(Photon {
-                    position: ray.march(impact.time_to_hit()),
-                    id: 0
-                });
-            }
-            None => {}
+        while let Some(ray) = ray_option {
+            assert_eq!(Vector4::from(ray.direction).t(), 1.0);
+
+            let impact = trace_single_ray(ray, &scene.surfaces);
+
+            ray_option = match impact {
+                Some(impact) => {
+                    let hit_point = ray.march(impact.time_to_hit());
+
+                    map_builder.add_photon(Photon {
+                        position: hit_point,
+                        id: 0
+                    });
+
+                    if map_builder.has_capacity() && rng.gen_range(0.0, 1.0) < config.reflectiveness {
+                        let mut new_ray = Ray {
+                            start: hit_point,
+                            direction: Direction::random_in_hemisphere(&mut rng, 1.0, impact.surface_normal())
+                        };
+
+                        new_ray.start = new_ray.march(SMALL_DISTANCE);
+
+                        Option::Some(new_ray)
+                    } else {
+                        Option::None
+                    }
+                }
+                None => {
+                    Option::None
+                }
+            };
         }
     }
 

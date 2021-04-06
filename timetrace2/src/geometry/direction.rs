@@ -1,5 +1,6 @@
 use crate::geometry::vector::Vector4;
 use rand::Rng;
+use crate::geometry::normal::Normal;
 
 #[cfg(test)]
 mod tests;
@@ -35,6 +36,16 @@ impl Direction {
 
             if len >= 0.1 && len <= 1.0 {
                 return Direction::from_vec(*(v / len).set_t(t));
+            }
+        }
+    }
+
+    pub fn random_in_hemisphere(rng: &mut impl Rng, t: f64, hemisphere: Normal) -> Direction {
+        loop {
+            let r = Direction::random(rng, t);
+
+            if Vector4::dot(r.vec, Vector4::from(hemisphere)) > 0.0 {
+                return r;
             }
         }
     }
