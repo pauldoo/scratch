@@ -18,6 +18,8 @@ use rand::seq::SliceRandom;
 use rayon::prelude::*;
 use crate::geometry::direction::Direction;
 use crate::constants::SMALL_DISTANCE;
+use rand::prelude::ThreadRng;
+use std::ops::Deref;
 
 #[cfg(test)]
 mod tests;
@@ -28,17 +30,29 @@ fn trace_single_ray(ray: Ray, surfaces: &Vec<Box<dyn Surface>>) -> Option<Impact
         .min_by_key(|i| OrderedFloat(i.time_to_hit()))
 }
 
-pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> PhotonMap {
-    assert_eq!(scene.lights.len(), 1);
+fn pick_light<'a>(rng: &mut ThreadRng, lights: &'a Vec<Box<dyn Light>>, energy_total: f64) -> &'a dyn Light {
+    let mut pick = rng.gen_range(0.0, energy_total);
 
+    loop {
+        for i in lights.iter() {
+            if pick < i.energy_total() {
+                return i.deref();
+            }
+            pick = pick - i.energy_total();
+        }
+    }
+}
+
+pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> PhotonMap {
     let mut map_builder: PhotonMapBuilder =
         PhotonMapBuilder::create(config.photon_map_size as usize, file_path.as_path());
 
+    let energy_total = scene.energy_total();
     let mut rng = thread_rng();
 
-    let light: &dyn Light = scene.lights.get(0).unwrap().as_ref();
-
     while map_builder.has_capacity() {
+        let light: &dyn Light = pick_light(&mut rng, &scene.lights, energy_total);
+
         let mut ray_option: Option<Ray> = Option::Some(light.emit(&mut rng));
         map_builder.increment_emitted_photon_count(1);
 
@@ -120,6 +134,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
     info!("Doing the raytrace");
     assert!(config.max_t > config.min_t);
 
+    let energy_total = scene.energy_total();
     let background_colour: Rgb<u8> = image::Rgb([255u8, 128u8, 128u8]);
 
     let render_frame = |frame : u32| {
@@ -145,7 +160,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
                 }
                 Some(impact) => {
                     let location = ray.march(impact.time_to_hit());
-                    let b: u8 = query_photon_map_intensity(map, location, config.brightness, config.sample_size);
+                    let b: u8 = query_photon_map_intensity(map, location, energy_total, config.sample_size);
                     *pixel = image::Rgb([b, b, b])
                 }
             }

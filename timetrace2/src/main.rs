@@ -35,19 +35,33 @@ fn create_surfaces() -> Vec<Box<dyn surfaces::Surface>> {
         Normal::from_vec(Vector4::create(0.0, 1.0, 0.0, 0.0)),
     );
 
+    let wall = surfaces::StaticPlane::new(
+        Vector4::create(-2.0, 0.0, 0.0, 0.0),
+        Normal::from_vec(Vector4::create(1.0, 0.0, 0.0, 0.0)),
+    );
+
     let sphere = surfaces::StaticSphere::new(
         Vector4::create(0.0, 0.0, 2.5, 0.0),
         1.0
     );
 
-    return vec![floor, sphere];
+    return vec![floor, wall, sphere];
 }
 
 fn create_lights() -> Vec<Box<dyn lights::Light>> {
-    return vec![lights::IntervalLight::new(
+    let short = lights::IntervalLight::new(
         Vector4::create(2.0, 2.0, 1.0, 0.0),
         Vector4::create(2.0, 2.0, 1.0, 0.2),
-    )];
+        10.0
+    );
+
+    let long = lights::IntervalLight::new(
+        Vector4::create(2.0, 2.0, 1.0, 10.0),
+        Vector4::create(2.0, 2.0, 1.0, 20.0),
+        250.0
+    );
+
+    return vec![short, long];
 }
 
 fn create_camera() -> Box<dyn camera::Camera> {
@@ -65,7 +79,6 @@ pub struct Config {
     height: u32,
     min_t: f64,
     max_t: f64,
-    brightness: f64,
     sample_size: u32,
     reflectiveness: f64,
     output_directory: PathBuf,
@@ -100,15 +113,14 @@ fn main() -> std::io::Result<()> {
     };
 
     let config: Config = Config {
-        photon_map_size: 100 * 1000 * 1000,
+        photon_map_size: 500 * 1000 * 1000,
         frame_count: 2000 / quick_factor,
         width: 1920 / quick_factor,
         height: 1080 / quick_factor,
         min_t: 0.0,
-        max_t: 10.0,
-        brightness: 10.0,
+        max_t: 30.0,
         sample_size: 50,
-        reflectiveness: 0.8,
+        reflectiveness: 0.80,
         output_directory: PathBuf::from("./output"),
     };
     if !config.output_directory.exists() {
