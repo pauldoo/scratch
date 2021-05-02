@@ -81,14 +81,32 @@ impl PhotonMapBuilder {
         return &mut *(self.nodes);
     }
 
-    pub fn add_photon(&mut self, photon: Photon) -> () {
-        assert!(self.has_capacity());
+    pub fn add_photons(&mut self, photons: &[Photon]) -> () {
+        assert!((self.usage + photons.len()) <= self.capacity, "photon map is full");
+        let usage = self.usage;
+        {
+            let k = self.nodes_slice();
+            for i in 0..photons.len() {
+                k[usage + i].photon = photons[i];
+            }
+        }
+        self.usage += photons.len();
+        if (self.usage % 1_000_000) == 0 {
+            info!("have {}M impacts", self.usage / 1_000_000);
+        }
+    }
+
+    fn add_photon(&mut self, photon: Photon) -> () {
+        assert!(self.has_capacity(), "photon map is full");
         let usage = self.usage;
         {
             let node: &mut Node = &mut self.nodes_slice()[usage];
             node.photon = photon;
         }
         self.usage += 1;
+        if (self.usage % 1_000_000) == 0 {
+            info!("have {}M impacts", self.usage);
+        }
     }
 
     pub fn increment_emitted_photon_count(&mut self, count: usize) -> () {
@@ -114,7 +132,7 @@ impl PhotonMapBuilder {
     }
 
     fn do_sort_internal(nodes: &mut [Node], bounds: Bounds4) -> () {
-        let info_log = nodes.len() > 10000000;
+        let info_log = nodes.len() > 10_000_000;
 
         if info_log {
             info!("do_sort_internal {} start", nodes.len());
@@ -174,7 +192,7 @@ impl PhotonMapBuilder {
     */
     pub(crate)
     fn partition_by_axis(nodes: &mut [Node], axis: Dimension, pivot_index: i64) -> () {
-        let info_log = nodes.len() > 10000;
+        let info_log = nodes.len() > 10_000_000;
 
         if info_log {
             info!(

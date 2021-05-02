@@ -60,7 +60,7 @@ fn create_test_map(rng: &mut impl Rng) -> TestMap {
             position: random_vec_in_bounds(rng, config().bounds),
             id: _i as u32,
         };
-        builder.add_photon(random_photon);
+        builder.add_photons(&[random_photon]);
         all_photons.push(random_photon);
     }
     builder.increment_emitted_photon_count(1000);
@@ -93,7 +93,7 @@ fn create_test_map_sphere(rng: &mut impl Rng) -> TestMap {
             position,
             id: _i as u32,
         };
-        builder.add_photon(random_photon);
+        builder.add_photons(&[random_photon]);
         all_photons.push(random_photon);
     }
 
@@ -122,7 +122,7 @@ fn create_test_map_common_plane(rng: &mut impl Rng) -> TestMap {
         position: Vector4::create(0.0, 1000.0, 0.0, 0.0),
         id: 0
     };
-    builder.add_photon(photon_off_plane);
+    builder.add_photons(&[photon_off_plane]);
     all_photons.push(photon_off_plane);
 
     for _i in 1..photon_count {
@@ -130,7 +130,7 @@ fn create_test_map_common_plane(rng: &mut impl Rng) -> TestMap {
             position: random_vec_in_bounds(rng, config().bounds).with_y(0.0),
             id: _i as u32,
         };
-        builder.add_photon(random_photon);
+        builder.add_photons(&[random_photon]);
         all_photons.push(random_photon);
     }
 

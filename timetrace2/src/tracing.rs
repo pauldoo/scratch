@@ -20,6 +20,7 @@ use crate::geometry::direction::Direction;
 use crate::constants::SMALL_DISTANCE;
 use rand::prelude::ThreadRng;
 use std::ops::Deref;
+use std::sync::{Arc, Mutex, MutexGuard};
 
 #[cfg(test)]
 mod tests;
@@ -44,54 +45,73 @@ fn pick_light<'a>(rng: &mut ThreadRng, lights: &'a Vec<Box<dyn Light>>, energy_t
 }
 
 pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) -> PhotonMap {
-    let mut map_builder: PhotonMapBuilder =
-        PhotonMapBuilder::create(config.photon_map_size as usize, file_path.as_path());
+    let mut photon_map_builder = PhotonMapBuilder::create(config.photon_map_size as usize, file_path.as_path());
+    {
+        let mutex_arc: Arc<Mutex<&mut PhotonMapBuilder>> = Arc::new(Mutex::new(&mut photon_map_builder));
 
-    let energy_total = scene.energy_total();
-    let mut rng = thread_rng();
+        let block_size = 100_000;
+        assert_eq!((config.photon_map_size % block_size), 0);
 
-    while map_builder.has_capacity() {
-        let light: &dyn Light = pick_light(&mut rng, &scene.lights, energy_total);
+        let do_block = |mutex_arc: &mut Arc<Mutex<&mut PhotonMapBuilder>>, block_number: &u64| {
+            let mut block: Vec<Photon> = Vec::new();
 
-        let mut ray_option: Option<Ray> = Option::Some(light.emit(&mut rng));
-        map_builder.increment_emitted_photon_count(1);
+            let energy_total = scene.energy_total();
+            let mut rng = thread_rng();
+            let mut emitted_count: u64 = 0;
 
-        while let Some(ray) = ray_option {
-            assert_eq!(Vector4::from(ray.direction).t(), 1.0);
+            while (block.len() as u64) < block_size {
+                let light: &dyn Light = pick_light(&mut rng, &scene.lights, energy_total);
 
-            let impact = trace_single_ray(ray, &scene.surfaces);
+                let mut ray: Ray = light.emit(&mut rng);
+                emitted_count += 1;
 
-            ray_option = match impact {
-                Some(impact) => {
-                    let hit_point = ray.march(impact.time_to_hit());
+                loop {
+                    assert_eq!(Vector4::from(ray.direction).t(), 1.0);
 
-                    map_builder.add_photon(Photon {
-                        position: hit_point,
-                        id: 0
-                    });
+                    let impact = trace_single_ray(ray, &scene.surfaces);
 
-                    if map_builder.has_capacity() && rng.gen_range(0.0, 1.0) < config.reflectiveness {
-                        let mut new_ray = Ray {
-                            start: hit_point,
-                            direction: Direction::random_in_hemisphere(&mut rng, 1.0, impact.surface_normal())
-                        };
+                    match impact {
+                        Some(impact) => {
+                            let hit_point = ray.march(impact.time_to_hit());
 
-                        new_ray.start = new_ray.march(SMALL_DISTANCE);
+                            if rng.gen_range(0.0, 1.0) < config.reflectiveness {
+                                let mut new_ray = Ray {
+                                    start: hit_point,
+                                    direction: Direction::random_in_hemisphere(&mut rng, 1.0, impact.surface_normal())
+                                };
 
-                        Option::Some(new_ray)
-                    } else {
-                        Option::None
-                    }
+                                new_ray.start = new_ray.march(SMALL_DISTANCE);
+
+                                ray = new_ray;
+                                continue;
+                            } else {
+                                block.push(Photon {
+                                    position: hit_point,
+                                    id: 0
+                                });
+                            }
+                        }
+                        None => {}
+                    };
+
+                    break;
                 }
-                None => {
-                    Option::None
-                }
-            };
-        }
+            }
+
+            assert_eq!(block.len() as u64, block_size);
+            let mut builder: MutexGuard<&mut PhotonMapBuilder> = mutex_arc.lock().unwrap();
+            builder.add_photons(&block);
+            builder.increment_emitted_photon_count(emitted_count as usize);
+        };
+
+        let blocks: Vec<u64> = (0..(config.photon_map_size / block_size)).collect();
+        blocks
+            .par_iter()
+            .for_each_with(mutex_arc, do_block);
+
     }
-
     info!("finishing");
-    return map_builder.finish();
+    return photon_map_builder.finish();
 }
 
 fn query_photon_map_intensity(map: &PhotonMap, location: Vector4, brightness :f64, sample_size: u32) -> u8 {

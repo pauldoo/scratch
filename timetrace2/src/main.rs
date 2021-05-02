@@ -52,13 +52,13 @@ fn create_lights() -> Vec<Box<dyn lights::Light>> {
     let short = lights::IntervalLight::new(
         Vector4::create(2.0, 2.0, 1.0, 0.0),
         Vector4::create(2.0, 2.0, 1.0, 0.2),
-        10.0
+        50.0
     );
 
     let long = lights::IntervalLight::new(
         Vector4::create(2.0, 2.0, 1.0, 10.0),
         Vector4::create(2.0, 2.0, 1.0, 20.0),
-        250.0
+        1000.0
     );
 
     return vec![short, long];
@@ -105,18 +105,18 @@ fn main() -> std::io::Result<()> {
         )
         .get_matches();
 
-    let quick_factor = if matches.is_present(quick_arg_name) {
+    let quick_factor: u64 = if matches.is_present(quick_arg_name) {
         warn!("Quick mode is go!");
-        3
+        4
     } else {
         1
     };
 
     let config: Config = Config {
-        photon_map_size: 500 * 1000 * 1000,
-        frame_count: 2000 / quick_factor,
-        width: 1920 / quick_factor,
-        height: 1080 / quick_factor,
+        photon_map_size: 500_000_000u64 / quick_factor,
+        frame_count: (2000 / quick_factor) as u32,
+        width: (1920 / quick_factor) as u32,
+        height: (1080 / quick_factor) as u32,
         min_t: 0.0,
         max_t: 30.0,
         sample_size: 50,
