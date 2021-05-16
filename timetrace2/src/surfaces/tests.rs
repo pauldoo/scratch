@@ -2,8 +2,9 @@ use crate::surfaces::{StaticPlane, Surface, StaticSphere};
 use crate::geometry::vector::Vector4;
 use crate::geometry::ray::Ray;
 use crate::geometry::direction::Direction;
-use crate::geometry::impact::Impact;
+use crate::geometry::impact::{Impact, SurfaceType};
 use crate::geometry::normal::Normal;
+use rand::thread_rng;
 
 fn flat_plane() -> Box<dyn Surface> {
     StaticPlane::new(
@@ -19,9 +20,10 @@ pub fn plane_straight_hit_front_forward_in_time() -> () {
         direction: Direction::from_vec(Vector4::create(0.0, 0.0, 1.0, 1.0))
     };
 
-    let actual:Impact = flat_plane().intersect(ray).unwrap();
+    let actual:Impact = flat_plane().intersect(ray, &mut thread_rng()).unwrap();
 
-    let expected: Impact = Impact::create(2.0, Normal::from_vec(Vector4::create(0.0, 0.0, -1.0, 0.0)));
+    let expected: Impact = Impact::create(2.0,
+                                          SurfaceType::Solid{ normal: Normal::from_vec(Vector4::create(0.0, 0.0, -1.0, 0.0))});
 
     assert_eq!(actual, expected);
 }
@@ -33,9 +35,10 @@ pub fn plane_straight_hit_front_backward_in_time() -> () {
         direction: Direction::from_vec(Vector4::create(0.0, 0.0, 1.0, -1.0))
     };
 
-    let actual:Impact = flat_plane().intersect(ray).unwrap();
+    let actual:Impact = flat_plane().intersect(ray, &mut thread_rng()).unwrap();
 
-    let expected: Impact = Impact::create(2.0, Normal::from_vec(Vector4::create(0.0, 0.0, -1.0, 0.0)));
+    let expected: Impact = Impact::create(2.0,
+                                          SurfaceType::Solid{ normal: Normal::from_vec(Vector4::create(0.0, 0.0, -1.0, 0.0))});
 
     assert_eq!(actual, expected);
 }
@@ -47,9 +50,10 @@ pub fn plane_straight_hit_back() -> () {
         direction: Direction::from_vec(Vector4::create(0.0, 0.0, -1.0, 1.0))
     };
 
-    let actual:Impact = flat_plane().intersect(ray).unwrap();
+    let actual:Impact = flat_plane().intersect(ray, &mut thread_rng()).unwrap();
 
-    let expected: Impact = Impact::create(2.0, Normal::from_vec(Vector4::create(0.0, 0.0, 1.0, 0.0)));
+    let expected: Impact = Impact::create(2.0,
+                                          SurfaceType::Solid{ normal: Normal::from_vec(Vector4::create(0.0, 0.0, 1.0, 0.0))});
 
     assert_eq!(actual, expected);
 }
@@ -61,7 +65,7 @@ pub fn plane_going_away_front() -> () {
         direction: Direction::from_vec(Vector4::create(0.0, 0.0, -1.0, 1.0))
     };
 
-    let actual:Option<Impact> = flat_plane().intersect(ray);
+    let actual:Option<Impact> = flat_plane().intersect(ray, &mut thread_rng());
 
     assert!(actual.is_none());
 }
@@ -73,7 +77,7 @@ pub fn plane_going_away_back() -> () {
         direction: Direction::from_vec(Vector4::create(0.0, 0.0, 1.0, 1.0))
     };
 
-    let actual:Option<Impact> = flat_plane().intersect(ray);
+    let actual:Option<Impact> = flat_plane().intersect(ray, &mut thread_rng());
 
     assert!(actual.is_none());
 }
@@ -86,7 +90,7 @@ pub fn plane_parallel_ray() -> () {
         direction: Direction::from_vec(Vector4::create(1.0, 0.0, 0.0, 1.0))
     };
 
-    let actual: Option<Impact> = flat_plane().intersect(ray);
+    let actual: Option<Impact> = flat_plane().intersect(ray, &mut thread_rng());
 
     assert!(actual.is_none());
 }
@@ -99,9 +103,10 @@ pub fn ray_jaunty() -> () {
         direction: Direction::from_vec(Vector4::create(1.0/s, 2.0/s, 1.0/s, 1.0))
     };
 
-    let actual:Impact = flat_plane().intersect(ray).unwrap();
+    let actual:Impact = flat_plane().intersect(ray, &mut thread_rng()).unwrap();
 
-    let expected: Impact = Impact::create(s*2.0, Normal::from_vec(Vector4::create(0.0, 0.0, -1.0, 0.0)));
+    let expected: Impact = Impact::create(s*2.0,
+                                          SurfaceType::Solid{ normal: Normal::from_vec(Vector4::create(0.0, 0.0, -1.0, 0.0))});
 
     assert_eq!(actual, expected);
 }
@@ -121,10 +126,11 @@ pub fn plane_jaunty() -> () {
     );
 
 
-    let actual:Impact = plane.intersect(ray).unwrap();
+    let actual:Impact = plane.intersect(ray, &mut thread_rng()).unwrap();
     println!("{:?}", actual);
 
-    let expected: Impact = Impact::create(12.0, Normal::from_vec(Vector4::create(1.0/s, 2.0/s, -1.0/s, 0.0)));
+    let expected: Impact = Impact::create(12.0,
+                                          SurfaceType::Solid{ normal: Normal::from_vec(Vector4::create(1.0/s, 2.0/s, -1.0/s, 0.0))});
 
     assert_eq!(actual, expected);
 }
@@ -141,10 +147,11 @@ pub fn sphere_example() -> () {
         1.0
     );
 
-    let actual = sphere.intersect(ray).unwrap();
+    let actual = sphere.intersect(ray, &mut thread_rng()).unwrap();
 
     let z = -(1.0f64 - (0.5*0.5)).sqrt();
-    let expected: Impact = Impact::create(6.0 + z, Normal::from_vec(Vector4::create(0.5, 0.0, z, 0.0)));
+    let expected: Impact = Impact::create(6.0 + z,
+                                          SurfaceType::Solid{ normal: Normal::from_vec(Vector4::create(0.5, 0.0, z, 0.0))});
 
     assert_abs_diff_eq!(actual, expected);
 }

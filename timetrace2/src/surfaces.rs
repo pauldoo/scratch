@@ -1,15 +1,41 @@
 use crate::geometry::vector::Vector4;
 use crate::geometry::ray::Ray;
-use crate::geometry::impact::Impact;
+use crate::geometry::impact::{Impact, SurfaceType};
 use crate::geometry::normal::Normal;
 use std::cmp::{min, max};
 use ordered_float::OrderedFloat;
+use rand::prelude::ThreadRng;
+use rand::Rng;
 
 #[cfg(test)]
 mod tests;
 
 pub trait Surface : Sync {
-    fn intersect(&self, ray: Ray) -> Option<Impact>;
+    fn intersect(&self, ray: Ray, rng: &mut ThreadRng) -> Option<Impact>;
+}
+
+pub struct Fog {
+    half_length: f64
+}
+
+impl Fog {
+    pub fn new(half_length: f64) -> Box<dyn Surface> {
+        assert!(half_length > 0.0);
+        return Box::new(Fog {
+            half_length
+        });
+    }
+}
+
+impl Surface for Fog {
+    fn intersect(&self, ray: Ray, rng: &mut ThreadRng) -> Option<Impact> {
+        let p: f64 = 1.0 - rng.gen_range(0.0, 1.0);
+        assert!(p > 0.0 && p <= 1.0);
+        let d: f64 = self.half_length * ((1.0f64 / p ).ln() / (2.0f64).ln());
+        return Option::Some(
+            Impact::create(d,SurfaceType::Gas)
+        );
+    }
 }
 
 pub struct StaticPlane {
@@ -28,7 +54,7 @@ impl StaticPlane {
 }
 
 impl Surface for StaticPlane {
-    fn intersect(&self, ray: Ray) -> Option<Impact> {
+    fn intersect(&self, ray: Ray, _: &mut ThreadRng) -> Option<Impact> {
         let distance_to_surface = Vector4::dot(self.point_on_plane - ray.start, self.normal.into());
         let rate_of_approach = Vector4::dot(ray.direction.into(), self.normal.into());
 
@@ -36,7 +62,7 @@ impl Surface for StaticPlane {
 
         if time_to_approach.is_finite() && time_to_approach >= 0.0 {
             let normal: Normal = if distance_to_surface.is_sign_positive() { self.normal.flip() } else { self.normal };
-            return Option::Some(Impact::create(time_to_approach, normal));
+            return Option::Some(Impact::create(time_to_approach, SurfaceType::Solid{normal}));
         }
 
         return Option::None;
@@ -75,7 +101,7 @@ fn lowest_positive_quadratic_solution(a: f64, b: f64, c: f64) -> Option<f64> {
 }
 
 impl Surface for StaticSphere {
-    fn intersect(&self, ray: Ray) -> Option<Impact> {
+    fn intersect(&self, ray: Ray, _: &mut ThreadRng) -> Option<Impact> {
         let offset = ray.start.with_t(0.0) - self.center;
         let a = Vector4::from(ray.direction).with_t(0.0).l2norm_squared();
         let b= 2.0 * Vector4::dot(Vector4::from(ray.direction).with_t(0.0), offset);
@@ -85,7 +111,8 @@ impl Surface for StaticSphere {
 
         return sol.map(|t| {
             let hit_location = ray.march(t).with_t(0.0);
-            return Impact::create(t, Normal::from_vec((hit_location - self.center) / self.radius));
+            let normal = Normal::from_vec((hit_location - self.center) / self.radius);
+            return Impact::create(t, SurfaceType::Solid{ normal });
         });
     }
 

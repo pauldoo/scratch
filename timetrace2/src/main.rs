@@ -40,25 +40,27 @@ fn create_surfaces() -> Vec<Box<dyn surfaces::Surface>> {
         Normal::from_vec(Vector4::create(1.0, 0.0, 0.0, 0.0)),
     );
 
+    let fog = surfaces::Fog::new(1.0);
+
     let sphere = surfaces::StaticSphere::new(
         Vector4::create(0.0, 0.0, 2.5, 0.0),
         1.0
     );
 
-    return vec![floor, wall, sphere];
+    return vec![floor, wall, sphere, fog];
 }
 
 fn create_lights() -> Vec<Box<dyn lights::Light>> {
     let short = lights::IntervalLight::new(
         Vector4::create(2.0, 2.0, 1.0, 0.0),
         Vector4::create(2.0, 2.0, 1.0, 0.2),
-        50.0
+        500.0
     );
 
     let long = lights::IntervalLight::new(
         Vector4::create(2.0, 2.0, 1.0, 10.0),
         Vector4::create(2.0, 2.0, 1.0, 20.0),
-        1000.0
+        10000.0
     );
 
     return vec![short, long];

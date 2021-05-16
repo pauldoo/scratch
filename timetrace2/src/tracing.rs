@@ -1,4 +1,4 @@
-use crate::geometry::impact::Impact;
+use crate::geometry::impact::{Impact, SurfaceType};
 use crate::geometry::ray::Ray;
 use crate::lights::Light;
 use crate::photonmap::builder::PhotonMapBuilder;
@@ -25,9 +25,9 @@ use std::sync::{Arc, Mutex, MutexGuard};
 #[cfg(test)]
 mod tests;
 
-fn trace_single_ray(ray: Ray, surfaces: &Vec<Box<dyn Surface>>) -> Option<Impact> {
+fn trace_single_ray(ray: Ray, surfaces: &Vec<Box<dyn Surface>>, rng: &mut ThreadRng) -> Option<Impact> {
     surfaces.iter()
-        .flat_map(|s| s.intersect(ray))
+        .flat_map(|s| s.intersect(ray, rng))
         .min_by_key(|i| OrderedFloat(i.time_to_hit()))
 }
 
@@ -68,16 +68,24 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
                 loop {
                     assert_eq!(Vector4::from(ray.direction).t(), 1.0);
 
-                    let impact = trace_single_ray(ray, &scene.surfaces);
+                    let impact = trace_single_ray(ray, &scene.surfaces, &mut rng);
 
                     match impact {
                         Some(impact) => {
                             let hit_point = ray.march(impact.time_to_hit());
 
                             if rng.gen_range(0.0, 1.0) < config.reflectiveness {
+
+                                let new_direction = match impact.surface_type() {
+                                    SurfaceType::Gas =>
+                                        ray.direction,
+                                    SurfaceType::Solid {normal} =>
+                                        Direction::random_in_hemisphere(&mut rng, 1.0, normal)
+                                };
+
                                 let mut new_ray = Ray {
                                     start: hit_point,
-                                    direction: Direction::random_in_hemisphere(&mut rng, 1.0, impact.surface_normal())
+                                    direction: new_direction
                                 };
 
                                 new_ray.start = new_ray.march(SMALL_DISTANCE);
@@ -162,6 +170,8 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
         info!("Frame: {} (t={})", frame, t);
         let half_size: f64 = (min(config.width, config.height) as f64) / 2.0;
 
+        let mut rng = thread_rng();
+
         let mut img: RgbImage = ImageBuffer::new(config.width, config.height);
         for (x, y, pixel) in img.enumerate_pixels_mut() {
 
@@ -172,7 +182,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
             assert_eq!(Vector4::from(ray.start).t(), t);
             assert_eq!(Vector4::from(ray.direction).t(), -1.0);
 
-            let impact  = trace_single_ray(ray, &scene.surfaces);
+            let impact  = trace_single_ray(ray, &scene.surfaces, &mut rng);
 
             match impact {
                 None => {
