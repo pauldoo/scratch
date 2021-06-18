@@ -38,6 +38,8 @@ ffmpeg \
   -i ./output/frame_%06d.png \
   -pix_fmt yuv420p \
   -c:a none \
+  -crf 30 \
+  -b:v 10M \
   -f webm \
   render.webm
 ```
@@ -52,4 +54,10 @@ cargo clippy
 
 ```
 RUST_LOG=timetrace2=debug RUST_BACKTRACE=1 cargo test --package timetrace2 --bin timetrace2 photonmap::tests::partition_by_axis_test::f -- --exact --nocapture 2>&1 | head -n 50
+```
+
+### Update dependencies
+
+```
+cargo update
 ```
