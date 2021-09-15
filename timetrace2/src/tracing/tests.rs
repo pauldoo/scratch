@@ -1,4 +1,5 @@
 use crate::tracing::{expose, expose_inv, max_distance_to_intensity, intensity_to_max_distance};
+use rand::{SeedableRng, RngCore};
 
 #[test]
 pub fn exposure() -> () {
@@ -32,3 +33,4 @@ pub fn intensity_to_max_distance_test() -> () {
     let i = max_distance_to_intensity(v, 1.0 / 1024.0);
     assert!(3.99 <= i && i <= 4.01);
 }
+

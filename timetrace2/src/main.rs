@@ -17,6 +17,7 @@ mod scene;
 mod surfaces;
 mod tracing;
 mod constants;
+mod swizzle;
 
 #[macro_use]
 extern crate approx;

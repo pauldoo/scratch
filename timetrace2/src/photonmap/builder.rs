@@ -118,10 +118,10 @@ impl PhotonMapBuilder {
     }
 
     fn do_sort(nodes: &mut [Node]) -> Bounds4 {
-        let mut bounds: Bounds4 = Bounds4::new(nodes[0].photon.position, nodes[0].photon.position);
+        let mut bounds: Bounds4 = Bounds4::new(nodes[0].photon.position(), nodes[0].photon.position());
         for np in &nodes[..] {
-            bounds.set_min(Vector4::mins(bounds.min(), np.photon.position));
-            bounds.set_max(Vector4::maxs(bounds.max(), np.photon.position));
+            bounds.set_min(Vector4::mins(bounds.min(), np.photon.position()));
+            bounds.set_max(Vector4::maxs(bounds.max(), np.photon.position()));
         }
 
         info!("do_sort {} bounds measurement done", nodes.len());
@@ -155,14 +155,14 @@ impl PhotonMapBuilder {
             );
         }
 
-        let pivot_point: Vector4 = nodes[pivot_index as usize].photon.position;
+        let pivot_point: Vector4 = nodes[pivot_index as usize].photon.position();
         if ENABLE_EXPENSIVE_ASSERTS {
             let pivot_value = pivot_point.get(split);
             for _i in 0..=pivot_index {
-                assert!(nodes[_i as usize].photon.position.get(split) <= pivot_value);
+                assert!(nodes[_i as usize].photon.position().get(split) <= pivot_value);
             }
             for _i in pivot_index..(nodes.len() as i64) {
-                assert!(nodes[_i as usize].photon.position.get(split) >= pivot_value);
+                assert!(nodes[_i as usize].photon.position().get(split) >= pivot_value);
             }
             if info_log {
                 info!("do_sort_internal {} assertions validated", nodes.len());
@@ -211,7 +211,7 @@ impl PhotonMapBuilder {
         }
 
         let extract = |nodes : &[Node], i:usize| {
-            nodes[i].photon.position.get(axis)
+            nodes[i].photon.position().get(axis)
         };
 
         if nodes.len() == 2 {

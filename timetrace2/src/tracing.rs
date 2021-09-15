@@ -21,6 +21,7 @@ use crate::constants::SMALL_DISTANCE;
 use rand::prelude::ThreadRng;
 use std::ops::Deref;
 use std::sync::{Arc, Mutex, MutexGuard};
+use crate::swizzle::unswizzle;
 
 #[cfg(test)]
 mod tests;
@@ -93,10 +94,7 @@ pub fn create_photon_map(config: &Config, file_path: &PathBuf, scene: &Scene) ->
                                 ray = new_ray;
                                 continue;
                             } else {
-                                block.push(Photon {
-                                    position: hit_point,
-                                    id: 0
-                                });
+                                block.push(Photon::new(hit_point, 0));
                             }
                         }
                         None => {}
@@ -130,7 +128,7 @@ fn query_photon_map_intensity(map: &PhotonMap, location: Vector4, brightness :f6
 
     if closest_photons.len() == (sample_size as usize) {
         let furthest_closest_photon = closest_photons.last().unwrap();
-        let distance = (location - furthest_closest_photon.position).l2norm();
+        let distance = (location - furthest_closest_photon.position()).l2norm();
 
         return expose(max_distance_to_intensity(distance, sampled_energy), brightness);
     } else {
@@ -173,7 +171,15 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
         let mut rng = thread_rng();
 
         let mut img: RgbImage = ImageBuffer::new(config.width, config.height);
-        for (x, y, pixel) in img.enumerate_pixels_mut() {
+
+        for pixel_index in (0u64).. {
+            let (x, y) : (u32, u32) = unswizzle(pixel_index);
+            if (x >= config.width) && (y >= config.height) {
+                break;
+            }
+            if (x >= config.width) || (y >= config.height) {
+                continue;
+            }
 
             let xfrac: f64 = ((x as f64 + 0.5) - (config.width as f64 / 2.0)) / half_size;
             let yfrac: f64 = ((y as f64 + 0.5) - (config.height  as f64 / 2.0)) / half_size;
@@ -184,17 +190,18 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
 
             let impact  = trace_single_ray(ray, &scene.surfaces, &mut rng);
 
-            match impact {
+            let pixel: Rgb<u8> = match impact {
                 None => {
-                    *pixel = background_colour;
+                    background_colour
                 }
                 Some(impact) => {
                     let location = ray.march(impact.time_to_hit());
                     let b: u8 = query_photon_map_intensity(map, location, energy_total, config.sample_size);
-                    *pixel = image::Rgb([b, b, b])
+                    image::Rgb([b, b, b])
                 }
-            }
+            };
 
+            img.put_pixel(x, y, pixel);
         }
 
         info!("Saving frame");

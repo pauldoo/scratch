@@ -132,15 +132,15 @@ impl PhotonMap {
             let pivot_node: Node = (&*(self._data))[pivot_idx];
 
             debug!("{:?}", bounds);
-            debug!("{:?}", pivot_node.photon.position);
-            assert!(bounds.contains_point(pivot_node.photon.position));
+            debug!("{:?}", pivot_node.photon.position());
+            assert!(bounds.contains_point(pivot_node.photon.position()));
 
             let split_direction: Dimension = PhotonMap::split_direction(bounds);
 
             let left_bounds =
-                PhotonMap::split_left(bounds, split_direction, pivot_node.photon.position);
+                PhotonMap::split_left(bounds, split_direction, pivot_node.photon.position());
             let right_bounds =
-                PhotonMap::split_right(bounds, split_direction, pivot_node.photon.position);
+                PhotonMap::split_right(bounds, split_direction, pivot_node.photon.position());
             assert!(bounds.contains_bounds(left_bounds));
             assert!(bounds.contains_bounds(right_bounds));
 
@@ -161,7 +161,7 @@ impl PhotonMap {
         let nodes: &[Node] = &*self._data;
 
         let enqueue_single = |idx: usize, queue: &mut BinaryHeap<RangeToSearch>| -> () {
-            let node_position = nodes[idx].photon.position;
+            let node_position = nodes[idx].photon.position();
             let distance = (node_position - search_point).l2norm();
 
             if distance > distance_limit {
@@ -221,11 +221,11 @@ impl PhotonMap {
             if length == 1 {
                 // single photon
                 let photon = &nodes[next.begin].photon;
-                assert!(next.bounds.contains_point(photon.position));
+                assert!(next.bounds.contains_point(photon.position()));
                 result.push(photon.clone());
             } else {
                 let pivot_idx = next.begin + (length / 2);
-                let pivot_position = nodes[pivot_idx].photon.position;
+                let pivot_position = nodes[pivot_idx].photon.position();
                 assert!(next.bounds.contains_point(pivot_position));
 
                 let split_direction = PhotonMap::split_direction(next.bounds);

@@ -56,10 +56,10 @@ fn create_test_map(rng: &mut impl Rng) -> TestMap {
     let mut all_photons: Vec<Photon> = Vec::new();
 
     for _i in 0..photon_count {
-        let random_photon = Photon {
-            position: random_vec_in_bounds(rng, config().bounds),
-            id: _i as u32,
-        };
+        let random_photon = Photon::new(
+            random_vec_in_bounds(rng, config().bounds),
+            _i as u32,
+        );
         builder.add_photons(&[random_photon]);
         all_photons.push(random_photon);
     }
@@ -89,10 +89,10 @@ fn create_test_map_sphere(rng: &mut impl Rng) -> TestMap {
         position = position * 10.0;
         position.set_t(rng.gen_range(-10.0, 10.0));
 
-        let random_photon = Photon {
+        let random_photon = Photon::new(
             position,
-            id: _i as u32,
-        };
+            _i as u32,
+        );
         builder.add_photons(&[random_photon]);
         all_photons.push(random_photon);
     }
@@ -118,18 +118,18 @@ fn create_test_map_common_plane(rng: &mut impl Rng) -> TestMap {
     let mut all_photons: Vec<Photon> = Vec::new();
 
 
-    let photon_off_plane = Photon {
-        position: Vector4::create(0.0, 1000.0, 0.0, 0.0),
-        id: 0
-    };
+    let photon_off_plane = Photon::new(
+        Vector4::create(0.0, 1000.0, 0.0, 0.0),
+        0
+    );
     builder.add_photons(&[photon_off_plane]);
     all_photons.push(photon_off_plane);
 
     for _i in 1..photon_count {
-        let random_photon = Photon {
-            position: random_vec_in_bounds(rng, config().bounds).with_y(0.0),
-            id: _i as u32,
-        };
+        let random_photon = Photon::new(
+            random_vec_in_bounds(rng, config().bounds).with_y(0.0),
+            _i as u32,
+        );
         builder.add_photons(&[random_photon]);
         all_photons.push(random_photon);
     }
@@ -152,7 +152,7 @@ fn brute_force_search(
     let mut sorted_photons: Vec<Photon> = photons.clone();
 
     let d = |p : &Photon| -> f64 {
-        (p.position - search_point).l2norm()
+        (p.position() - search_point).l2norm()
     };
 
     let cmp = |a: &Photon, b: &Photon| -> Ordering {
@@ -213,11 +213,11 @@ pub fn partition_by_axis_test() {
     for _i in 0..photon_count {
         let zero_or_one: f64 = rng.gen_range(0, 2) as f64;
         assert!(zero_or_one == 0.0 || zero_or_one == 1.0);
-        let photon = Photon {
-            position: random_vec_in_bounds(&mut rng, config().bounds)
+        let photon = Photon::new(
+            random_vec_in_bounds(&mut rng, config().bounds)
                 .with_y(zero_or_one),
-            id: _i as u32,
-        };
+            _i as u32,
+        );
         nodes.push(Node { photon });
     }
 
