@@ -161,7 +161,7 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
     assert!(config.max_t > config.min_t);
 
     let energy_total = scene.energy_total();
-    let background_colour: Rgb<u8> = image::Rgb([255u8, 128u8, 128u8]);
+    let background_colour: Vector4 = Vector4::create(255.0, 128.0, 128.0, 0.0);
 
     let render_frame = |frame : u32| {
         let t = config.min_t + (frame as f64 / (config.frame_count - 1) as f64) * (config.max_t - config.min_t);
@@ -188,20 +188,30 @@ pub fn do_raytrace(config: &Config, map: &PhotonMap, scene: &Scene) -> () {
             assert_eq!(Vector4::from(ray.start).t(), t);
             assert_eq!(Vector4::from(ray.direction).t(), -1.0);
 
-            let impact  = trace_single_ray(ray, &scene.surfaces, &mut rng);
+            let mut accumulated_pixel = Vector4::zero();
 
-            let pixel: Rgb<u8> = match impact {
-                None => {
-                    background_colour
-                }
-                Some(impact) => {
-                    let location = ray.march(impact.time_to_hit());
-                    let b: u8 = query_photon_map_intensity(map, location, energy_total, config.sample_size);
-                    image::Rgb([b, b, b])
-                }
-            };
+            for _i in 0..(config.pixel_sample_size) {
+                let impact = trace_single_ray(ray, &scene.surfaces, &mut rng);
 
-            img.put_pixel(x, y, pixel);
+                let pixel: Vector4 = match impact {
+                    None => {
+                        background_colour
+                    }
+                    Some(impact) => {
+                        let location = ray.march(impact.time_to_hit());
+                        let b: u8 = query_photon_map_intensity(map, location, energy_total, config.photon_map_sample_size);
+                        Vector4::create(b as f64, b as f64, b as f64, 0.0)
+                    }
+                };
+
+                accumulated_pixel = accumulated_pixel + pixel;
+            }
+
+            img.put_pixel(x, y, image::Rgb([
+                (accumulated_pixel.x() / (config.pixel_sample_size as f64)) as u8,
+                (accumulated_pixel.y() / (config.pixel_sample_size as f64)) as u8,
+                (accumulated_pixel.z() / (config.pixel_sample_size as f64)) as u8
+            ]));
         }
 
         info!("Saving frame");

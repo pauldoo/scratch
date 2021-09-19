@@ -16,6 +16,7 @@ ordered-float = "2.0"
 clap = "2.33"
 rayon = "1.4.1"
 approx = "0.3.2"
+num_cpus = "1.0"
 
 [dev-dependencies]
 tempfile = "3.0"

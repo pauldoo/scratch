@@ -32,17 +32,7 @@ cargo build --release && \
 
 ### ffmpeg
 
-```
-ffmpeg \
-  -framerate 10 \
-  -i ./output/frame_%06d.png \
-  -pix_fmt yuv420p \
-  -c:a none \
-  -crf 30 \
-  -b:v 10M \
-  -f webm \
-  render.webm
-```
+See `encode.sh`.
 
 ### Clippy
 
@@ -61,3 +51,5 @@ RUST_LOG=timetrace2=debug RUST_BACKTRACE=1 cargo test --package timetrace2 --bin
 ```
 cargo update
 ```
+
+

@@ -22,6 +22,8 @@ mod swizzle;
 #[macro_use]
 extern crate approx;
 
+extern crate num_cpus;
+
 fn create_scene() -> scene::Scene {
     return Scene {
         surfaces: create_surfaces(),
@@ -82,14 +84,28 @@ pub struct Config {
     height: u32,
     min_t: f64,
     max_t: f64,
-    sample_size: u32,
+    photon_map_sample_size: u32,
+    pixel_sample_size: u32,
     reflectiveness: f64,
     output_directory: PathBuf,
+}
+
+fn configure_thread_pool() -> () {
+    let num_threads = num_cpus::get() * 2;
+    info!("Will use {} worker threads.", num_threads);
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(num_threads)
+        .start_handler(|num| {
+            info!("Thread #{} starting", num);
+        })
+        .build_global()
+        .unwrap();
 }
 
 fn main() -> std::io::Result<()> {
     env_logger::init();
     info!("Starting.");
+    configure_thread_pool();
 
     let skip_building_photon_map_arg_name = "skip-building-photon-map";
     let quick_arg_name = "quick";
@@ -116,13 +132,14 @@ fn main() -> std::io::Result<()> {
     };
 
     let config: Config = Config {
-        photon_map_size: 500_000_000u64 / quick_factor,
+        photon_map_size: 1_000_000_000u64 / quick_factor,
         frame_count: (2000 / quick_factor) as u32,
-        width: (1920 / quick_factor) as u32,
-        height: (1080 / quick_factor) as u32,
+        width: (640 / quick_factor) as u32,
+        height: (360 / quick_factor) as u32,
         min_t: 0.0,
         max_t: 30.0,
-        sample_size: 50,
+        photon_map_sample_size: 50,
+        pixel_sample_size: 8,
         reflectiveness: 0.80,
         output_directory: PathBuf::from("./output"),
     };
