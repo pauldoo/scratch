@@ -1,75 +1,121 @@
 import { useMemo, useState, Fragment } from 'react';
+import { useMediaQuery } from 'react-responsive';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+} from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { getAutomaticTypeDirectiveNames } from 'typescript';
 import { OutcomeDistribution, simulate, State } from './Simulation';
 
-export interface Props {
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend
+);
 
+export interface Props {
 }
 
-const Outcomes: React.FC<State> = (props) => {
-    
-    const simData: OutcomeDistribution = useMemo( () => {
-        return simulate(props); 
+interface OutcomeProps {
+    initialState: State,
+    darkMode: boolean
+}
+
+const Outcomes: React.FC<OutcomeProps> = (props) => {
+
+    const simData: OutcomeDistribution = useMemo(() => {
+        return simulate(props.initialState);
     }, [props]);
 
-    const labels :string[] = simData.outcomes.map( (e) => {
+    const labels: string[] = simData.outcomes.map((e) => {
         return e.state.attackerCount + " - " + e.state.defenderCount;
     });
 
-    const values : number[] = simData.outcomes.map( (e) => {
+    const values: number[] = simData.outcomes.map((e) => {
         return (100 * e.count) / simData.totalCount;
     });
 
-    const data = {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Liklihood',
-            backgroundColor: 'rgba(255,99,132,0.5)',
-            //borderColor: 'rgba(255,99,132,1)',
-            //borderWidth: 1,
-            hoverBackgroundColor: 'rgba(255,99,132,1.0)',
-            //hoverBorderColor: 'rgba(255,99,132,1)',
-            data: values,
-            barPercentage: 1.0,
-            categoryPercentage: 1.0
-          }
-        ]
-      };
+    const standoutColor: string = props.darkMode ?
+        'rgba(255, 255, 255, 1.0)' :
+        'rgba(0, 0, 0, 1.0)';
 
-    const options = {
-        title: {
-            display: true,
-            text: 'End state likelihoods'
-        },
-        scales: {
-            xAxes: [{
-                scaleLabel: {
-                    display: true,
-                    labelString: 'Remaining troops ([attacker] - [defender])'
-                }
-            }],
-            yAxes: [{
-                ticks: {
-                    beginAtZero: true
-                },
-                scaleLabel: {
-                    display: true,
-                    labelString: 'Likelihood (%)'
-                }
-            }]            
-        },
-        legend: {
-            display: false
+    const bar = <Bar
+        data={
+            {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Liklihood',
+                        backgroundColor: 'rgba(255,99,132,0.5)',
+                        //borderColor: 'rgba(255,99,132,1)',
+                        //borderWidth: 1,
+                        //hoverBackgroundColor: 'rgba(255,99,132,1.0)',
+                        //hoverBorderColor: 'rgba(255,99,132,1)',
+                        data: values,
+                        barPercentage: 0.9,
+                        categoryPercentage: 1.0
+                    }
+                ]
+            }
         }
-    };
+        options={
+            {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    title: {
+                        display: true,
+                        text: 'End state likelihoods',
+                        color: standoutColor
+                    },
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: standoutColor
+                        },
+                        grid: {
+                            color: 'rgba(127, 127, 127, 1.0)'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Remaining troops ([attacker] - [defender])',
+                            color: standoutColor
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        ticks: {
+                            color: standoutColor
+                        },
+                        grid: {
+                            color: 'rgba(127, 127, 127, 1.0)'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Likelihood (%)',
+                            color: standoutColor
+                        }
+                    }
+                }
+            }
+        } />;
 
     return (
         <Fragment>
             <div>
-                <h2>All out attack with {props.attackerCount} against {props.defenderCount}</h2>
-                <Bar data={data} options={options} />
+                <h2>All out attack with {props.initialState.attackerCount} against {props.initialState.defenderCount}</h2>
+                {bar}
             </div>
             <div>
                 <h2>Summary</h2>
@@ -105,12 +151,27 @@ const Outcomes: React.FC<State> = (props) => {
 
 export const Calculator: React.FC<Props> = (props) => {
 
+    const [isDark, setIsDark] = useState<boolean>(true);
+
+    useMediaQuery(
+        {
+          query: '(prefers-color-scheme: dark)',
+        },
+        undefined,
+        (isSystemDark: boolean) => setIsDark(isSystemDark)
+      );
+
     const [attackerCount, setAttackerCount] = useState(5);
     const [defenderCount, setDefenderCount] = useState(5);
 
     let calculator;
     if (attackerCount >= 2 && defenderCount >= 1) {
-        calculator = <Outcomes attackerCount={attackerCount} defenderCount={defenderCount}/>;
+        calculator = <Outcomes darkMode={ isDark } initialState={
+            {
+                attackerCount: attackerCount,
+                defenderCount: defenderCount
+            }
+        } />;
     } else {
         calculator = <div />
     }
