@@ -151,22 +151,13 @@ const Outcomes: React.FC<OutcomeProps> = (props) => {
 
 export const Calculator: React.FC<Props> = (props) => {
 
-    const [isDark, setIsDark] = useState<boolean>(true);
-
-    useMediaQuery(
-        {
-          query: '(prefers-color-scheme: dark)',
-        },
-        undefined,
-        (isSystemDark: boolean) => setIsDark(isSystemDark)
-      );
-
+    const isDark = useMediaQuery({query:'(prefers-color-scheme: dark)'});
     const [attackerCount, setAttackerCount] = useState(5);
     const [defenderCount, setDefenderCount] = useState(5);
 
     let calculator;
     if (attackerCount >= 2 && defenderCount >= 1) {
-        calculator = <Outcomes darkMode={ isDark } initialState={
+        calculator = <Outcomes darkMode={isDark} initialState={
             {
                 attackerCount: attackerCount,
                 defenderCount: defenderCount
