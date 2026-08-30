@@ -1,0 +1,25 @@
+[package]
+name = "crcbench"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+bench = false
+
+[dependencies]
+crc = "3"
+crc-fast = "1"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+twox-hash = { version = "2", features = ["std", "xxhash3_64"] }
+
+[dev-dependencies]
+criterion = "0.8"
+rand = "0.10"
+
+[[bench]]
+name = "my_benchmark"
+harness = false
+
+[profile.bench]
+codegen-units = 1
+lto = true
