@@ -1,0 +1,14 @@
+go: build-native build-java build-rust
+    java -cp ./build/java Go
+
+build-native:
+    gcc -Wall -O2 -g \
+      -fPIC -fhardened \
+      -shared -o build/libtest.so native/lib.c
+
+build-java:
+    javac -d build/java java/*.java
+
+build-rust:
+    (cd logic && cargo build --release)
+    cp -v logic/target/release/liblogic.so ./build/

@@ -1,0 +1,12 @@
+FROM fedora:44
+
+RUN dnf install -y \
+  cargo \
+  gcc \
+  g++ \
+  git \
+  java-25-openjdk \
+  java-25-openjdk-devel \
+  just \
+  rust \
+  rust-src

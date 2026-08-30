@@ -1,0 +1,15 @@
+{
+    "name": "Development",
+    "build": {
+        "dockerfile": "Containerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools-extension-pack",
+                "rust-lang.rust-analyzer",
+                "vscjava.vscode-java-pack",
+            ]
+        }
+    }
+}
